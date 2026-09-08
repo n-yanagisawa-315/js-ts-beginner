@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="TypeScript 初学者向けの印刷対応クイックリファレンス">
+  <title>TypeScript Core — Quick Reference</title>
+  <link rel="stylesheet" href="../assets/reference.css">
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Quick Reference 02</p>
+    <h1>TypeScript Core</h1>
+    <p class="lead">型は、実行前にコードの使い方を検査するための情報。実行時の値と、コンパイル時の型を分けて追う。</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="syntax">
+      <h2 id="syntax">よく使う構文</h2>
+      <div class="grid">
+        <article class="card">
+          <h2>オブジェクト型・関数</h2>
+          <pre><code>type User = {
+  id: number;
+  name: string;
+  email?: string;
+};
+
+function label(user: User): string {
+  return `${user.id}: ${user.name}`;
+}</code></pre>
+        </article>
+        <article class="card">
+          <h2>ユニオン・絞り込み</h2>
+          <pre><code>type Result =
+  | { ok: true; value: string }
+  | { ok: false; error: Error };
+
+function message(result: Result) {
+  if (result.ok) {
+    return result.value;
+  }
+  return result.error.message;
+}</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="mechanism">
+      <h2 id="mechanism">仕組み：型検査から実行まで</h2>
+      <ol class="flow" aria-label="TypeScript コードの基本的な処理順">
+        <li>コードを解析</li>
+        <li>型を推論</li>
+        <li>型の整合を検査</li>
+        <li>JavaScriptを出力</li>
+        <li>実行環境で動作</li>
+      </ol>
+      <div class="callout">
+        <strong>二つの世界:</strong> <code>type</code> や <code>interface</code> は主に型検査で使われ、通常は出力 JavaScript に残らない。<code>typeof</code>、条件分岐、判別用プロパティなどを使うと、制御フローに沿って広い型を安全に絞り込める。
+      </div>
+    </section>
+
+    <section aria-labelledby="mistakes">
+      <h2 id="mistakes">ありがちな誤解</h2>
+      <ul class="misconceptions">
+        <li><strong>型が通れば実行時も安全？</strong> 外部入力は型注釈だけでは検証されない。実行時のチェックが別に必要。</li>
+        <li><strong><code>any</code> は「どんな型でも安全」？</strong> 型検査を避ける値。未知の入力には、絞り込みを要求する <code>unknown</code> が適する。</li>
+        <li><strong><code>as</code> は値を変換する？</strong> 多くの場合、コンパイラへの型の主張であり、実行時の値を変換しない。</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="test">
+      <h2 id="test">自己テスト</h2>
+      <ol class="self-test">
+        <li><code>email?: string</code> を読む前に何を確認すべきか。実行時の値も含めて説明する。</li>
+        <li>上の <code>Result</code> で <code>result.ok</code> を調べると、なぜ <code>value</code> を読めるのか説明する。</li>
+        <li><code>JSON.parse</code> の結果へ型を付けただけでは不十分な理由と、必要な実行時検証を挙げる。</li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="sources">
+      <h2 id="sources">公式一次資料</h2>
+      <ul class="sources">
+        <li><a href="https://www.typescriptlang.org/docs/handbook/intro.html">TypeScript Handbook</a> — 型システムを体系的に学ぶ</li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/2/narrowing.html">Handbook: Narrowing</a> — 制御フローによる型の絞り込みを確認する</li>
+        <li><a href="https://www.typescriptlang.org/docs/handbook/release-notes/overview.html">TypeScript Release Notes</a> — バージョン差を確認する</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>エラーを読むときは「実際の型」「期待される型」「両者が出会う場所」を探す。</footer>
+</body>
+</html>

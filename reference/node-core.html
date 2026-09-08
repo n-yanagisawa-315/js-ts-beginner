@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Node.js 初学者向けの印刷対応クイックリファレンス">
+  <title>Node.js Core — Quick Reference</title>
+  <link rel="stylesheet" href="../assets/reference.css">
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Quick Reference 03</p>
+    <h1>Node.js Core</h1>
+    <p class="lead">Node.js は JavaScript をブラウザー外で動かす実行環境。入口、入出力、非同期の完了、終了条件を順に追う。</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="syntax">
+      <h2 id="syntax">よく使う構文</h2>
+      <div class="grid">
+        <article class="card">
+          <h2>CLI・ファイル</h2>
+          <pre><code>import { readFile } from "node:fs/promises";
+
+const path = process.argv[2];
+
+try {
+  const text = await readFile(path, "utf8");
+  console.log(text);
+} catch (error) {
+  console.error(error);
+  process.exitCode = 1;
+}</code></pre>
+        </article>
+        <article class="card">
+          <h2>HTTP サーバー</h2>
+          <pre><code>import { createServer } from "node:http";
+
+const server = createServer((request, response) =&gt; {
+  response.writeHead(200, {
+    "content-type": "application/json"
+  });
+  response.end(JSON.stringify({ ok: true }));
+});
+
+server.listen(3000);</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="mechanism">
+      <h2 id="mechanism">仕組み：非同期 I/O の実行順</h2>
+      <ol class="flow" aria-label="Node.js の非同期入出力の基本的な実行順">
+        <li>スクリプト開始</li>
+        <li>I/Oを依頼</li>
+        <li>他の処理へ進む</li>
+        <li>完了を通知</li>
+        <li>後続処理を実行</li>
+      </ol>
+      <div class="callout">
+        <strong>イベントループ:</strong> JavaScript のコールスタックが空くと、準備のできたコールバックなどが実行される。<code>await</code> はプロセス全体を止める命令ではなく、その async 関数の続きが Promise の決着後に再開される境界。
+      </div>
+    </section>
+
+    <section aria-labelledby="mistakes">
+      <h2 id="mistakes">ありがちな誤解</h2>
+      <ul class="misconceptions">
+        <li><strong>Node.js にブラウザー API は全部ある？</strong> 実行環境が違う。DOM の <code>document</code> などは通常存在しない。</li>
+        <li><strong><code>readFile</code> は呼んだ行で完了する？</strong> Promise 版は完了を待つ必要がある。<code>await</code> または <code>then</code> で結果を扱う。</li>
+        <li><strong><code>process.exit()</code> は安全な終了方法？</strong> 保留中の出力を打ち切る場合がある。通常は <code>process.exitCode</code> を設定して自然終了させる。</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="test">
+      <h2 id="test">自己テスト</h2>
+      <ol class="self-test">
+        <li>CLI 例を引数なしで実行すると、どこで何が起きるか。入口からエラー処理まで説明する。</li>
+        <li><code>await readFile</code> の待機中、プロセス全体が停止するわけではない理由を説明する。</li>
+        <li>HTTP 例で二つのリクエストが来たとき、共有してはいけないリクエスト固有の値を挙げる。</li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="sources">
+      <h2 id="sources">公式一次資料</h2>
+      <ul class="sources">
+        <li><a href="https://nodejs.org/learn">Node.js Learn</a> — ランタイムと非同期処理を学ぶ</li>
+        <li><a href="https://nodejs.org/api/">Node.js API Documentation</a> — 組み込み API の契約を引く</li>
+        <li><a href="https://docs.npmjs.com/">npm Docs</a> — コマンド、依存関係、package.json を確認する</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>デバッグでは「プロセスの入口」「I/O の依頼」「完了後の処理」「終了条件」を順番に確認する。</footer>
+</body>
+</html>

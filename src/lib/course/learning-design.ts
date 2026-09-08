@@ -1,0 +1,690 @@
+import type {
+  ExerciseKind,
+  Lesson,
+  Question,
+  ScaffoldLevel,
+  Slide,
+  StoryBeat,
+  Track,
+  TransferLevel,
+} from "./types";
+
+const PROJECT_BY_TRACK: Record<Track, string> = {
+  js: "注文管理画面",
+  ts: "型安全な注文管理",
+  node: "注文API",
+};
+
+const INCIDENT_BY_TRACK: Record<Track, string> = {
+  js: "店員が迷わず注文を処理できるよう、画面の動きを1つずつ組み立てます。",
+  ts: "注文データの取り違えを実行前に見つけられるよう、コードへ約束を加えます。",
+  node: "注文をファイル・通信・プロセスへ安全につなぎ、運用できる形へ育てます。",
+};
+
+const TRACK_CAPSTONE_CODE: Record<Track, string> = {
+  js: `// 注文管理ツールの引き継ぎコード
+const TAX_RATE = 0.1;
+const orders = [
+  { id: 1, customer: "Aya", items: [1200, 800], paid: true },
+  { id: 2, customer: "Ren", items: [500], paid: false },
+  { id: 3, customer: "Mio", items: [900, 300], paid: true },
+];
+
+function subtotal(order) {
+  return order.items.reduce((sum, price) => sum + price, 0);
+}
+
+function total(order) {
+  return Math.floor(subtotal(order) * (1 + TAX_RATE));
+}
+
+function label(order) {
+  const status = order.paid ? "支払済み" : "未払い";
+  return \`#\${order.id} \${order.customer} \${status}\`;
+}
+
+function paidOrders(source) {
+  return source.filter((order) => order.paid);
+}
+
+function totalsByCustomer(source) {
+  return source.reduce((result, order) => {
+    result[order.customer] = total(order);
+    return result;
+  }, {});
+}
+
+async function saveOrder(order, save) {
+  const payload = {
+    id: order.id,
+    customer: order.customer,
+    total: total(order),
+  };
+  return await save(payload);
+}
+
+for (const order of orders) {
+  console.log(label(order));
+}
+
+paidOrders(orders).forEach((order) => {
+  console.log(order.customer, total(order));
+});
+
+const summary = totalsByCustomer(orders);
+console.log(summary);
+
+// package.json には start と test がある
+// package-lock.json はリポジトリへ保存済み
+// CI は毎回同じ依存関係を復元する必要がある
+// node_modules は生成物なので保存しない
+// ここまでを読み、最後の設問へ答える`,
+  ts: `type OrderStatus = "draft" | "paid" | "cancelled";
+
+type OrderItem = {
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+type Order = {
+  id: string;
+  customer: string;
+  status: OrderStatus;
+  items: OrderItem[];
+};
+
+type OrderSummary = {
+  id: string;
+  total: number;
+  label: string;
+};
+
+function itemTotal(item: OrderItem): number {
+  return item.price * item.quantity;
+}
+
+function orderTotal(order: Order): number {
+  return order.items.reduce((sum, item) => sum + itemTotal(item), 0);
+}
+
+function isPaid(order: Order): boolean {
+  return order.status === "paid";
+}
+
+function summarize(order: Order): OrderSummary {
+  return {
+    id: order.id,
+    total: orderTotal(order),
+    label: \`\${order.customer}: \${order.status}\`,
+  };
+}
+
+const apiValue: unknown = {
+  id: "o-1",
+  customer: "Aya",
+  status: "paid",
+  items: [{ name: "本", price: 1200, quantity: "1" }],
+};
+
+const order = apiValue as Order;
+const unsafeQuantity = "1" as unknown as number;
+const summary = summarize(order);
+
+console.log(summary);
+console.log(unsafeQuantity + 1);
+
+// 型アサーションは値を変換しない
+// unknown を経由しても実行時検査は増えない
+// API境界では値の検証が別途必要
+// ここまでを読み、最後の設問へ答える`,
+  node: `import http from "node:http";
+import { readFile, writeFile } from "node:fs/promises";
+
+const PORT = Number(process.env.PORT ?? 3000);
+const DATA_FILE = new URL("./orders.json", import.meta.url);
+
+async function readOrders() {
+  const text = await readFile(DATA_FILE, "utf8");
+  return JSON.parse(text);
+}
+
+async function saveOrders(orders) {
+  await writeFile(DATA_FILE, JSON.stringify(orders, null, 2));
+}
+
+function sendJson(res, status, value) {
+  res.writeHead(status, { "content-type": "application/json" });
+  res.end(JSON.stringify(value));
+}
+
+const server = http.createServer(async (req, res) => {
+  try {
+    if (req.method === "GET" && req.url === "/orders") {
+      const orders = await readOrders();
+      console.log("orders.read", orders.length);
+      sendJson(res, 200, orders);
+      return;
+    }
+
+    if (req.method === "POST" && req.url === "/orders") {
+      const orders = await readOrders();
+      const next = { id: Date.now(), status: "draft" };
+      orders.push(next);
+      await saveOrders(orders);
+      console.log("orders.created", next.id);
+      sendJson(res, 201, next);
+      return;
+    }
+
+    sendJson(res, 404, { error: "not found" });
+  } catch (error) {
+    console.error("request.failed", error);
+    sendJson(res, 500, { error: "internal error" });
+  }
+});
+
+server.listen(PORT, () => {
+  console.log("server.started", PORT);
+});
+
+process.on("SIGTERM", () => {
+  console.log("server.stopping");
+  server.close(() => process.exit(0));
+});
+
+// コンテナ基盤は標準出力と標準エラーを収集する
+// 一時ファイルだけへログを残さない
+// ここまでを読み、最後の設問へ答える`,
+};
+
+const CONTRAST_GROUP: Partial<Record<Slide["diagram"], string>> = {
+  label: "declaration-let-const-var",
+  rewrite: "declaration-let-const-var",
+  "var-hoist": "declaration-let-const-var",
+  loop: "iteration-choice",
+  "for-loop": "iteration-choice",
+  "while-loop": "iteration-choice",
+  "for-of-loop": "iteration-choice",
+  "foreach-loop": "iteration-choice",
+  map: "array-method-choice",
+  shape: "type-shape-choice",
+  union: "type-shape-choice",
+  "node-cjs-esm": "module-system-choice",
+  modules: "module-system-choice",
+};
+
+function isSummary(slide: Slide): boolean {
+  return slide.title === "この講義の要点";
+}
+
+function storyBeat(index: number, teachingCount: number): StoryBeat {
+  if (index === 0) return "problem";
+  if (index === 1) return "prediction";
+  if (index === teachingCount - 1) return "transfer";
+  if (index === teachingCount - 2) return "resolution";
+  return "trace";
+}
+
+function storyContextForSlide(
+  lesson: Lesson,
+  slides: Slide[],
+  index: number,
+): string {
+  const slide = slides[index];
+  if (!slide) return lesson.title;
+  const previous = slides[index - 1];
+  const beat = storyBeat(index, slides.length);
+  switch (beat) {
+    case "problem":
+      return `${PROJECT_BY_TRACK[lesson.track]}で「${lesson.title}」に関わる問題が起きました。「${slide.title}」を手がかりに、まず何が起きているかを切り分けます。`;
+    case "prediction":
+      return `最初の手がかり「${previous?.title ?? lesson.title}」を踏まえ、コードを動かす前に「${slide.title}」の結果を予想します。`;
+    case "trace":
+      return `「${previous?.title ?? lesson.title}」だけでは原因を説明し切れません。次に「${slide.title}」の値と実行位置を順番に追います。`;
+    case "resolution":
+      return `「${previous?.title ?? lesson.title}」まで追って原因が見えました。「${slide.title}」を判断基準にして修正します。`;
+    case "transfer":
+      return `修正後の注文処理を別の入力でも確かめます。「${slide.title}」で同じ仕組みを使えるか判断します。`;
+  }
+}
+
+function exerciseKind(index: number, count: number): ExerciseKind {
+  if (index === count - 1) return "transfer";
+  if (index === 0) return "trace";
+  if (index <= Math.floor(count / 3)) return "faded";
+  return "independent";
+}
+
+function scaffoldLevel(index: number, count: number): ScaffoldLevel {
+  if (index === 0) return "guided";
+  if (index < Math.max(2, Math.floor(count / 2))) return "faded";
+  return "independent";
+}
+
+function transferLevel(kind: ExerciseKind): TransferLevel {
+  return kind === "transfer" ? "near" : kind === "independent" ? "same" : "same";
+}
+
+function diagnoseOption(
+  option: string,
+  answer: string,
+  baseId: string,
+  index: number,
+) {
+  if (option.toLowerCase() === answer.toLowerCase() && option !== answer) {
+    return {
+      id: `${baseId}:case-sensitive`,
+      feedback: `「${option}」は大文字・小文字だけが異なります。JavaScriptは命令名の大小を区別します。`,
+      nextCheck: "命令名を正解例と1文字ずつ比較する",
+    };
+  }
+  if (/\b(?:undefined|null)\b/.test(option) && !answer.includes(option)) {
+    return {
+      id: `${baseId}:missing-versus-empty`,
+      feedback: `「${option}」を選んだ場合は、「値が未設定」と「対象が存在しない」を同じものとして扱っていないか確認します。`,
+      nextCheck: "その値が作られる時点と、実際に保持される値を追う",
+    };
+  }
+  if (/\bvar\b/.test(option) && !/\bvar\b/.test(answer)) {
+    return {
+      id: `${baseId}:var-scope`,
+      feedback: `「${option}」ではvarの関数スコープと巻き上げが入ります。ブロック単位で名前を分けたい場面とは動きが異なります。`,
+      nextCheck: "名前が見える範囲と、再代入が必要かを分けて確認する",
+    };
+  }
+  if (/自動|必ず|すべて|何でも|そのまま/.test(option)) {
+    return {
+      id: `${baseId}:overgeneralization`,
+      feedback: `「${option}」は処理が自動で行われる範囲を広く見積もりすぎています。構文が保証する処理だけに分けて考えます。`,
+      nextCheck: "コードに実際に書かれた変換・待機・検査だけを列挙する",
+    };
+  }
+  if (/\b(?:Promise|await|then|async)\b/.test(option + answer)) {
+    return {
+      id: `${baseId}:async-order`,
+      feedback: `「${option}」では、処理を開始する時点と結果を受け取る時点が混ざっています。`,
+      nextCheck: "同期処理、Promiseの確定、コールバック再開の順を番号で書く",
+    };
+  }
+  return {
+    id: `${baseId}:alternative-${index + 1}`,
+    feedback: `「${option}」という結果になるには、コード中に別の処理が必要です。現在のコードが実際に行う操作だけを順に追ります。`,
+    nextCheck: "入力値→実行される行→出力値の3段階で確認する",
+  };
+}
+
+function misconceptionByAnswer(
+  question: Question,
+  baseId: string,
+): Question["misconceptionByAnswer"] {
+  if (question.kind !== "choice" || !question.options) {
+    return question.misconceptionByAnswer;
+  }
+  return Object.fromEntries(
+    question.options
+      .filter((option) => option !== question.answer)
+      .map((option, index) => [
+        option,
+        diagnoseOption(option, question.answer, baseId, index),
+      ]),
+  );
+}
+
+function fadedStarter(question: Question, level: ScaffoldLevel): string | undefined {
+  if (question.kind !== "code" || level !== "faded") return question.starter;
+  const lines = question.answer.split("\n");
+  const target = lines.findIndex(
+    (line) =>
+      /\b(return|const|let|if|for|await|console|throw)\b|=/.test(line) &&
+      !/^\s*(?:\/\/|\/\*)/.test(line),
+  );
+  if (target < 0) return question.starter;
+  const indent = lines[target]?.match(/^\s*/)?.[0] ?? "";
+  return lines
+    .map((line, index) =>
+      index === target ? `${indent}// ここを1行だけ補う` : line,
+    )
+    .join("\n");
+}
+
+function enrichQuestion(
+  lesson: Lesson,
+  question: Question,
+  teachingIndex: number,
+  teachingCount: number,
+  slide: Slide | undefined,
+): Question {
+  const kind = question.exerciseKind ?? exerciseKind(teachingIndex, teachingCount);
+  const scaffold =
+    question.scaffoldLevel ?? scaffoldLevel(teachingIndex, teachingCount);
+  const conceptIds = question.conceptIds ?? [
+    `${lesson.track}:${slide?.diagram ?? lesson.chapter}`,
+  ];
+  const misconceptionId =
+    question.misconceptionId ?? `${conceptIds[0]}:common-misread`;
+  const misconceptionMap =
+    question.misconceptionByAnswer ??
+    misconceptionByAnswer(question, misconceptionId);
+  return {
+    ...question,
+    objectiveId:
+      question.objectiveId ?? `${lesson.id}:objective-${teachingIndex + 1}`,
+    conceptIds,
+    variantId: question.variantId ?? `${lesson.id}:${question.id}:base`,
+    scenario:
+      question.scenario ??
+      `${PROJECT_BY_TRACK[lesson.track]}で「${slide?.title ?? lesson.title}」を使う場面`,
+    exerciseKind: kind,
+    scaffoldLevel: scaffold,
+    starter: fadedStarter(question, scaffold),
+    contrastGroup:
+      question.contrastGroup ??
+      (slide ? CONTRAST_GROUP[slide.diagram] : undefined),
+    transferLevel: question.transferLevel ?? transferLevel(kind),
+    misconceptionId,
+    misconceptionByAnswer: misconceptionMap,
+    feedbackByAnswer:
+      question.feedbackByAnswer ??
+      (misconceptionMap
+        ? Object.fromEntries(
+            Object.entries(misconceptionMap).map(([answer, diagnosis]) => [
+              answer,
+              `${diagnosis.feedback} 次は「${diagnosis.nextCheck}」を確認してください。`,
+            ]),
+          )
+        : undefined),
+    hints:
+      question.hints ??
+      [
+        question.hint,
+        question.steps?.[0]
+          ? `最初の一歩だけ確認します。${question.steps[0]}`
+          : undefined,
+      ].filter((hint): hint is string => Boolean(hint)),
+  };
+}
+
+export function applyLearningDesign(lesson: Lesson): Lesson {
+  const teachingSlides = lesson.slides.filter((slide) => !isSummary(slide));
+  const teachingIndexBySlide = new Map<number, number>();
+  let teachingIndex = 0;
+  lesson.slides.forEach((slide, slideIndex) => {
+    if (!isSummary(slide)) {
+      teachingIndexBySlide.set(slideIndex, teachingIndex);
+      teachingIndex += 1;
+    }
+  });
+
+  const slides = lesson.slides.map((slide, slideIndex) => {
+    if (isSummary(slide)) return slide;
+    const index = teachingIndexBySlide.get(slideIndex) ?? 0;
+    const objectiveId = `${lesson.id}:objective-${index + 1}`;
+    return {
+      ...slide,
+      objectiveId: slide.objectiveId ?? objectiveId,
+      conceptIds: slide.conceptIds ?? [`${lesson.track}:${slide.diagram}`],
+      storyBeat: slide.storyBeat ?? storyBeat(index, teachingSlides.length),
+      storyContext:
+        slide.storyContext ??
+        storyContextForSlide(lesson, teachingSlides, index),
+    };
+  });
+
+  const questions = lesson.questions.map((question, index) => {
+    const slideIndex =
+      question.slide ??
+      lesson.slides.findIndex((slide) => !isSummary(slide));
+    return enrichQuestion(
+      lesson,
+      question,
+      index,
+      lesson.questions.length,
+      slides[slideIndex],
+    );
+  });
+
+  return {
+    ...lesson,
+    story:
+      lesson.story ??
+      {
+        project: PROJECT_BY_TRACK[lesson.track],
+        incident: `${INCIDENT_BY_TRACK[lesson.track]} 今回は「${lesson.title}」が課題です。`,
+        outcome: lesson.summary,
+      },
+    objectives:
+      lesson.objectives ??
+      teachingSlides.map((slide, index) => ({
+        id: `${lesson.id}:objective-${index + 1}`,
+        label: slide.title,
+        conceptIds: [`${lesson.track}:${slide.diagram}`],
+        prerequisites:
+          index === 0 ? [] : [`${lesson.id}:objective-${index}`],
+      })),
+    slides,
+    questions,
+  };
+}
+
+export function prequestionForLesson(lesson: Lesson): string {
+  return `${lesson.story?.project ?? PROJECT_BY_TRACK[lesson.track]}で「${lesson.title}」が必要になりました。説明を見る前に、どんな値や実行順が関係しそうか予想してください。`;
+}
+
+function orderingQuestionIndex(questions: Question[]): number {
+  for (let index = questions.length - 2; index >= 0; index -= 1) {
+    const question = questions[index];
+    const lineCount = question?.answer.trim().split("\n").length ?? 0;
+    if (question?.kind === "code" && lineCount >= 2 && lineCount <= 8) {
+      return index;
+    }
+  }
+  return -1;
+}
+
+function asOrderingQuestion(question: Question): Question {
+  const lines = question.answer.trim().split("\n");
+  const offset = Math.max(1, Math.floor(lines.length / 2));
+  const fragments = [...lines.slice(offset), ...lines.slice(0, offset)];
+  return {
+    ...question,
+    kind: "order",
+    prompt: `処理が正しい順で動くように、${lines.length}個のコード断片を並べてください。${question.prompt}`,
+    starter: undefined,
+    fragments,
+    exerciseKind: "faded",
+    scaffoldLevel: "faded",
+  };
+}
+
+function transferQuestion(
+  lesson: Lesson,
+  question: Question,
+  relatedLessons: Lesson[],
+  conceptIds: string[],
+  far: boolean,
+): Question {
+  const misconceptionId = `${lesson.id}:cumulative-transfer`;
+  let prompt: string;
+  let options: string[];
+  let answer: string;
+  let explain: string;
+  let code = relatedLessons
+    .flatMap((item) => item.slides)
+    .map((slide) => slide.code)
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 3)
+    .join("\n\n// 次の処理\n");
+
+  if (far && lesson.track === "js") {
+    code = TRACK_CAPSTONE_CODE.js;
+    prompt =
+      "引き継いだ注文管理コードを読みます。支払済み注文だけを集計し、CIでも同じ依存関係を再現する組み合わせを選んでください。";
+    options = [
+      "paidOrdersで絞ってから集計し、CIではnpm ciを使う",
+      "元のordersを直接削除しながら集計し、CIではnpm updateを使う",
+      "forEachの戻り値を新配列として集計し、lockを削除する",
+      "未払いを含む全件を集計し、node_modulesを保存して配布する",
+    ];
+    answer = options[0];
+    explain =
+      "配列の変換と副作用を分け、支払状態で絞ってから集計します。依存関係はlockからnpm ciで再現します。";
+  } else if (far && lesson.track === "ts") {
+    code = TRACK_CAPSTONE_CODE.ts;
+    prompt =
+      "API由来のquantityが文字列の可能性を残すコードです。型だけを言い切らず、実行時にも安全に合計する修正を選んでください。";
+    options = [
+      "unknownの形とquantityの型を検証し、数値へ変換できた値だけOrderとして扱う",
+      "as Orderを二重に書き、文字列のquantityをnumberへ自動変換する",
+      "OrderItem.quantityをanyへ変え、すべての演算を許可する",
+      "型注釈を削除すれば実行時に自動検証される",
+    ];
+    answer = options[0];
+    explain =
+      "型アサーションは値を変換しません。外部境界ではunknownとして形を検証し、変換後の値へ型を付けます。";
+  } else if (far) {
+    code = TRACK_CAPSTONE_CODE.node;
+    prompt =
+      "複数コンテナで動く注文APIを安全に運用します。非同期I/O、ログ収集、終了処理をまとめた判断を選んでください。";
+    options = [
+      "I/Oはawaitで失敗を捕捉し、ログはstdout/stderrへ出し、SIGTERMでserver.closeを始める",
+      "同期I/Oでイベントループを止め、ログは/tmpだけへ保存し、SIGKILLで必ず終了する",
+      "Promiseの失敗を無視し、ログはlocalStorageへ出し、終了処理を省く",
+      "すべての要求を同じ配列へ無制限にため、終了時に新規受付を続ける",
+    ];
+    answer = options[0];
+    explain =
+      "待ち時間は非同期処理へ渡し、診断可能な標準ストリームへ記録し、通常終了要求では新規受付を止めて処理中の要求を待ちます。";
+  } else {
+    const objectives = relatedLessons
+      .flatMap((item) => item.objectives ?? [])
+      .map((objective) => objective.label);
+    const first = objectives[0] ?? "入力の状態";
+    const last = objectives.at(-1) ?? "出力の状態";
+    prompt = `章末の注文処理を調査します。「${first}」と「${last}」を両方使って原因を切り分ける手順を選んでください。`;
+    options = [
+      `最初に「${first}」の値と実行順を確認し、その結果を「${last}」の判断へ渡す`,
+      `「${last}」だけを見て、「${first}」の入力状態は確認しない`,
+      `どちらも自動で正しくなる前提にして、実行結果を確認しない`,
+      `二つの仕組みを同じものとして扱い、名前だけを書き換える`,
+    ];
+    answer = options[0];
+    explain = `章末課題では片方の用語を思い出すだけでなく、「${first}」の結果が「${last}」へどう影響するかを順に追います。`;
+  }
+
+  const base: Question = {
+    ...question,
+    prompt,
+    lead: far
+      ? "初めて見る長いコードから、複数の仕組みを組み合わせて判断します。"
+      : "この章で別々に学んだ仕組みを、1つの注文処理の中でつなぎます。",
+    kind: "choice",
+    options,
+    starter: undefined,
+    fragments: undefined,
+    answer,
+    explain,
+    code,
+    exerciseKind: "transfer",
+    scaffoldLevel: "independent",
+    transferLevel: far ? "far" : "near",
+    conceptIds,
+    misconceptionId,
+  };
+  const diagnosis = misconceptionByAnswer(base, misconceptionId);
+  return {
+    ...base,
+    misconceptionByAnswer: diagnosis,
+    feedbackByAnswer: diagnosis
+      ? Object.fromEntries(
+          Object.entries(diagnosis).map(([option, item]) => [
+            option,
+            `${item.feedback} 次は「${item.nextCheck}」を確認してください。`,
+          ]),
+        )
+      : undefined,
+  };
+}
+
+export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
+  const lessons = source.map(applyLearningDesign);
+  const lastByChapter = new Map<string, Lesson>();
+  const lastByTrack = new Map<Track, Lesson>();
+  for (const lesson of lessons) {
+    const chapterLast = lastByChapter.get(lesson.chapter);
+    if (!chapterLast || chapterLast.order < lesson.order) {
+      lastByChapter.set(lesson.chapter, lesson);
+    }
+    const trackLast = lastByTrack.get(lesson.track);
+    if (!trackLast || trackLast.order < lesson.order) {
+      lastByTrack.set(lesson.track, lesson);
+    }
+  }
+
+  const connectedLessons = lessons.map((lesson) => {
+    const previous = lessons
+      .filter((candidate) => candidate.track === lesson.track && candidate.order < lesson.order)
+      .sort((a, b) => b.order - a.order)[0];
+    if (!previous || !lesson.story) return lesson;
+    const connectedIncident = `前の講義で「${previous.summary}」まで確認しました。その仕組みを使ったところ、次は「${lesson.title}」が必要になりました。${lesson.story.incident}`;
+    return {
+      ...lesson,
+      story: { ...lesson.story, incident: connectedIncident },
+      slides: lesson.slides.map((slide, index) =>
+        index === 0 && slide.storyContext
+          ? {
+              ...slide,
+              storyContext: `${connectedIncident} ${slide.storyContext}`,
+            }
+          : slide,
+      ),
+    };
+  });
+
+  return connectedLessons.map((lesson) => {
+    const chapterLast = lastByChapter.get(lesson.chapter)?.id === lesson.id;
+    const trackLast = lastByTrack.get(lesson.track)?.id === lesson.id;
+    if (!chapterLast && !trackLast) return lesson;
+    const allConcepts = [
+      ...new Set(
+        connectedLessons
+          .filter((item) =>
+            trackLast
+              ? item.track === lesson.track
+              : item.chapter === lesson.chapter,
+          )
+          .flatMap((item) => item.objectives?.flatMap((objective) => objective.conceptIds) ?? []),
+      ),
+    ];
+    const relatedLessons = connectedLessons.filter((item) =>
+      trackLast
+        ? item.track === lesson.track
+        : item.chapter === lesson.chapter,
+    );
+    const lastQuestionIndex = lesson.questions.length - 1;
+    const orderQuestionIndex = chapterLast
+      ? orderingQuestionIndex(lesson.questions)
+      : -1;
+    return {
+      ...lesson,
+      questions: lesson.questions.map((question, index) =>
+        index === orderQuestionIndex
+          ? asOrderingQuestion(question)
+          : index === lastQuestionIndex
+          ? {
+              ...transferQuestion(
+                lesson,
+                question,
+                relatedLessons,
+                allConcepts,
+                trackLast,
+              ),
+              scenario: trackLast
+                ? `${PROJECT_BY_TRACK[lesson.track]}全体の引き継ぎコードを読み、未知のコードから判断する`
+                : `${lesson.chapter}で学んだ複数の方法を区別して判断する章末課題`,
+            }
+          : question,
+      ),
+    };
+  });
+}

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="JavaScript 初学者向けの印刷対応クイックリファレンス">
+  <title>JavaScript Core — Quick Reference</title>
+  <link rel="stylesheet" href="../assets/reference.css">
+</head>
+<body>
+  <header>
+    <p class="eyebrow">Quick Reference 01</p>
+    <h1>JavaScript Core</h1>
+    <p class="lead">値を作り、名前を付け、条件で分け、関数へ渡す。まずは「今どの式が評価され、どの値になったか」を追う。</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="syntax">
+      <h2 id="syntax">よく使う構文</h2>
+      <div class="grid">
+        <article class="card">
+          <h2>値・変数・分岐</h2>
+          <pre><code>const price = 800;
+let count = 2;
+const total = price * count;
+
+if (total &gt;= 1500) {
+  console.log("送料無料");
+} else {
+  console.log("送料あり");
+}</code></pre>
+        </article>
+        <article class="card">
+          <h2>配列・オブジェクト・関数</h2>
+          <pre><code>const user = { name: "Aki", active: true };
+const scores = [72, 88, 95];
+
+function average(values) {
+  const sum = values.reduce((a, b) =&gt; a + b, 0);
+  return sum / values.length;
+}
+
+const result = average(scores);</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="mechanism">
+      <h2 id="mechanism">仕組み：式から結果まで</h2>
+      <ol class="flow" aria-label="JavaScript の基本的な実行順">
+        <li>ソースを解析</li>
+        <li>式を順に評価</li>
+        <li>値を束縛</li>
+        <li>関数を呼ぶ</li>
+        <li>値を返す</li>
+      </ol>
+      <div class="callout">
+        <strong>追跡の軸:</strong> 変数は箱そのものではなく、値への名前。関数呼び出しでは引数の式を評価し、その結果を仮引数へ渡し、<code>return</code> の値を呼び出し元へ戻す。オブジェクトは参照値なので、同じオブジェクトを指す複数の名前から変更が見える。
+      </div>
+    </section>
+
+    <section aria-labelledby="mistakes">
+      <h2 id="mistakes">ありがちな誤解</h2>
+      <ul class="misconceptions">
+        <li><strong><code>const</code> なら中身も不変？</strong> 再代入できないだけ。オブジェクトのプロパティは変更できる。</li>
+        <li><strong><code>==</code> と <code>===</code> は同じ？</strong> <code>==</code> は型変換を伴う。通常は型も比較する <code>===</code> を基準にする。</li>
+        <li><strong><code>async</code> は別スレッド？</strong> そうとは限らない。Promise とイベントループによって、完了後の処理を後のタイミングへ予約する。</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="test">
+      <h2 id="test">自己テスト</h2>
+      <ol class="self-test">
+        <li><code>const item = { n: 1 }; item.n = 2;</code> は成功するか。理由も説明する。</li>
+        <li><code>average([2, 4, 6])</code> の評価を、引数・仮引数・戻り値の順で説明する。</li>
+        <li><code>"5" + 1</code> と <code>"5" - 1</code> の結果を予想し、MDN で型変換の根拠を探す。</li>
+      </ol>
+    </section>
+
+    <section aria-labelledby="sources">
+      <h2 id="sources">公式一次資料</h2>
+      <ul class="sources">
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide">MDN JavaScript Guide</a> — 概念を例から学ぶ</li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference">MDN JavaScript Reference</a> — 構文と API を引く</li>
+        <li><a href="https://tc39.es/ecma262/">ECMAScript Language Specification</a> — 厳密な挙動を確かめる</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>説明するときは「コード → 評価された値 → 次に実行される箇所」の順で指差す。</footer>
+</body>
+</html>
