@@ -2,6 +2,8 @@
 
 JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で学ぶ初心者向けWeb教材です。49講義、262スライド、213問を収録しています。
 
+公開サイト: [https://js-ts-beginner.vercel.app](https://js-ts-beginner.vercel.app)
+
 ## 特徴
 
 - 初心者とエンジニアの会話で、専門用語を日常語から説明
