@@ -390,11 +390,11 @@ function enrichQuestion(
     exerciseKind: kind,
     scaffoldLevel: scaffold,
     lead: worked
-      ? `完成例を上から追い、各行が必要な理由を確認します。${question.lead ?? ""}`.trim()
+      ? `直前のスライドにある完成例を手がかりに、同じ働きを自分で再現します。${question.lead ?? ""}`.trim()
       : question.lead,
     starter:
       worked && (question.kind === "code" || question.kind === "shell")
-        ? question.answer
+        ? question.starter
         : scaffold === "independent"
           ? undefined
           : fadedStarter(question, scaffold),

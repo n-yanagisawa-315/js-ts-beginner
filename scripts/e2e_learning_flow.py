@@ -92,7 +92,7 @@ with sync_playwright() as playwright:
         continue_button.last.click()
     assert saw_semantic_highlight, "会話中のコード語と一致する行が強調されませんでした"
     expect(page.get_by_text("演習", exact=True)).to_be_visible()
-    expect(page.get_by_text("完成例を追って理解する", exact=True)).to_be_visible()
+    expect(page.get_by_text("完成例を手がかりに再現する", exact=True)).to_be_visible()
     page.locator(".monaco-editor:visible").last.click()
     page.keyboard.press("Meta+A")
     page.keyboard.insert_text("// わざと誤答する")

@@ -185,6 +185,11 @@ const prequestionSection = learningDesign.slice(
 if (prequestionSection.includes(".at(-1)")) {
   issues.push("学習前質問: 最初と最後の未習目標を同時に問う構造が残っています");
 }
+if (
+  /worked[\s\S]{0,180}\?\s*question\.answer/.test(learningDesign)
+) {
+  issues.push("worked問題: 解答全文を入力欄の初期値に入れています");
+}
 
 if (issues.length > 0) {
   console.error("教材粒度の監査で問題が見つかりました:");

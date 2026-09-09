@@ -288,6 +288,26 @@ assert.match(designed[1].story.incident, /前の講義で「結果1」まで確�
 assert.match(designed[0].slides[1].storyContext, /値を調べる.*値を保存する/);
 assert.equal(designed[0].questions[0].exerciseKind, "worked");
 assert.equal(designed[0].questions[0].scaffoldLevel, "worked");
+const workedCodeLesson = fixtureLesson("worked-code", 1);
+workedCodeLesson.questions[0] = {
+  id: "q1",
+  slide: 0,
+  prompt: "scoreを定義して表示する",
+  kind: "code",
+  starter: "// ここに書く",
+  answer: "let score = 10;\nconsole.log(score);",
+  explain: "定義後に表示します",
+};
+const [workedCodeDesigned] = applyCourseLearningDesign([workedCodeLesson]);
+assert.equal(
+  workedCodeDesigned.questions[0].starter,
+  "// ここに書く",
+  "worked問題でも解答全文を入力欄へ入れない",
+);
+assert.notEqual(
+  workedCodeDesigned.questions[0].starter,
+  workedCodeDesigned.questions[0].answer,
+);
 assert.match(designed[0].questions[1].starter, /ここを1行だけ補う/);
 assert.equal(
   designed[0].questions[2].starter,

@@ -525,7 +525,7 @@ function QuestionGuide({
         {question.exerciseKind === "transfer"
           ? "別の場面へ応用"
           : question.scaffoldLevel === "worked"
-            ? "完成例を追って理解する"
+            ? "完成例を手がかりに再現する"
           : question.scaffoldLevel === "independent"
             ? "手順なしで思い出す"
             : question.scaffoldLevel === "faded"

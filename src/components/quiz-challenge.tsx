@@ -97,7 +97,7 @@ export function QuizChallenge({
             {question.exerciseKind === "transfer"
               ? "応用課題: "
               : question.exerciseKind === "worked"
-                ? "完成例の確認: "
+                ? "完成例から再現: "
                 : "今回の場面: "}
             {question.scenario}
           </p>
