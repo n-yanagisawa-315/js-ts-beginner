@@ -765,17 +765,7 @@ function QuestionGuide({
       {question.lead ? (
         <div className="question-guide-block">
           <p className="question-guide-label">イメージ</p>
-          <p className="question-guide-copy">
-            <CopyableText
-              text={question.lead}
-              code={question.answer}
-              copyValues={
-                isShell
-                  ? [question.answer, ...(question.aliases ?? [])]
-                  : undefined
-              }
-            />
-          </p>
+          <p className="question-guide-copy">{question.lead}</p>
         </div>
       ) : null}
 
