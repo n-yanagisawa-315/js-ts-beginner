@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { CopyableText } from "@/components/copyable-text";
 import {
   ConfidenceDialog,
   ConfidenceScale,
@@ -156,27 +155,17 @@ export function QuizChallenge({
           </p>
         ) : null}
         <h1 className="mt-3 max-w-2xl font-serif text-3xl font-medium leading-snug">
-          <CopyableText
-            text={question.prompt}
-            code={question.answer}
-            copyValues={
-              question.kind === "shell"
-                ? [question.answer, ...(question.aliases ?? [])]
-                : undefined
-            }
-          />
+          {question.prompt.replaceAll(
+            "starter",
+            "最初から入っているコード",
+          )}
         </h1>
         {question.lead ? (
           <p className="mt-4 max-w-2xl text-base leading-7 text-ink">
-            <CopyableText
-              text={question.lead}
-              code={question.answer}
-              copyValues={
-                question.kind === "shell"
-                  ? [question.answer, ...(question.aliases ?? [])]
-                  : undefined
-              }
-            />
+            {question.lead.replaceAll(
+              "starter",
+              "最初から入っているコード",
+            )}
           </p>
         ) : null}
         {question.code ? <Snippet code={question.code} /> : null}
@@ -333,15 +322,10 @@ export function QuizChallenge({
                     {hints.slice(0, hintLevel).map((hint, index) => (
                       <li key={hint}>
                         <span className="mr-2 font-mono">{index + 1}.</span>
-                        <CopyableText
-                          text={hint}
-                          code={question.answer}
-                          copyValues={
-                            question.kind === "shell"
-                              ? [question.answer, ...(question.aliases ?? [])]
-                              : undefined
-                          }
-                        />
+                        {hint.replaceAll(
+                          "starter",
+                          "最初から入っているコード",
+                        )}
                       </li>
                     ))}
                   </ol>

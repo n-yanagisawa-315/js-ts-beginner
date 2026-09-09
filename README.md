@@ -30,41 +30,6 @@ JavaScript、TypeScript、Node.js、SQL、GitHubを、コード・会話・図�
 
 アカウント登録は不要です。個人情報は収集しません。
 
-## 開発と検証
-
-Node.js 22.6以降を使用します。
-
-```bash
-npm install
-npm run dev
-```
-
-変更後の一括検証は `npm run verify` で実行します。lint、型検査、静的監査、
-古い `.next` を削除した本番ビルド、Client bundle/HTML/RSC予算監査、
-Chromium上のVercel Labs agent-browser E2Eをこの順番で実行します。
-
-```bash
-npm run e2e:install       # 初回のみChromiumをインストール
-npm run verify:static       # ブラウザE2Eを除く検証
-npm run e2e                 # クリーンビルド後に全E2E
-npm run e2e:learning        # 学習・復習フローだけ
-npm run e2e:catalog         # 講座カタログだけ
-npm run e2e:extensions      # SQL・GitHubだけ
-npm run e2e:ui              # responsive・keyboardだけ
-npm run e2e:review          # 復習データフローだけ
-```
-
-E2Eは `scripts/e2e-agent-browser.mjs` が `127.0.0.1:3100` の本番サーバーと
-suiteごとのagent-browser sessionを管理します。既にポートが使われている場合は
-既存プロセスを停止せず失敗します。失敗時のスクリーンショットは
-`test-results/agent-browser/` に保存します。
-通常の画面エラーはE2E対象で、ルート/global errorは本番専用の失敗hookを追加せず
-静的監査でfallbackと再試行ボタンの構造を確認します。
-
-ビルドはWebpackを明示しています。Client reference manifestと
-`react-loadable-manifest.json`を安定した入力として、route初期JSと遅延chunkを
-ハッシュ名に依存せず監査するためです。
-
 ## 設計資料
 
 - [MISSION.md](./MISSION.md): 到達目標

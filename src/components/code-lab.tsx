@@ -387,15 +387,10 @@ function CodeLabInner({
               演習
             </p>
             <h1 className="mt-2 font-serif text-xl font-medium leading-8">
-              <CopyableText
-                text={question.prompt}
-                code={question.answer}
-                copyValues={
-                  isShell
-                    ? [question.answer, ...(question.aliases ?? [])]
-                    : undefined
-                }
-              />
+              {question.prompt.replaceAll(
+                "starter",
+                "最初から入っているコード",
+              )}
             </h1>
             {question.scenario ? (
               <p className="mt-3 border-l-2 border-studio pl-3 text-sm leading-6 text-mute">
@@ -446,15 +441,10 @@ function CodeLabInner({
                     {hints.slice(0, hintLevel).map((hint, index) => (
                       <li key={hint}>
                         <span className="mr-2 font-mono">{index + 1}.</span>
-                        <CopyableText
-                          text={hint}
-                          code={question.answer}
-                          copyValues={
-                            isShell
-                              ? [question.answer, ...(question.aliases ?? [])]
-                              : undefined
-                          }
-                        />
+                        {hint.replaceAll(
+                          "starter",
+                          "最初から入っているコード",
+                        )}
                       </li>
                     ))}
                   </ol>
