@@ -28,9 +28,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {
   askLocalAssistant,
+  FAMILIAR_EXAMPLE_QUESTION,
+  FIRST_STEP_QUESTION,
+  groundedSummary,
   loadLocalAssistant,
+  SIMPLE_EXPLANATION_QUESTION,
   stopLocalAssistantGeneration,
   supportsLocalAssistant,
+  trustedAssistantAnswer,
 } from "@/lib/learning-assistant-engine";
 
 type AssistantMessage = {
@@ -43,9 +48,13 @@ export type LearningAssistantContext = {
   lessonSummary: string;
   phase: string;
   slideTitle?: string;
+  slideLead?: string;
   conversation?: string;
   points?: string[];
   questionPrompt?: string;
+  questionDetails?: string;
+  firstStepHint?: string;
+  expectedAnswer?: string;
   learnerAnswer?: string;
   attempted?: boolean;
   correct?: boolean;
@@ -62,8 +71,8 @@ type AssistantStatus =
   | "error";
 
 const QUICK_QUESTIONS = [
-  "この内容を、もっと簡単な言葉で説明して",
-  "身近な例に置き換えて説明して",
+  SIMPLE_EXPLANATION_QUESTION,
+  FAMILIAR_EXAMPLE_QUESTION,
 ] as const;
 
 export function LearningAssistant({
@@ -138,6 +147,21 @@ export function LearningAssistant({
     setMessages(nextMessages);
     setInput("");
     setError("");
+    const unanswered = Boolean(context.questionPrompt) && !context.correct;
+    const trustedQuickAnswer = trustedAssistantAnswer(trimmed, {
+      ...context,
+      unanswered,
+      restrictedAnswer: unanswered ? context.expectedAnswer : undefined,
+    });
+    if (trustedQuickAnswer) {
+      if (unanswered) onAssistance?.();
+      setMessages([
+        ...nextMessages,
+        { role: "assistant", content: trustedQuickAnswer },
+      ]);
+      return;
+    }
+
     setStatus("generating");
     const generationId = ++generationIdRef.current;
     if (context.questionPrompt && !context.correct) onAssistance?.();
@@ -147,6 +171,14 @@ export function LearningAssistant({
         createSystemPrompt(context),
         nextMessages,
         generationOwnerRef.current,
+        {
+          allowAnswer: Boolean(context.correct),
+          preferHint: /ヒント/.test(trimmed),
+          fallback: unanswered
+            ? "問題文を「最初の状態」「行う操作」「確かめる結果」の順に分け、まず最初の状態だけ確認してみましょう。"
+            : groundedSummary(context),
+          restrictedAnswer: unanswered ? context.expectedAnswer : undefined,
+        },
       );
       if (generationId !== generationIdRef.current) return;
       setMessages((current) => [
@@ -169,7 +201,10 @@ export function LearningAssistant({
   }
 
   const questionSuggestions = context.questionPrompt
-    ? ["正解を言わず、最初の一歩だけヒントをください", ...QUICK_QUESTIONS]
+    ? [
+        ...(context.firstStepHint ? [FIRST_STEP_QUESTION] : []),
+        ...QUICK_QUESTIONS,
+      ]
     : QUICK_QUESTIONS;
 
   return (
@@ -386,7 +421,10 @@ function AssistantOverlay({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="learning-assistant-overlay">
+      <SheetContent
+        className="learning-assistant-overlay"
+        showCloseButton={false}
+      >
         <SheetHeader className="sr-only">
           <SheetTitle>学習アシスタント</SheetTitle>
           <SheetDescription>
@@ -424,6 +462,7 @@ ${answerPolicy}
 - 講義全体の要約: ${context.lessonSummary}
 - 段階: ${context.phase}
 - 問題: ${context.questionPrompt ?? "なし"}
+- 問題の補足情報: ${context.questionDetails ?? "なし"}
 - 学習者の入力: ${context.learnerAnswer?.slice(0, 1000) || "なし"}
 - SQL/Git演習の現在状態: ${context.runtimeState?.slice(0, 1600) || "なし"}
 - 解答済み: ${context.attempted ? "はい" : "いいえ"}

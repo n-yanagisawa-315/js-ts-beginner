@@ -112,6 +112,7 @@ export type CodeLabProps = {
   onOpenSlide?: (trigger: HTMLButtonElement) => void;
   onHintUsed?: (level: number) => void;
   onAnswerViewed?: () => void;
+  onRuntimeStateChange?: (state: string) => void;
   confidence: number | null;
   onConfidence: (value: number) => void;
   attempted: boolean;
@@ -148,6 +149,7 @@ function CodeLabInner({
   onOpenSlide,
   onHintUsed,
   onAnswerViewed,
+  onRuntimeStateChange,
   confidence,
   onConfidence,
   reflection,
@@ -236,11 +238,17 @@ function CodeLabInner({
       };
       setLogs([]);
       setRunError(result.error);
+      onRuntimeStateChange?.(`エラー: ${result.error}`);
       return result;
     }
     const result = await runStudentJs(typed);
     setLogs(result.logs);
     setRunError(result.error ?? null);
+    onRuntimeStateChange?.(
+      result.error
+        ? `エラー: ${result.error}`
+        : `実行結果:\n${result.logs.join("\n") || "表示なし"}`,
+    );
     return result;
   }
 
@@ -255,11 +263,17 @@ function CodeLabInner({
       };
       setLogs(result.logs);
       setRunError(result.error);
+      onRuntimeStateChange?.(`エラー: ${result.error}`);
       return result;
     }
     const result = await runDomQuestion(question, typed, { iframe });
     setLogs(result.logs);
     setRunError(result.error ?? null);
+    onRuntimeStateChange?.(
+      result.error
+        ? `エラー: ${result.error}`
+        : `実行ログ:\n${result.logs.join("\n") || "表示なし"}`,
+    );
     return result;
   }
 
@@ -279,6 +293,9 @@ function CodeLabInner({
       });
     }
     setShellLog(next);
+    onRuntimeStateChange?.(
+      `ターミナル:\n${next.map((line) => line.text).join("\n")}`,
+    );
   }
 
   async function run() {
@@ -363,6 +380,7 @@ function CodeLabInner({
         setShellLog([]);
         setTypeErrors([]);
         setTypeValidationReady(false);
+        onRuntimeStateChange?.("");
         setTerminalRevision((revision) => revision + 1);
         if (isDom && domPreviewRef.current) {
           domPreviewRef.current.srcdoc = initialDomDocument;
@@ -544,8 +562,14 @@ function CodeLabInner({
                   source: typed,
                   result,
                 };
+                onRuntimeStateChange?.(
+                  `SQL実行結果:\n${JSON.stringify(result, null, 2)}`,
+                );
               }}
-              onError={(error) => setRunError(error.message)}
+              onError={(error) => {
+                setRunError(error.message);
+                onRuntimeStateChange?.(`SQLエラー: ${error.message}`);
+              }}
             />
             {checked ? (
               <p
@@ -685,6 +709,9 @@ function CodeLabInner({
                 onValidate={(errors) => {
                   setTypeErrors(errors);
                   setTypeValidationReady(true);
+                if (errors.length > 0) {
+                  onRuntimeStateChange?.(`型エラー:\n${errors.join("\n")}`);
+                }
                 }}
                 typeTests={question.typeTests}
               />

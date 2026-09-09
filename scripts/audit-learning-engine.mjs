@@ -40,6 +40,49 @@ const { reviewVariant } = await import("../src/lib/review-variant.ts");
 const { applyCourseLearningDesign, applyLearningDesign } = await import(
   "../src/lib/course/learning-design.ts"
 );
+const { isUnreliableAssistantOutput, sanitizeAssistantOutput } = await import(
+  "../src/lib/learning-assistant-engine.ts"
+);
+
+const structuredHint = sanitizeAssistantOutput(
+  `# 数値や文字列は、コピー後に独立する
+
+## 解説:
+コピーについて説明します。
+
+## ヒント:
+- まずコピー先の名前を考えます。
+
+## 正解:
+
+##`,
+  false,
+  { preferHint: true },
+);
+assert.equal(
+  structuredHint,
+  "- まずコピー先の名前を考えます。",
+  "ヒント回答から見出しと正解欄を除く",
+);
+assert.equal(
+  isUnreliableAssistantOutput("10 % 3 は Infinity です。"),
+  true,
+  "誤った数式を検出する",
+);
+assert.equal(
+  isUnreliableAssistantOutput(
+    "1 + 2 は 3 / % は 3 / % は 3 / % は 3 / % は 3 /",
+  ),
+  true,
+  "異常な反復を検出する",
+);
+assert.equal(
+  isUnreliableAssistantOutput(
+    "1 + 2 は 3 です。10 % 3 は 1 です。1 / 0 は Infinity です。",
+  ),
+  false,
+  "正しい数式は許可する",
+);
 
 const start = new Date("2026-01-01T09:00:00.000Z");
 const first = progress.recordQuestionAttempt({
@@ -351,8 +394,16 @@ assert.equal(
 assert.match(designed[0].questions[1].starter, /ここを1行だけ補う/);
 assert.equal(
   designed[0].questions[2].starter,
+  "console.log(1);",
+  "独力問題でも実行に必要なstarterは残す",
+);
+const independentCommentLesson = fixtureLesson("independent-comment", 1);
+independentCommentLesson.questions[2].starter = "// 自分で思い出して書く";
+const independentCommentDesigned = applyLearningDesign(independentCommentLesson);
+assert.equal(
+  independentCommentDesigned.questions[2].starter,
   undefined,
-  "独力問題からstarterを外す",
+  "独力問題からコメントだけのstarterを外す",
 );
 assert.equal(designed[1].questions[1].kind, "order");
 assert.ok(designed[1].questions[1].fragments.length >= 2);

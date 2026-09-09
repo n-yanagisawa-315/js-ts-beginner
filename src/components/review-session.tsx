@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { CodeLabProps } from "@/components/code-lab";
+import { LearningAssistant } from "@/components/learning-assistant";
 import type { QuizChallengeProps } from "@/components/quiz-challenge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,10 @@ import {
   gradeQuestion,
   type RuntimeEvidence,
 } from "@/lib/grade-question";
+import {
+  assistantQuestionDetails,
+  firstStepForQuestion,
+} from "@/lib/learning-assistant-engine";
 import {
   initializeLearningState,
   recordQuestionAssistance,
@@ -150,6 +155,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
   const [attemptNumber, setAttemptNumber] = useState(0);
   const [attemptStartedAt, setAttemptStartedAt] = useState(() => Date.now());
   const [reflection, setReflection] = useState("");
+  const [assistantRuntimeState, setAssistantRuntimeState] = useState("");
 
   useEffect(() => {
     if (!hydrated || initialized.current) return;
@@ -325,6 +331,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     setAttemptNumber(0);
     setAttemptStartedAt(Date.now());
     setReflection("");
+    setAssistantRuntimeState("");
   }
 
   function recordHint(level: number) {
@@ -444,6 +451,37 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
   const nextLabel =
     position + 1 === queue.items.length ? "結果を見る" : "次の問題";
   const question = item.question;
+  const assistant = (
+    <LearningAssistant
+      key={`${item.lesson.id}-${question.id}-${question.variantId ?? "base"}`}
+      context={{
+        lessonTitle: item.lesson.title,
+        lessonSummary: question.lead ?? item.lesson.title,
+        phase: "復習",
+        slideTitle: question.scenario ?? item.lesson.title,
+        slideLead: question.lead,
+        questionPrompt: question.prompt,
+        questionDetails: assistantQuestionDetails(question),
+        firstStepHint: firstStepForQuestion(question),
+        expectedAnswer: question.answer,
+        learnerAnswer: answer,
+        attempted: attemptNumber > 0,
+        correct: checked,
+        feedback: failReason ?? undefined,
+        runtimeState: [
+          question.kind === "sql"
+            ? `初期データ:\n${question.sqlSeed ?? "なし"}\n現在のSQL:\n${answer}`
+            : question.kind === "git"
+              ? `初期状態:\n${JSON.stringify(question.gitInitialState ?? {})}\n実行したコマンド:\n${answer}`
+              : undefined,
+          assistantRuntimeState,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      }}
+      onAssistance={() => recordHint(Math.max(hintLevel, 1))}
+    />
+  );
 
   if (
     question.kind === "code" ||
@@ -477,6 +515,8 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
           nextLabel={nextLabel}
           onHintUsed={recordHint}
           onAnswerViewed={recordAnswer}
+          assistant={assistant}
+          onRuntimeStateChange={setAssistantRuntimeState}
           confidence={confidence}
           onConfidence={setConfidence}
           attempted={attemptNumber > 0}
@@ -514,6 +554,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
         onNext={next}
         nextLabel={nextLabel}
         onHintUsed={recordHint}
+        assistant={assistant}
         confidence={confidence}
         onConfidence={setConfidence}
         attempted={attemptNumber > 0}

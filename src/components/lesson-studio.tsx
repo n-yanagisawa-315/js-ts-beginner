@@ -57,6 +57,10 @@ import {
   type RuntimeEvidence,
 } from "@/lib/grade-question";
 import {
+  assistantQuestionDetails,
+  firstStepForQuestion,
+} from "@/lib/learning-assistant-engine";
+import {
   getLatestExitRecallSnapshot,
   getServerLatestExitRecallSnapshot,
   recordQuestionAssistance,
@@ -109,6 +113,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
   const [prediction, setPrediction] = useState("");
   const [exitRecall, setExitRecall] = useState("");
   const [reflection, setReflection] = useState("");
+  const [assistantRuntimeState, setAssistantRuntimeState] = useState("");
   const getPreviousExitRecall = useCallback(
     () => getLatestExitRecallSnapshot(lesson.id),
     [lesson.id],
@@ -200,6 +205,14 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
   const assistantPage = conversationPages[
     Math.min(conversationPage, Math.max(conversationPages.length - 1, 0))
   ];
+  const checkpointPrompt =
+    phase === "predict"
+      ? prequestion
+      : phase === "exit"
+        ? `「${lesson.title}」の仕組みを、コードを見ずに1〜3文で説明してください。`
+        : undefined;
+  const assistantSlide =
+    phase === "slides" || phase === "quiz" ? currentSlide : undefined;
   const assistantContext: LearningAssistantContext = {
     lessonTitle: lesson.title,
     lessonSummary: lesson.summary,
@@ -213,20 +226,37 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
             : phase === "exit"
               ? "学習後の想起"
               : "講義完了",
-    slideTitle: currentSlide?.title,
-    conversation: assistantPage?.lines.map((line) => line.text).join(" "),
-    points: currentSlide?.points,
-    questionPrompt: assistantQuestion?.prompt,
+    slideTitle: assistantSlide?.title,
+    slideLead: assistantSlide?.lead,
+    conversation:
+      phase === "slides" || phase === "quiz"
+        ? assistantPage?.lines.map((line) => line.text).join(" ")
+        : undefined,
+    points: assistantSlide?.points,
+    questionPrompt: assistantQuestion?.prompt ?? checkpointPrompt,
+    questionDetails: assistantQuestion
+      ? assistantQuestionDetails(assistantQuestion)
+      : undefined,
+    firstStepHint: assistantQuestion
+      ? firstStepForQuestion(assistantQuestion)
+      : undefined,
+    expectedAnswer: assistantQuestion?.answer,
     learnerAnswer: assistantQuestion ? currentAnswer : undefined,
     attempted: assistantQuestion ? attemptNumber > 0 : undefined,
     correct: assistantQuestion ? checked : undefined,
     feedback: assistantQuestion ? (failReason ?? undefined) : undefined,
-    runtimeState:
-      assistantQuestion?.kind === "sql"
-        ? `初期データ:\n${assistantQuestion.sqlSeed ?? "なし"}\n現在のSQL:\n${currentAnswer}`
-        : assistantQuestion?.kind === "git"
-          ? `初期状態:\n${JSON.stringify(assistantQuestion.gitInitialState ?? {})}\n実行したコマンド:\n${currentAnswer}`
-          : undefined,
+    runtimeState: assistantQuestion
+      ? [
+          assistantQuestion.kind === "sql"
+            ? `初期データ:\n${assistantQuestion.sqlSeed ?? "なし"}\n現在のSQL:\n${currentAnswer}`
+            : assistantQuestion.kind === "git"
+              ? `初期状態:\n${JSON.stringify(assistantQuestion.gitInitialState ?? {})}\n実行したコマンド:\n${currentAnswer}`
+              : undefined,
+          assistantRuntimeState,
+        ]
+          .filter(Boolean)
+          .join("\n")
+      : undefined,
   };
 
   const assistant = (
@@ -261,6 +291,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     setAttemptNumber(0);
     setAttemptStartedAt(Date.now());
     setReflection("");
+    setAssistantRuntimeState("");
   }
 
   function updateTyped(value: string) {
@@ -535,6 +566,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
           reflection={reflection}
           onReflection={setReflection}
           assistant={assistant}
+          onRuntimeStateChange={setAssistantRuntimeState}
           projectPreview={lesson.id === "js-run" && question.id === "q1"}
           onHintUsed={(level) => {
             setHintLevel(level);

@@ -556,6 +556,9 @@ function enrichQuestion(
 
 export function applyLearningDesign(lesson: Lesson): Lesson {
   const teachingSlides = lesson.slides.filter((slide) => !isSummary(slide));
+  const teachingSlideIndexes = lesson.slides.flatMap((slide, index) =>
+    isSummary(slide) ? [] : [index],
+  );
   const teachingIndexBySlide = new Map<number, number>();
   let teachingIndex = 0;
   lesson.slides.forEach((slide, slideIndex) => {
@@ -583,10 +586,11 @@ export function applyLearningDesign(lesson: Lesson): Lesson {
   const questions = lesson.questions.map((question, index) => {
     const slideIndex =
       question.slide ??
+      teachingSlideIndexes[index] ??
       lesson.slides.findIndex((slide) => !isSummary(slide));
     return enrichQuestion(
       lesson,
-      question,
+      { ...question, slide: slideIndex },
       index,
       lesson.questions.length,
       slides[slideIndex],
