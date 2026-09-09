@@ -1005,7 +1005,7 @@ function SuccessDock({
   const actionLabel = nextLabel === "結果を見る" ? nextLabel : "次に進む";
 
   return (
-    <section className="success-dock" aria-labelledby={titleId}>
+    <section className="result-dock is-success" aria-labelledby={titleId}>
       <div>
         <h2 id={titleId}>Congratulations!</h2>
         <p role="status">
@@ -1014,7 +1014,7 @@ function SuccessDock({
             : "正解です！振り返りを10文字以上入力すると次に進めます。"}
         </p>
       </div>
-      <div className="success-dock-actions">
+      <div className="result-dock-actions">
         <Button
           variant="secondary"
           className="bg-[#e3e8ec] text-[#536476] hover:bg-[#d4dce2] hover:text-[#344754]"
@@ -1039,16 +1039,24 @@ function FailDock({
   message: string;
   onClose: () => void;
 }) {
+  const titleId = useId();
+
   return (
-    <Alert key={tick} variant="destructive" className="editor-fail-alert">
-      <AlertTitle>まだ一致していません</AlertTitle>
-      <AlertDescription className="flex items-start justify-between gap-3">
-        <p>{message}</p>
-        <Button variant="ghost" size="sm" onClick={onClose}>
+    <section
+      key={tick}
+      className="result-dock is-failure"
+      aria-labelledby={titleId}
+    >
+      <div>
+        <h2 id={titleId}>Try again!</h2>
+        <p role="alert">{message}</p>
+      </div>
+      <div className="result-dock-actions is-single">
+        <Button variant="secondary" onClick={onClose}>
           閉じる
         </Button>
-      </AlertDescription>
-    </Alert>
+      </div>
+    </section>
   );
 }
 

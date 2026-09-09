@@ -1615,50 +1615,69 @@ a[aria-disabled="true"] {
   padding: 6px 10px;
 }
 
-.success-dock {
+.result-dock {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  border-left: 7px solid #27b8c3;
   background: #f5f7f9;
   padding: 18px 24px 20px 32px;
   color: #536476;
   box-shadow: 0 -5px 16px rgb(0 0 0 / 18%);
+  overflow-wrap: anywhere;
 }
 
-.success-dock h2 {
+.result-dock.is-success {
+  border-left: 7px solid #27b8c3;
+}
+
+.result-dock.is-failure {
+  border-left: 7px solid var(--destructive);
+}
+
+.result-dock h2 {
   margin: 0 0 8px;
-  color: #c83f66;
   font-size: clamp(1.55rem, 3vw, 2rem);
   font-weight: 400;
   line-height: 1.15;
 }
 
-.success-dock p {
+.result-dock.is-success h2 {
+  color: #c83f66;
+}
+
+.result-dock.is-failure h2 {
+  color: var(--destructive);
+}
+
+.result-dock p {
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.6;
 }
 
-.success-dock-actions {
+.result-dock-actions {
   display: flex;
   flex-shrink: 0;
   gap: 10px;
 }
 
 @media (max-width: 640px) {
-  .success-dock {
+  .result-dock {
     align-items: stretch;
     flex-direction: column;
     gap: 16px;
     padding: 18px 16px 20px 20px;
   }
 
-  .success-dock-actions {
+  .result-dock-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .result-dock-actions.is-single {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -4033,21 +4052,6 @@ button.console-window-play:hover {
   border-color: var(--studio);
   background: color-mix(in srgb, var(--studio) 18%, var(--editor));
   color: var(--cream);
-}
-
-.editor-fail-alert {
-  max-height: min(16rem, 40dvh);
-  flex-shrink: 0;
-  overflow-y: auto;
-  margin: 8px 12px 12px;
-  border-color: color-mix(in srgb, var(--destructive) 70%, white);
-  background: color-mix(in srgb, var(--destructive) 14%, var(--editor));
-  color: var(--ng-on-dark);
-  overflow-wrap: anywhere;
-}
-
-.editor-fail-alert [data-slot="button"] {
-  color: var(--ng-on-dark);
 }
 
 .confidence-dialog[data-slot="dialog-content"] {
