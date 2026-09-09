@@ -134,13 +134,15 @@ server.listen(3000);`,
       {
         id: "q2",
         slide: 1,
+        scenario: "GET /orders で order-list を返すルート条件を実装する。",
+        projectRole: "build",
         prompt:
-          "starterのreqについて、methodがGETかつurlが/healthの場合だけokを1行表示してください。",
+          "starterのreqについて、methodがGETかつurlが/ordersの場合だけorder-listを1行表示してください。",
         lead:
-          "Node.jsの基本HTTPサーバーでは、リクエストのメソッドとURLを両方調べて処理を分けます。今回は2つの条件が同時に成立した場合だけ、ヘルスチェック成功の出力を行います。",
+          "Node.jsの基本HTTPサーバーでは、リクエストのメソッドとURLを両方調べて処理を分けます。今回は2つの条件が同時に成立した場合だけ、注文一覧取得の出力を行います。",
         kind: "code",
         starter:
-          'const req = { method: "GET", url: "/health" };\n// method と url で分岐\n',
+          'const req = { method: "GET", url: "/orders" };\n// method と url で分岐\n',
         fileName: "app.js",
         steps: [
           "reqのmethodとurlをそれぞれ指定値と比較する",
@@ -149,10 +151,10 @@ server.listen(3000);`,
         ],
         hint:
           "片方だけでは別のリクエストも通ります。値を書き換える操作ではなく、2条件の一致を確認してください。",
-        sample: "ok",
-        answer: `const req = { method: "GET", url: "/health" };
-if (req.method === "GET" && req.url === "/health") {
-  console.log("ok");
+        sample: "order-list",
+        answer: `const req = { method: "GET", url: "/orders" };
+if (req.method === "GET" && req.url === "/orders") {
+  console.log("order-list");
 }`,
         explain: "生の http では req.method と req.url で自分で分けます。",
       },
@@ -290,10 +292,12 @@ if (req.method === "GET" && req.url === "/health") {
       {
         id: "q1",
         slide: 0,
+        scenario: "package.json のstartスクリプトで注文API開発サーバーを起動する。",
+        projectRole: "build",
         prompt:
-          "package.jsonに登録済みのstart処理を使って、ファイル変更を監視する開発サーバーを起動してください。",
+          "package.jsonに登録済みのstart処理を使って、注文APIの変更を監視する開発サーバーを起動してください。",
         lead:
-          "現在の作業ディレクトリにはpackage.jsonがあり、startにはnodemonでapp.jsを動かす処理が定義されています。登録内容を直接書き直さずに実行し、監視開始メッセージが表示されて待機状態になれば完了です。",
+          "現在の作業ディレクトリにはpackage.jsonがあり、startにはnodemonでorders-api.jsを動かす処理が定義されています。登録内容を直接書き直さずに実行し、監視開始メッセージが表示されて待機状態になれば完了です。",
         kind: "shell",
         cwd: "app",
         starter: "",
@@ -306,12 +310,12 @@ if (req.method === "GET" && req.url === "/health") {
         aliases: ["npm run start"],
         termOutput: [
           { text: "> beginner@0.1.0 start", tone: "out" },
-          { text: "> nodemon ./app.js", tone: "out" },
+          { text: "> nodemon ./orders-api.js", tone: "out" },
           { text: "[nodemon] 3.1.10", tone: "warn" },
           { text: "[nodemon] to restart at any time, enter `rs`", tone: "warn" },
           { text: "[nodemon] watching path(s): *.*", tone: "warn" },
           { text: "[nodemon] watching extensions: js,json", tone: "warn" },
-          { text: "[nodemon] starting `node ./app.js`", tone: "ok" },
+          { text: "[nodemon] starting `node ./orders-api.js`", tone: "ok" },
         ],
         termAlive: true,
         answer: "npm start",
@@ -483,10 +487,12 @@ await pipeline(src, gzip, dest);`,
       {
         id: "q1",
         slide: 0,
+        scenario: "巨大な orders.ndjson を流し読みし、order.total を逐次集計する。",
+        projectRole: "build",
         prompt:
-          "数GBのアクセスログを1行ずつ集計するため、Readableから届くチャンクをすべてメモリへためずに処理します。適切な現代的構文を1つ選んでください。",
+          "数GBのorders.ndjsonを1注文ずつ読み、order.totalを集計するため、Readableから届くチャンクをすべてメモリへためずに処理します。適切な現代的構文を1つ選んでください。",
         lead:
-          "現在の入力はメモリに収まるとは限らない大きなファイルです。Readableの次のチャンクを待ちながら順番に扱い、全体を結合せず処理できる方法を選びます。",
+          "現在の入力はメモリに収まるとは限らない大きなorder-listです。Readableの次のチャンクを待ちながら順番に扱い、全体を結合せず処理できる方法を選びます。",
         kind: "choice",
         options: [
           "for await...of",
@@ -661,8 +667,10 @@ await p;`,
       {
         id: "q1",
         slide: 0,
+        scenario: "orders.json の非同期読み取り中も別の注文処理を進める順序を確認する。",
+        projectRole: "build",
         prompt:
-          "設定ファイルの非同期読み取りを開始した直後に「先にここ」、読み取り完了時に「完了」をログへ出します。表示順序を1つ選んでください。",
+          "orders.jsonの非同期読み取りを開始した直後に「先にここ」、読み取り完了時に「完了」をログへ出します。表示順序を1つ選んでください。",
         lead:
           "読み取りはまだ完了していない可能性がありますが、JavaScriptはI/Oを依頼したあと次の同期処理へ進みます。完了後の処理がキューから再開されるタイミングと比較します。",
         kind: "choice",
@@ -840,8 +848,10 @@ await p;`,
       {
         id: "q1",
         slide: 0,
+        scenario: "orders.json が無い場合だけ空の order-list へ回復し、他の失敗は再送出する。",
+        projectRole: "build",
         prompt:
-          "starterのrecover関数を完成させてください。対象が見つからないエラーだけnullで回復し、それ以外は同じエラーを再送出します。既存の呼び出しでnullを1行表示してください。",
+          "starterのrecover関数を完成させてください。注文ファイルが見つからないエラーだけ空のorder-listで回復し、それ以外は同じエラーを再送出します。既存の呼び出しで[]を1行表示してください。",
         lead:
           "Node.jsのシステムエラーはcodeで種類を判別できます。想定済みの不存在だけを処理し、権限不足などの予期しない失敗を成功扱いにしないようにします。",
         kind: "code",
@@ -855,9 +865,9 @@ await p;`,
         ],
         hint:
           "条件に一致した分岐は値を返して終えます。条件を通らなかった場合はthrowで呼び出し元へ失敗を戻します。",
-        sample: "null",
+        sample: "[]",
         answer: `function recover(err) {
-  if (err.code === "ENOENT") return null;
+  if (err.code === "ENOENT") return [];
   throw err;
 }
 console.log(recover({ code: "ENOENT" }));`,
@@ -1096,8 +1106,10 @@ cb("fail");`,
       {
         id: "q4",
         slide: 3,
+        scenario: "複数コンテナの注文APIログをstdoutへ出し、orderId単位で集約可能にする。",
+        projectRole: "build",
         prompt:
-          "複数コンテナの注文APIから出る通常ログを、基盤側でまとめて収集・検索します。アプリがログを出す先として適切なものを1つ選んでください。",
+          "複数コンテナの注文APIから出るorderIdを含む構造化ログを、基盤側でまとめて収集・検索します。アプリがログを出す先として適切なものを1つ選んでください。",
         lead:
           "コンテナは入れ替わるため、特定の一時ファイルだけにログを残すと追跡できません。各プロセスから基盤が収集できる、通常出力用の標準ストリームを選びます。",
         kind: "choice",
@@ -1110,7 +1122,7 @@ cb("fail");`,
         answer: "標準出力の stdout",
         steps: [
           "コンテナ基盤がプロセスから収集しやすい出力を考える",
-          "通常ログ用の標準ストリームを選ぶ",
+          "orderIdを含む構造化ログ用の標準ストリームを選ぶ",
         ],
         hint:
           "診断用ではなく、プロセスの通常出力としてOSが用意するストリームです。",

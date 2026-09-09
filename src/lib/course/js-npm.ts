@@ -6,7 +6,7 @@ export const jsNpm: Lesson[] = [
     track: "js",
     level: "advanced",
     chapter: "js-npm",
-    order: 25,
+    order: 33,
     title: "パッケージは借りた道具箱",
     summary: "package.json に書き、install し、名前で import する",
     minutes: 16,
@@ -156,16 +156,18 @@ console.log(locked);`,
       {
         id: "q1",
         slide: 0,
+        scenario: "注文日を扱うため、自作の total 計算と外部の日付パッケージを使い分ける。",
+        projectRole: "build",
         prompt:
-          "注文計算では、自作の `math.js` と導入済みの日付パッケージ `date-fns` を使います。それぞれを正しい読み込み元で指定した組み合わせを選んでください。",
+          "注文管理では、自作の `order-total.js` と導入済みの日付パッケージ `date-fns` を使います。それぞれを正しい読み込み元で指定した組み合わせを選んでください。",
         lead:
-          "入力候補には、相対パスとパッケージ名を入れ替えた指定も含まれます。手元の計算ファイルは現在位置からたどり、外部の日付機能はインストール名で探す組み合わせを選べば完了です。",
+          "入力候補には、相対パスとパッケージ名を入れ替えた指定も含まれます。手元のorder.total計算ファイルは現在位置からたどり、外部の日付機能はインストール名で探す組み合わせを選べば完了です。",
         kind: "choice",
         options: [
-          '自作: "./math.js" / 外部: "date-fns"',
-          '自作: "math.js" / 外部: "./date-fns"',
-          '自作: "date-fns" / 外部: "./math.js"',
-          '自作: "/date-fns" / 外部: "../math.js"',
+          '自作: "./order-total.js" / 外部: "date-fns"',
+          '自作: "./date-fns" / 外部: "order-total.js"',
+          '自作: "order-total.js" / 外部: "./date-fns"',
+          '自作: "/order-total.js" / 外部: "../date-fns"',
         ],
         steps: [
           "プロジェクト内のファイルを示す指定の特徴を確認する",
@@ -174,7 +176,7 @@ console.log(locked);`,
         ],
         hint:
           "手元のファイルは現在位置との関係を示します。外部の道具は、インストール時に使った名前で探します。",
-        answer: '自作: "./math.js" / 外部: "date-fns"',
+        answer: '自作: "./order-total.js" / 外部: "date-fns"',
         explain: "相対パスが自分の部屋、名前だけが借りた道具箱です。",
       },
       {

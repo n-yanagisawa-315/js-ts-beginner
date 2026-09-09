@@ -248,13 +248,15 @@ afterWork(console.log);
       {
         id: "q1",
         slide: 0,
+        scenario: "明細金額を合計する calculateTotal をコールバックとして別名から実行する。",
+        projectRole: "build",
         prompt:
-          "商品数を合計する `add` 関数を別名 `fn` でも使えるようにし、2個と3個の合計を表示してください。",
+          "明細金額を合計する `calculateTotal` 関数を別名 `fn` でも使えるようにし、金額200と300の totalを表示してください。",
         lead:
-          "starterには2つの数を合計する `add` が用意されています。代入時には実行結果ではなく関数そのものを `fn` から参照できるようにし、別名へ2と3を渡してください。結果として5が1行表示されれば完成です。",
+          "starterには2つの明細金額を合計する `calculateTotal` が用意されています。代入時には実行結果ではなく関数そのものを `fn` で参照できるようにし、別名へ200と300を渡してください。結果として500が1行表示されれば完成です。",
         kind: "code",
         starter:
-          "function add(a, b) {\n return a + b;\n}\n// 機械を別の名前でも押す\n",
+          "function calculateTotal(a, b) {\n return a + b;\n}\n// 機械を別の名前でも押す\n",
         fileName: "script.js",
         steps: [
           "関数を実行せず、関数そのものを新しい変数から参照できるようにする",
@@ -262,12 +264,12 @@ afterWork(console.log);
         ],
         hint:
           "代入する時点では関数を呼び出しません。関数を表す値と、関数を実行して得られる値の違いを意識しましょう。",
-        sample: "5",
-        answer: `function add(a, b) {
+        sample: "500",
+        answer: `function calculateTotal(a, b) {
   return a + b;
 }
 const fn = add;
-console.log(fn(2, 3));`,
+console.log(fn(200, 300));`,
         explain: "fn は add と同じ機械です。括弧を付けたときだけ動きます。",
       },
       {

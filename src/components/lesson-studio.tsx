@@ -3,17 +3,36 @@
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CodeLab } from "@/components/code-lab";
-import { ConfidenceScale } from "@/components/confidence-scale";
+import { ConfidenceDialog } from "@/components/confidence-scale";
 import {
   LearningAssistant,
   type LearningAssistantContext,
 } from "@/components/learning-assistant";
+import { LearningFlowHeader } from "@/components/learning-flow-header";
 import { QuizChallenge } from "@/components/quiz-challenge";
 import { SlideTheater } from "@/components/slide-theater";
+import { Button } from "@/components/ui/button";
 import {
-  LEVEL_LABEL,
-  TRACK_LABEL,
-  getChapter,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
+import {
   nextLessonId,
   prequestionForLesson,
   type Lesson,
@@ -89,7 +108,6 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   const currentSlide = lesson.slides[slide];
   const conversationPages = currentSlide ? talkPages(currentSlide) : [];
   const lastConversationPage = Math.max(conversationPages.length - 1, 0);
-  const chapterTitle = getChapter(lesson.chapter)?.title ?? TRACK_LABEL[lesson.track];
   const referenceTopic =
     lesson.track === "js"
       ? "javascript"
@@ -144,29 +162,24 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
     feedback: assistantQuestion ? (failReason ?? undefined) : undefined,
   };
 
-  function withAssistant(content: ReactNode) {
-    return (
-      <>
-        {content}
-        <LearningAssistant
-          key={`${lesson.id}-${phase}-${slide}`}
-          context={assistantContext}
-          onAssistance={
-            assistantQuestion
-              ? () => {
-                  setHintLevel((level) => Math.max(level, 1));
-                  recordQuestionAssistance({
-                    lessonId: lesson.id,
-                    questionId: assistantQuestion.id,
-                    hintUsed: true,
-                  });
-                }
-              : undefined
-          }
-        />
-      </>
-    );
-  }
+  const assistant = (
+    <LearningAssistant
+      key={`${lesson.id}-${phase}-${slide}`}
+      context={assistantContext}
+      onAssistance={
+        assistantQuestion
+          ? () => {
+              setHintLevel((level) => Math.max(level, 1));
+              recordQuestionAssistance({
+                lessonId: lesson.id,
+                questionId: assistantQuestion.id,
+                hintUsed: true,
+              });
+            }
+          : undefined
+      }
+    />
+  );
 
   function resetAttempt(starter = "") {
     setChoice(null);
@@ -353,7 +366,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (phase === "predict") {
-    return withAssistant(
+    return (
       <LearningCheckpoint
         mode="predict"
         lesson={lesson}
@@ -361,6 +374,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
         confidence={confidence}
         comparisonLabel={previousExitRecall ? "前回の出口想起" : undefined}
         comparisonResponse={previousExitRecall || undefined}
+        assistant={assistant}
         onChange={setPrediction}
         onConfidence={setConfidence}
         onContinue={() => {
@@ -378,7 +392,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (phase === "exit") {
-    return withAssistant(
+    return (
       <LearningCheckpoint
         mode="exit"
         lesson={lesson}
@@ -386,6 +400,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
         confidence={confidence}
         comparisonLabel="学習前の予想"
         comparisonResponse={prediction}
+        assistant={assistant}
         onChange={setExitRecall}
         onConfidence={setConfidence}
         onContinue={() => {
@@ -402,8 +417,14 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (codeQuiz && question) {
-    return withAssistant(
+    return (
       <div className="flex min-h-full flex-1 flex-col">
+        <LearningFlowHeader
+          lesson={lesson}
+          stage="コード演習"
+          current={Math.max(quizIndex, 0) + 1}
+          total={quizTotal}
+        />
         <CodeLab
           track={lesson.track}
           question={question}
@@ -424,6 +445,8 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           attempted={attemptNumber > 0}
           reflection={reflection}
           onReflection={setReflection}
+          assistant={assistant}
+          projectPreview={lesson.id === "js-run" && question.id === "q1"}
           onHintUsed={(level) => {
             setHintLevel(level);
             recordQuestionAssistance({
@@ -451,19 +474,14 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (phase === "quiz" && question) {
-    return withAssistant(
+    return (
       <div className="flex min-h-full flex-1 flex-col bg-paper">
-        <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-6">
-          <Link
-            href="/"
-            className="btn btn-ghost min-h-11 px-3 text-sm text-mute hover:text-ink"
-          >
-            講座一覧
-          </Link>
-          <p className="font-mono text-xs text-mute">
-            {TRACK_LABEL[lesson.track]} / {LEVEL_LABEL[lesson.level]}
-          </p>
-        </header>
+        <LearningFlowHeader
+          lesson={lesson}
+          stage="確認演習"
+          current={Math.max(quizIndex, 0) + 1}
+          total={quizTotal}
+        />
         <QuizChallenge
           key={question.id}
           question={question}
@@ -475,7 +493,6 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           checked={checked}
           isCorrect={isCorrect}
           failReason={failReason}
-          failTick={failTick}
           onChoice={setChoice}
           onTyped={setTyped}
           onSubmit={submit}
@@ -487,6 +504,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           attempted={attemptNumber > 0}
           reflection={reflection}
           onReflection={setReflection}
+          assistant={assistant}
           onHintUsed={(level) => {
             setHintLevel(level);
             recordQuestionAssistance({
@@ -497,85 +515,86 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           }}
         />
         <footer className="sticky bottom-0 z-10 flex justify-start border-t border-line bg-paper px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
-          <button
-            type="button"
-            className="btn btn-ghost"
+          <Button
+            variant="ghost"
             onClick={() => {
               setMaterialReviewed(true);
               setPhase("slides");
             }}
           >
             スライドへ戻る
-          </button>
+          </Button>
         </footer>
       </div>
     );
   }
 
   if (phase === "done") {
-    return withAssistant(
+    return (
       <div className="flex min-h-full flex-1 flex-col bg-paper">
-        <article className="flex flex-1 flex-col items-start justify-center px-5 py-16 sm:px-10 lg:px-14">
-          <p className="font-mono text-xs tracking-[0.18em] text-studio">
-            今回の練習おわり
-          </p>
-          <h1 className="mt-3 font-serif text-5xl font-medium tracking-tight">
-            {correctCount} / {quizTotal}
-          </h1>
-          <p className="mt-5 max-w-md leading-7 text-mute">
-            今回、支援なしまたは再試行で正解できた問題数です。講義の閲覧完了と、
-            時間を空けても使える「習熟」は別に記録されます。
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setSlide(0);
-                setConversationPage(0);
-                setPhase("predict");
-                setCorrectCount(0);
-                setAttempted(new Set());
-                setDrafts({});
-                setPrediction("");
-                setExitRecall("");
-                resetAttempt();
-              }}
-              className="btn btn-line"
-            >
-              もう一度
-            </button>
-            {nextId ? (
-              <Link href={`/lesson/${nextId}`} className="btn btn-primary">
-                次の講義
-              </Link>
-            ) : (
-              <Link href="/" className="btn btn-primary">
-                講座一覧へ
-              </Link>
-            )}
-            <a
-              href={`/reference/${referenceTopic}`}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-line"
-            >
-              早見表で復習
-            </a>
-          </div>
-          <p className="mt-6 max-w-md text-sm leading-6 text-mute">
-            分からない点は、試したコード・期待した結果・実際の結果を添えて質問してください。
-          </p>
-        </article>
+        <LearningFlowHeader lesson={lesson} stage="講義完了" />
+        <main id="main-content" className="learning-done">
+          <Card className="learning-done-card">
+            <CardHeader>
+              <p className="course-section-kicker">今回の練習おわり</p>
+              <CardTitle asChild>
+                <h1>{correctCount} / {quizTotal}</h1>
+              </CardTitle>
+              <CardDescription>
+                今回、支援なしまたは再試行で正解できた問題数です。講義の閲覧完了と、
+                時間を空けても使える「習熟」は別に記録されます。
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-6 text-mute">
+                分からない点は、試したコード・期待した結果・実際の結果を添えて質問してください。
+              </p>
+            </CardContent>
+            <CardFooter className="flex flex-wrap gap-3">
+              {assistant}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSlide(0);
+                  setConversationPage(0);
+                  setPhase("predict");
+                  setCorrectCount(0);
+                  setAttempted(new Set());
+                  setDrafts({});
+                  setPrediction("");
+                  setExitRecall("");
+                  resetAttempt();
+                }}
+              >
+                もう一度
+              </Button>
+              <Button asChild>
+                <Link href={nextId ? `/lesson/${nextId}` : "/"}>
+                  {nextId ? "次の講義" : "講座一覧へ"}
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <a
+                  href={`/reference/${referenceTopic}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  早見表で復習
+                </a>
+              </Button>
+            </CardFooter>
+          </Card>
+        </main>
       </div>
     );
   }
 
   if (!currentSlide) return null;
 
-  return withAssistant(
+  return (
     <div className="flex min-h-full flex-1 flex-col">
       <SlideTheater
-        kicker={`${chapterTitle} · ${lesson.title}`}
+        lesson={lesson}
         slide={currentSlide}
         index={slide}
         total={slideCount}
@@ -585,6 +604,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
         onContinue={continueFromSlide}
         onPrev={previousSlideOrConversation}
         onNext={nextSlideOrQuiz}
+        assistant={assistant}
       />
     </div>
   );
@@ -600,6 +620,7 @@ function LearningCheckpoint({
   onChange,
   onConfidence,
   onContinue,
+  assistant,
 }: {
   mode: "predict" | "exit";
   lesson: Lesson;
@@ -610,7 +631,9 @@ function LearningCheckpoint({
   onChange: (value: string) => void;
   onConfidence: (value: number) => void;
   onContinue: () => void;
+  assistant?: ReactNode;
 }) {
+  const [confidenceOpen, setConfidenceOpen] = useState(false);
   const prediction = mode === "predict";
   const title = prediction ? "説明を見る前に予想する" : "資料を閉じて思い出す";
   const prompt = prediction
@@ -618,32 +641,72 @@ function LearningCheckpoint({
     : `「${lesson.title}」の仕組みを、コードを見ずに1〜3文で説明してください。正確さより、今取り出せることを確かめます。`;
 
   return (
-    <main className="learning-checkpoint">
-      <article>
-        <p className="learning-checkpoint-step">
-          {prediction ? "学習前の予想" : "講義末の出口想起"}
-        </p>
-        <p className="learning-checkpoint-project">
-          {lesson.story?.project}
-        </p>
-        <h1>{title}</h1>
-        <p className="learning-checkpoint-incident">
-          {prediction ? lesson.story?.incident : lesson.story?.outcome}
-        </p>
-        <label htmlFor="learning-recall">{prompt}</label>
-        <textarea
-          id="learning-recall"
-          name={prediction ? "lesson-prediction" : "lesson-exit-recall"}
-          autoComplete="off"
-          value={value}
-          onChange={(event) => onChange(event.currentTarget.value)}
-          placeholder={
-            prediction
-              ? "例: 値を1つずつ調べる処理が必要そう…"
-              : "例: 右側を先に計算し、その値を左の名前へ結び付ける…"
-          }
-        />
-        <ConfidenceScale value={confidence} onChange={onConfidence} />
+    <div className="learning-checkpoint-shell">
+      <LearningFlowHeader
+        lesson={lesson}
+        stage={prediction ? "学習前の予想" : "講義末の出口想起"}
+      />
+      <main id="main-content" className="learning-checkpoint">
+      <Card className="learning-checkpoint-card">
+        <CardHeader>
+          <p className="learning-checkpoint-step">
+            {prediction ? "学習前の予想" : "講義末の出口想起"}
+          </p>
+          <p className="learning-checkpoint-project">
+            {lesson.story?.project}
+          </p>
+          <CardTitle asChild>
+            <h1>{title}</h1>
+          </CardTitle>
+          <CardDescription className="learning-checkpoint-incident">
+            {prediction ? lesson.story?.incident : lesson.story?.outcome}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+        {prediction ? (
+          <FieldSet className="learning-prediction-options">
+            <FieldLegend>{prompt}</FieldLegend>
+            <FieldDescription>
+              正解を当てる問題ではありません。今の考えに一番近いものを選びます。
+            </FieldDescription>
+            <ToggleGroup
+              type="single"
+              value={value}
+              onValueChange={(next) => {
+                if (next) onChange(next);
+              }}
+              orientation="vertical"
+              className="learning-prediction-options-list"
+            >
+              {predictionOptions(lesson).map((option, index) => (
+                <ToggleGroupItem
+                  key={option}
+                  value={option}
+                >
+                  <span aria-hidden="true">
+                    {String.fromCharCode(65 + index)}
+                  </span>
+                  {option}
+                  {value === option ? (
+                    <small aria-hidden="true">選択中</small>
+                  ) : null}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </FieldSet>
+        ) : (
+          <Field>
+            <FieldLabel htmlFor="learning-recall">{prompt}</FieldLabel>
+            <Textarea
+              id="learning-recall"
+              name="lesson-exit-recall"
+              autoComplete="off"
+              value={value}
+              onChange={(event) => onChange(event.currentTarget.value)}
+              placeholder="例: 右側を先に計算し、その値を左の名前へ結び付ける…"
+            />
+          </Field>
+        )}
         {value.trim() && comparisonResponse?.trim() ? (
           <details className="learning-checkpoint-comparison">
             <summary>書いた内容を比較する</summary>
@@ -656,31 +719,57 @@ function LearningCheckpoint({
             </small>
           </details>
         ) : null}
-        <div className="learning-checkpoint-actions">
-          {prediction && value.trim() === "" ? (
-            <button
-              type="button"
-              className="btn btn-line"
-              onClick={() => onChange("まだ分からない。説明で確かめたい。")}
-            >
-              まだ分からない
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={value.trim() === "" || confidence === null}
-            onClick={onContinue}
-          >
-            {prediction ? "予想を残して説明を見る" : "思い出した内容を残して完了"}
-          </button>
-        </div>
         <p className="learning-checkpoint-note">
           {prediction
             ? "予想は採点しません。先に考えることで、説明のどこを見るかを決めます。"
             : "この後は休憩して構いません。睡眠時間を削って続ける必要はありません。"}
         </p>
-      </article>
-    </main>
+        </CardContent>
+        <CardFooter className="learning-checkpoint-actions">
+          {assistant}
+          <Button
+            disabled={value.trim() === ""}
+            onClick={() => {
+              if (confidence === null) {
+                setConfidenceOpen(true);
+                return;
+              }
+              onContinue();
+            }}
+          >
+            {prediction ? "予想を残して説明を見る" : "思い出した内容を残して完了"}
+          </Button>
+        </CardFooter>
+      </Card>
+      <ConfidenceDialog
+        open={confidenceOpen}
+        value={confidence}
+        onChange={onConfidence}
+        onCancel={() => setConfidenceOpen(false)}
+        onConfirm={() => {
+          setConfidenceOpen(false);
+          onContinue();
+        }}
+      />
+      </main>
+    </div>
   );
+}
+
+function predictionOptions(lesson: Lesson): string[] {
+  if (lesson.id === "js-run") {
+    return [
+      "JavaScriptは、書かれた命令を上から1行ずつ動かす",
+      "JavaScriptは、すべての行を同時に動かす",
+      "JavaScriptは、下の行から上へ向かって動かす",
+      "まだ分からないので、説明で確かめたい",
+    ];
+  }
+  const objective = lesson.objectives?.[0]?.label ?? lesson.title;
+  return [
+    `「${objective}」は、値や表示が変わる順番に関係する`,
+    `「${objective}」は、入力の種類や条件を確かめる`,
+    `「${objective}」は、操作や通信の後で処理を動かす`,
+    "まだ分からないので、説明で確かめたい",
+  ];
 }

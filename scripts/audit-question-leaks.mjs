@@ -11,6 +11,7 @@ const COURSE_FILES = [
   "js-middle.ts",
   "js-modern.ts",
   "js-advanced.ts",
+  "js-dom.ts",
   "js-npm.ts",
   "ts-lessons.ts",
   "ts-modern.ts",
@@ -18,7 +19,7 @@ const COURSE_FILES = [
   "node-core.ts",
 ];
 const TEXT_FIELDS = ["prompt", "lead", "steps", "hint"];
-const EXPECTED_QUESTION_COUNT = 220;
+const EXPECTED_QUESTION_COUNT = 252;
 
 function propertyName(node) {
   if (ts.isIdentifier(node) || ts.isStringLiteral(node)) return node.text;

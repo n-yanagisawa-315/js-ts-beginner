@@ -1,5 +1,6 @@
 import type { Question, Track } from "./course/types.ts";
 import { grade } from "./grade.ts";
+import { runDomQuestion } from "./run-dom.ts";
 import { runStudentJs } from "./run-js.ts";
 
 const FUNCTION_DECLARATION =
@@ -48,6 +49,10 @@ export async function gradeCodeByBehavior(
   track: Track,
 ): Promise<boolean> {
   if (question.kind !== "code" || track === "ts") return grade(question, raw);
+  if (question.runtime === "dom") {
+    const result = await runDomQuestion(question, raw);
+    return result.passed;
+  }
 
   const output = expectedOutput(question);
   if (!output) return grade(question, raw);

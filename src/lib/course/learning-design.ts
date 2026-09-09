@@ -1,6 +1,8 @@
 import type {
+  ChapterId,
   ExerciseKind,
   Lesson,
+  ProjectRole,
   Question,
   ScaffoldLevel,
   Slide,
@@ -20,6 +22,36 @@ const INCIDENT_BY_TRACK: Record<Track, string> = {
   ts: "注文データの取り違えを実行前に見つけられるよう、コードへ約束を加えます。",
   node: "注文をファイル・通信・プロセスへ安全につなぎ、運用できる形へ育てます。",
 };
+
+const PROJECT_MILESTONE_BY_CHAPTER: Record<ChapterId, string> = {
+  "js-syntax": "注文画面が読む値と、処理する順番を確かめる",
+  "js-data": "1件の注文と注文一覧をデータとして組み立てる",
+  "js-loop": "注文の状態に応じて処理を分け、一覧を順に扱う",
+  "js-fn": "金額計算や表示名の手順を再利用できる関数にする",
+  "js-callback": "注文ごとの処理と、操作された後の処理を関数として渡す",
+  "js-array-fn": "未払い注文の抽出、合計、並べ替えを配列から作る",
+  "js-modern": "欠けた注文データを安全に読み、元の一覧を壊さず更新する",
+  "js-ref": "注文オブジェクトを意図せず共有・変更しない形へ直す",
+  "js-class": "同じ決まりを持つ注文を同じ形から作る",
+  "js-async": "注文APIの返事を待ちながら画面を止めない",
+  "js-dom": "注文一覧を表示し、追加・支払更新・保存を操作できる画面にする",
+  "js-module": "注文画面の表示、計算、通信をファイルへ分ける",
+  "js-npm": "注文画面を同じ依存関係で再現できるようにする",
+  "ts-intro": "注文番号・金額・状態へ型の約束を付ける",
+  "ts-shape": "注文全体と表示用データの形を契約として表す",
+  "ts-guard": "APIから来た不明な値を検査してから注文として扱う",
+  "ts-generic": "注文一覧を扱う共通処理でも具体的な型を保つ",
+  "ts-advanced": "注文の更新・表示用の型を元の契約から組み立てる",
+  "node-runtime": "注文APIをサーバーマシン上で起動する",
+  "node-fs": "注文データをJSONファイルから読み書きする",
+  "node-http": "注文の取得・追加をHTTPの入口へつなぐ",
+  "node-npm": "注文APIをどの環境でも同じ手順で起動する",
+  "node-async": "複数の注文通信を止めずに処理する",
+  "node-prod": "失敗を記録し、注文処理を途中で壊さず終了する",
+};
+
+const PROJECT_TERMS =
+  /(注文|受注|order|customer|paid|unpaid|支払|顧客|商品|price|quantity|status|在庫|金額|合計|API|HTTP)/i;
 
 const TRACK_CAPSTONE_CODE: Record<Track, string> = {
   js: `// 注文管理ツールの引き継ぎコード
@@ -47,6 +79,20 @@ function paidOrders(source) {
   return source.filter((order) => order.paid);
 }
 
+function renderOrders(source) {
+  const list = document.querySelector("#order-list");
+  list.replaceChildren();
+  source.forEach((order) => {
+    const row = document.createElement("li");
+    const status = order.paid ? "支払済み" : "未払い";
+    row.dataset.orderId = String(order.id);
+    row.textContent = \`\${order.customer} \${total(order)}円 \${status}\`;
+    list.append(row);
+  });
+  document.querySelector("#order-count").textContent =
+    \`\${source.length}件\`;
+}
+
 function totalsByCustomer(source) {
   return source.reduce((result, order) => {
     result[order.customer] = total(order);
@@ -72,6 +118,7 @@ paidOrders(orders).forEach((order) => {
 });
 
 const summary = totalsByCustomer(orders);
+renderOrders(orders);
 console.log(summary);
 
 // package.json には start と test がある
@@ -243,7 +290,7 @@ function storyContextForSlide(
   const beat = storyBeat(index, slides.length);
   switch (beat) {
     case "problem":
-      return `${PROJECT_BY_TRACK[lesson.track]}で「${lesson.title}」に関わる問題が起きました。「${slide.title}」を手がかりに、まず何が起きているかを切り分けます。`;
+      return `${PROJECT_BY_TRACK[lesson.track]}の工程「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」を始めます。このスライドでは「${slide.title}」を使い、最初に確認する動きを一つに絞ります。`;
     case "prediction":
       return `最初の手がかり「${previous?.title ?? lesson.title}」を踏まえ、コードを動かす前に「${slide.title}」の結果を予想します。`;
     case "trace":
@@ -373,6 +420,22 @@ function enrichQuestion(
     question.misconceptionByAnswer ??
     misconceptionByAnswer(question, misconceptionId);
   const worked = kind === "worked";
+  const projectText = [
+    question.prompt,
+    question.lead,
+    question.code,
+    question.starter,
+    question.sample,
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const projectRole: ProjectRole =
+    question.projectRole ??
+    (kind === "transfer"
+      ? "transfer"
+      : question.runtime === "dom" || PROJECT_TERMS.test(projectText)
+        ? "build"
+        : "drill");
   const generatedHints = [
     question.hint,
     question.steps?.[0]
@@ -387,8 +450,13 @@ function enrichQuestion(
     variantId: question.variantId ?? `${lesson.id}:${question.id}:base`,
     scenario:
       question.scenario ??
-      `${PROJECT_BY_TRACK[lesson.track]}で「${slide?.title ?? lesson.title}」を使う場面`,
+      (projectRole === "build"
+        ? `${PROJECT_BY_TRACK[lesson.track]}を進める工程で「${slide?.title ?? lesson.title}」を使います`
+        : projectRole === "transfer"
+          ? `${PROJECT_BY_TRACK[lesson.track]}で学んだ判断を別の入力へ応用します`
+          : `基礎練習として「${slide?.title ?? lesson.title}」だけを取り出して確かめます`),
     exerciseKind: kind,
+    projectRole,
     scaffoldLevel: scaffold,
     lead: worked
       ? `直前のスライドにある完成例を手がかりに、同じ働きを自分で再現します。${question.lead ?? ""}`.trim()
@@ -476,7 +544,7 @@ export function applyLearningDesign(lesson: Lesson): Lesson {
       lesson.story ??
       {
         project: PROJECT_BY_TRACK[lesson.track],
-        incident: `${INCIDENT_BY_TRACK[lesson.track]} 今回は「${lesson.title}」が課題です。`,
+        incident: `${INCIDENT_BY_TRACK[lesson.track]} 今回は「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」のために「${lesson.title}」を使います。`,
         outcome: lesson.summary,
       },
     objectives:
@@ -495,7 +563,7 @@ export function applyLearningDesign(lesson: Lesson): Lesson {
 
 export function prequestionForLesson(lesson: Lesson): string {
   const first = lesson.objectives?.[0]?.label ?? lesson.title;
-  return `${lesson.story?.project ?? PROJECT_BY_TRACK[lesson.track]}で「${lesson.title}」が必要になりました。説明を見る前に、最初の目標「${first}」がどの値や実行順を変えるか、一つだけ予想してください。`;
+  return `${lesson.story?.project ?? PROJECT_BY_TRACK[lesson.track]}の工程「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」で「${lesson.title}」が必要になりました。説明を見る前に、最初の目標「${first}」がどの値や実行順を変えるか、一つだけ予想してください。`;
 }
 
 function orderingQuestionIndex(questions: Question[]): number {
@@ -744,6 +812,7 @@ export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
               scenario: trackLast
                 ? `${PROJECT_BY_TRACK[lesson.track]}全体の引き継ぎコードを読み、未知のコードから判断する`
                 : `${lesson.chapter}で学んだ複数の方法を区別して判断する章末課題`,
+              projectRole: "transfer",
             }
           : question,
       ),

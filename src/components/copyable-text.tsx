@@ -48,7 +48,9 @@ export function CopyableText({
 }) {
   const liveId = useId();
   const [copied, setCopied] = useState<string | null>(null);
-  const pieces = piecesOf(text);
+  const pieces = piecesOf(
+    text.replaceAll("starter", "最初から入っているコード"),
+  );
 
   async function copy(value: string) {
     const ok = await copyText(value);

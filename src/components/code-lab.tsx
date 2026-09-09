@@ -1,14 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnswerDialog } from "@/components/answer-dialog";
 import { CopyableText } from "@/components/copyable-text";
-import { ConfidenceScale } from "@/components/confidence-scale";
-import { GradeToast } from "@/components/grade-toast";
+import {
+  ConfidenceDialog,
+  ConfidenceScale,
+} from "@/components/confidence-scale";
 import { HighlightEditor } from "@/components/highlight-editor";
 import { IconEye, IconFile, IconPlay, IconReset } from "@/components/icons";
+import { OrderProjectPreview } from "@/components/order-project-preview";
 import { SelfExplanation } from "@/components/self-explanation";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import {
   NodeTermChrome,
   NodeTermInput,
@@ -16,6 +31,7 @@ import {
   NodeTermPrompt,
 } from "@/components/node-terminal";
 import { gradeShell, mismatchLines } from "@/lib/grade";
+import { createDomDocument, runDomQuestion } from "@/lib/run-dom";
 import { runStudentJs, syntaxLine } from "@/lib/run-js";
 import type { Question, TermLine, Track } from "@/lib/course";
 
@@ -42,8 +58,15 @@ export function CodeLab(props: {
   attempted: boolean;
   reflection: string;
   onReflection: (value: string) => void;
+  assistant?: ReactNode;
+  projectPreview?: boolean;
 }) {
-  return <CodeLabInner key={props.question.id} {...props} />;
+  return (
+    <CodeLabInner
+      key={`${props.question.id}-${props.question.variantId ?? "base"}`}
+      {...props}
+    />
+  );
 }
 
 function CodeLabInner({
@@ -69,6 +92,8 @@ function CodeLabInner({
   attempted,
   reflection,
   onReflection,
+  assistant,
+  projectPreview = false,
 }: {
   track: Track;
   question: Question;
@@ -92,24 +117,36 @@ function CodeLabInner({
   attempted: boolean;
   reflection: string;
   onReflection: (value: string) => void;
+  assistant?: ReactNode;
+  projectPreview?: boolean;
 }) {
   const editorId = useId();
   const explainId = useId();
   const explainRef = useRef<HTMLParagraphElement>(null);
-  const confidenceRef = useRef<HTMLDivElement>(null);
   const guideRef = useRef<HTMLElement>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [answerOpen, setAnswerOpen] = useState(false);
-  const [confidenceMissing, setConfidenceMissing] = useState(false);
+  const [confidenceOpen, setConfidenceOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [runError, setRunError] = useState<string | null>(null);
   const [termTab, setTermTab] = useState<1 | 2>(1);
   const [pane, setPane] = useState<"file" | "term">("file");
   const [shellLog, setShellLog] = useState<TermLine[]>([]);
   const [typeErrors, setTypeErrors] = useState<string[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [domDocument, setDomDocument] = useState(() =>
+    question.runtime === "dom"
+      ? createDomDocument({
+          source: "",
+          fixtureHtml: question.fixtureHtml ?? "",
+        })
+      : "",
+  );
   const fileName = question.fileName ?? (track === "ts" ? "script.ts" : "script.js");
   const isNode = track === "node";
   const isShell = question.kind === "shell";
+  const isDom = question.runtime === "dom";
   const cwd = question.cwd ?? "app";
   const canRun = track !== "ts";
   const hasOutputSample = Boolean(question.sample?.trim());
@@ -178,35 +215,70 @@ function CodeLabInner({
   }
 
   async function run() {
-    if (isShell) {
-      replayShell(typed);
-      return;
+    if (isRunning || isSubmitting) return;
+    setIsRunning(true);
+    try {
+      if (isShell) {
+        replayShell(typed);
+        return;
+      }
+      if (isDom) {
+        setDomDocument(
+          createDomDocument({
+            source: typed,
+            fixtureHtml: question.fixtureHtml ?? "",
+          }),
+        );
+        const result = await runDomQuestion(question, typed);
+        setLogs(result.logs);
+        setRunError(result.error ?? null);
+        return;
+      }
+      await runJs();
+      if (isNode) setPane("term");
+    } finally {
+      setIsRunning(false);
     }
-    await runJs();
-    if (isNode) setPane("term");
   }
 
   async function submit() {
-    if (!typed.trim()) return;
+    if (!typed.trim() || isRunning || isSubmitting) return;
     if (confidence === null) {
-      setConfidenceMissing(true);
-      requestAnimationFrame(() => {
-        confidenceRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-      });
+      setConfidenceOpen(true);
       return;
     }
     if (track === "ts" && typeErrors.length > 0) {
       setRunError(`TypeScript: ${typeErrors[0]}`);
       return;
     }
-    await run();
-    await onSubmit();
+    setIsSubmitting(true);
+    try {
+      if (isShell) {
+        replayShell(typed);
+      } else if (isDom) {
+        setDomDocument(
+          createDomDocument({
+            source: typed,
+            fixtureHtml: question.fixtureHtml ?? "",
+          }),
+        );
+        const result = await runDomQuestion(question, typed);
+        setLogs(result.logs);
+        setRunError(result.error ?? null);
+      } else {
+        await runJs();
+        if (isNode) setPane("term");
+      }
+      await onSubmit();
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const toolbar = (
     <LabToolbar
       checked={checked}
-      canSubmit={canSubmit}
+      canSubmit={canSubmit && !isRunning && !isSubmitting}
       canAdvance={Boolean(failReason) && reflection.trim().length >= 10}
       canFinish={!requiresExplanation || reflection.trim().length >= 10}
       correctCount={correctCount}
@@ -214,10 +286,19 @@ function CodeLabInner({
       nextLabel={nextLabel}
       onReset={() => {
         onTyped(question.starter ?? "");
+        setConfidenceOpen(false);
         setLogs([]);
         setRunError(null);
         setShellLog([]);
         setTypeErrors([]);
+        if (isDom) {
+          setDomDocument(
+            createDomDocument({
+              source: "",
+              fixtureHtml: question.fixtureHtml ?? "",
+            }),
+          );
+        }
         setPane("file");
       }}
       onAnswer={() => {
@@ -226,23 +307,22 @@ function CodeLabInner({
       }}
       onNext={onNext}
       onSubmit={submit}
+      pending={isSubmitting}
     />
   );
 
   return (
-    <div className="flex max-h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#10141c] text-[var(--cream)] lg:overflow-hidden">
+    <main
+      id="main-content"
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#10141c] text-[var(--cream)] lg:overflow-hidden"
+    >
       <div className={`lab-grid min-h-0 flex-1${isNode ? " is-node" : ""}`}>
         <aside
           ref={guideRef}
           className="flex min-h-0 touch-pan-y flex-col overflow-y-auto border-b border-line bg-desk text-ink lg:border-b-0 lg:border-r"
         >
           <div className="flex items-center justify-between px-4 py-3">
-            <Link
-              href="/"
-              className="btn btn-ghost min-h-11 px-3 text-sm text-mute hover:text-ink"
-            >
-              講座一覧
-            </Link>
+            <p className="font-mono text-xs font-semibold text-studio">コード演習</p>
             <p className="font-mono text-xs tracking-widest text-mute">
               {String(index + 1).padStart(2, "0")} · {String(total).padStart(2, "0")}
             </p>
@@ -254,30 +334,39 @@ function CodeLabInner({
             <h1 className="mt-2 font-serif text-xl font-medium leading-8">
               <CopyableText text={question.prompt} />
             </h1>
+            {question.scenario ? (
+              <p className="mt-3 border-l-2 border-studio pl-3 text-sm leading-6 text-mute">
+                {question.projectRole === "transfer"
+                  ? "別の場面へ応用: "
+                  : question.projectRole === "build"
+                    ? "注文画面を作る: "
+                    : "基礎練習: "}
+                {question.scenario}
+              </p>
+            ) : null}
           </header>
+          {projectPreview ? (
+            <div className="px-4 pb-4">
+              <OrderProjectPreview compact />
+            </div>
+          ) : null}
           <QuestionGuide
             question={question}
             track={track}
             fileName={fileName}
             isShell={isShell}
           />
-          <div ref={confidenceRef} className="px-4 pb-4">
+          {attempted ? (
+          <div className="px-4 pb-4">
             <ConfidenceScale
               value={confidence}
-              onChange={(value) => {
-                setConfidenceMissing(false);
-                onConfidence(value);
-              }}
+              onChange={onConfidence}
               tone="light"
-              disabled={attempted}
-              result={attempted ? checked : null}
+              disabled
+              result={checked}
             />
-            {confidenceMissing ? (
-              <p role="alert" className="mt-2 text-sm font-medium text-red-700">
-                「できた！」の前に、今の自信度を1つ選んでください。
-              </p>
-            ) : null}
           </div>
+          ) : null}
           {failReason || (checked && requiresExplanation) ? (
             <div className="px-4 pb-4">
               <SelfExplanation
@@ -289,10 +378,11 @@ function CodeLabInner({
             </div>
           ) : null}
           <div className="mt-auto flex flex-col gap-2 px-4 pb-4">
+            {assistant}
             {hints.length > 0 ? (
-              <button
-                type="button"
-                className="btn btn-hint w-full"
+              <Button
+                variant="secondary"
+                className="w-full"
                 aria-expanded={hintLevel > 0}
                 onClick={() => {
                   const next = Math.min(hintLevel + 1, hints.length);
@@ -305,26 +395,30 @@ function CodeLabInner({
                   : hintLevel < hints.length
                     ? "次のヒントを見る"
                     : "ヒントを確認済み"}
-              </button>
+              </Button>
             ) : null}
             {hintLevel > 0 ? (
-              <ol className="space-y-2 bg-paper px-3 py-2 text-sm leading-6 text-mute">
-                {hints.slice(0, hintLevel).map((hint, index) => (
-                  <li key={hint}>
-                    <span className="mr-2 font-mono">{index + 1}.</span>
-                    <CopyableText text={hint} />
-                  </li>
-                ))}
-              </ol>
+              <Alert role="status">
+                <AlertTitle>ヒント {hintLevel}/{hints.length}</AlertTitle>
+                <AlertDescription>
+                  <ol className="flex flex-col gap-2">
+                    {hints.slice(0, hintLevel).map((hint, index) => (
+                      <li key={hint}>
+                        <span className="mr-2 font-mono">{index + 1}.</span>
+                        <CopyableText text={hint} />
+                      </li>
+                    ))}
+                  </ol>
+                </AlertDescription>
+              </Alert>
             ) : null}
             {onOpenSlide ? (
-              <button
-                type="button"
-                className="btn btn-studio w-full"
+              <Button
+                className="w-full"
                 onClick={(event) => onOpenSlide(event.currentTarget)}
               >
                 スライドで確認
-              </button>
+              </Button>
             ) : null}
           </div>
         </aside>
@@ -380,39 +474,36 @@ function CodeLabInner({
           </NodeTermChrome>
         ) : isNode ? (
           <section className="editor-shell is-term">
-            <div className="node-term-tabs">
-              <button
-                type="button"
-                className={`node-term-tab${pane === "file" ? " is-on" : ""}`}
-                onClick={() => setPane("file")}
-              >
-                <IconFile className="h-3.5 w-3.5" />
-                {fileName}
-              </button>
-              <button
-                type="button"
-                className={`node-term-tab${pane === "term" ? " is-on" : ""}`}
-                onClick={() => setPane("term")}
-              >
-                <span className="node-term-glyph" aria-hidden="true">
-                  &gt;_
-                </span>
-                ターミナル
-              </button>
-            </div>
-            {pane === "file" ? (
-              <HighlightEditor
-                id={editorId}
-                value={typed}
-                language="javascript"
-                disabled={checked}
-                describedBy={checked ? explainId : undefined}
-                errorLines={errorLines}
-                onChange={onTyped}
-                onValidate={setTypeErrors}
-              />
-            ) : (
-              <div className="node-term-body">
+            <Tabs
+              value={pane}
+              onValueChange={(value) => setPane(value as "file" | "term")}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              <TabsList className="node-term-tabs">
+                <TabsTrigger value="file" className="node-term-tab">
+                  <IconFile aria-hidden="true" />
+                  {fileName}
+                </TabsTrigger>
+                <TabsTrigger value="term" className="node-term-tab">
+                  <span className="node-term-glyph" aria-hidden="true">
+                    &gt;_
+                  </span>
+                  ターミナル
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="file" className="mt-0 min-h-0 flex-1">
+                <HighlightEditor
+                  id={editorId}
+                  value={typed}
+                  language="javascript"
+                  disabled={checked}
+                  describedBy={checked ? explainId : undefined}
+                  errorLines={errorLines}
+                  onChange={onTyped}
+                  onValidate={setTypeErrors}
+                />
+              </TabsContent>
+              <TabsContent value="term" className="node-term-body mt-0">
                 {logs.length > 0 || runError ? (
                   <>
                     <p className="node-term-line is-meta">
@@ -427,10 +518,10 @@ function CodeLabInner({
                         </p>
                       ))
                     )}
-                    <p className="node-term-row">
-                      <NodeTermPrompt cwd={cwd} />
-                      <span className="term-cursor" aria-hidden="true" />
-                    </p>
+                  <p className="node-term-row">
+                    <NodeTermPrompt cwd={cwd} />
+                    <span className="term-cursor" aria-hidden="true" />
+                  </p>
                   </>
                 ) : (
                   <p className="node-term-row">
@@ -438,8 +529,8 @@ function CodeLabInner({
                     <span className="term-cursor" aria-hidden="true" />
                   </p>
                 )}
-              </div>
-            )}
+              </TabsContent>
+            </Tabs>
             {checked ? (
               <p
                 ref={explainRef}
@@ -492,17 +583,31 @@ function CodeLabInner({
               ) : null}
             </section>
             <aside className="console-stack min-h-[16rem] border-t border-[#c5c9d0] lg:border-t-0 lg:border-l">
-              <OutputPane title="コンソール" onPlay={run}>
-                {runError ? (
-                  <p className="text-[#fca5a5]">{runError}</p>
-                ) : logs.length > 0 ? (
-                  logs.map((line, lineIndex) => (
-                    <p key={`${lineIndex}-${line}`}>{line}</p>
-                  ))
-                ) : (
-                  <p className="text-white/35">実行結果がここに出ます</p>
-                )}
-              </OutputPane>
+              {isDom ? (
+                <OutputPane title="画面プレビュー" onPlay={run} pending={isRunning}>
+                  <iframe
+                    className="dom-preview-frame"
+                    title="注文管理画面の実行結果"
+                    sandbox="allow-scripts"
+                    srcDoc={domDocument}
+                  />
+                  {runError ? (
+                    <p className="mt-2 text-[#fca5a5]">{runError}</p>
+                  ) : null}
+                </OutputPane>
+              ) : (
+                <OutputPane title="コンソール" onPlay={run} pending={isRunning}>
+                  {runError ? (
+                    <p className="text-[#fca5a5]">{runError}</p>
+                  ) : logs.length > 0 ? (
+                    logs.map((line, lineIndex) => (
+                      <p key={`${lineIndex}-${line}`}>{line}</p>
+                    ))
+                  ) : (
+                    <p className="text-white/35">実行結果がここに出ます</p>
+                  )}
+                </OutputPane>
+              )}
               <OutputPane title={hasOutputSample ? "出力見本" : "達成条件"}>
                 <pre className="whitespace-pre-wrap">
                   {expectedResult}
@@ -512,6 +617,16 @@ function CodeLabInner({
           </>
         )}
       </div>
+      <ConfidenceDialog
+        open={confidenceOpen}
+        value={confidence}
+        onChange={onConfidence}
+        onCancel={() => setConfidenceOpen(false)}
+        onConfirm={() => {
+          setConfidenceOpen(false);
+          void submit();
+        }}
+      />
       <AnswerDialog
         open={answerOpen}
         fileName={isShell ? `${cwd} $` : fileName}
@@ -525,7 +640,7 @@ function CodeLabInner({
         termAlive={question.termAlive}
         onClose={() => setAnswerOpen(false)}
       />
-    </div>
+    </main>
   );
 }
 
@@ -586,7 +701,9 @@ function QuestionGuide({
         <p className="question-material">
           <span>{isShell ? "入力場所" : "用意済み"}</span>
           <strong>{isShell ? "ターミナル" : fileName}</strong>
-          {question.starter ? <small>書き始めるコードあり</small> : null}
+          {question.starter ? (
+            <small>最初から入っているコードがあります</small>
+          ) : null}
         </p>
       </div>
 
@@ -621,6 +738,7 @@ function LabToolbar({
   onAnswer,
   onNext,
   onSubmit,
+  pending,
 }: {
   checked: boolean;
   canSubmit: boolean;
@@ -633,14 +751,15 @@ function LabToolbar({
   onAnswer: () => void;
   onNext: () => void;
   onSubmit: () => void | Promise<void>;
+  pending: boolean;
 }) {
   return (
     <div className="editor-toolbar">
-      <button type="button" className="editor-tool" disabled={checked} onClick={onReset}>
+      <button type="button" className="editor-tool" disabled={checked || pending} onClick={onReset}>
         <IconReset className="h-4 w-4" />
         リセット
       </button>
-      <button type="button" className="editor-tool" disabled={checked} onClick={onAnswer}>
+      <button type="button" className="editor-tool" disabled={checked || pending} onClick={onAnswer}>
         <IconEye className="h-4 w-4" />
         答えを見る
       </button>
@@ -648,24 +767,31 @@ function LabToolbar({
         正解 {correctCount} / {total}
       </span>
       {checked ? (
-        <button
-          type="button"
-          className="btn btn-go"
+        <Button
           disabled={!canFinish}
           onClick={onNext}
         >
           {nextLabel}
-        </button>
+        </Button>
       ) : (
         <div className="flex flex-wrap gap-2">
           {canAdvance ? (
-            <button type="button" className="btn btn-line" onClick={onNext}>
+            <Button variant="outline" onClick={onNext}>
               あとで解き直す
-            </button>
+            </Button>
           ) : null}
-          <button type="button" className="btn btn-go" disabled={!canSubmit} onClick={onSubmit}>
-            {canAdvance ? "もう一度確かめる" : "できた！"}
-          </button>
+          <Button disabled={!canSubmit || pending} onClick={onSubmit}>
+            {pending ? (
+              <>
+                <Spinner data-icon="inline-start" />
+                採点中…
+              </>
+            ) : canAdvance ? (
+              "もう一度確かめる"
+            ) : (
+              "できた！"
+            )}
+          </Button>
         </div>
       )}
     </div>
@@ -682,21 +808,27 @@ function FailDock({
   onClose: () => void;
 }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[3.75rem] z-20 px-3 pb-2">
-      <div className="pointer-events-auto mx-auto max-w-xl">
-        <GradeToast key={tick} message={message} tone="dark" onClose={onClose} />
-      </div>
-    </div>
+    <Alert key={tick} variant="destructive" className="editor-fail-alert">
+      <AlertTitle>まだ一致していません</AlertTitle>
+      <AlertDescription className="flex items-start justify-between gap-3">
+        <p>{message}</p>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          閉じる
+        </Button>
+      </AlertDescription>
+    </Alert>
   );
 }
 
 function OutputPane({
   title,
   onPlay,
+  pending = false,
   children,
 }: {
   title: string;
   onPlay?: () => void;
+  pending?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -712,10 +844,11 @@ function OutputPane({
           <button
             type="button"
             className="console-window-play"
-            aria-label="実行"
+            aria-label={pending ? "実行中" : "実行"}
+            disabled={pending}
             onClick={onPlay}
           >
-            <IconPlay className="h-3 w-3" />
+            {pending ? <Spinner /> : <IconPlay className="h-3 w-3" />}
           </button>
         ) : (
           <span className="console-window-play" aria-hidden="true">

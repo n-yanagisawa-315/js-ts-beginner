@@ -180,12 +180,14 @@ let ok: boolean = true;`,
       {
         id: "q4",
         slide: 3,
+        scenario: "customer を string として宣言し、Order 型導入前の基本契約を作る。",
+        projectRole: "build",
         prompt:
-          "変更可能な変数 courseName に、文字列だけを入れられる約束と初期値「入門」を設定してください。",
+          "変更可能な変数 customer に、文字列だけを入れられる約束と初期値「Aya」を設定してください。",
         lead:
           "名前・種類・値を読み分ける練習です。画面への表示は不要で、指定した文字列を持つ変数が型検査に合格すれば完成です。",
         kind: "code",
-        starter: "// courseName をここで宣言する\n",
+        starter: "// customer をここで宣言する\n",
         fileName: "script.ts",
         steps: [
           "あとから変更できる変数として宣言する",
@@ -195,7 +197,7 @@ let ok: boolean = true;`,
         hint:
           "変数名の直後に種類、代入記号の右側に実際の値を置きます。",
         sample: "",
-        answer: 'let courseName: string = "入門"',
+        answer: 'let customer: string = "Aya"',
         explain: "コロンの左が名前、右が種類。イコールの右が値です。",
       },
     ],
@@ -331,23 +333,25 @@ config.url; // string。"/api"ではない`,
       {
         id: "q2",
         slide: 1,
+        scenario: "注文API設定を satisfies で検査し、ordersUrl と retry を保持する。",
+        projectRole: "build",
         prompt:
-          "urlが「/api」、retryが3のapiConfigを作り、指定された形を満たすかsatisfiesで検査してください。",
+          "ordersUrlが「/api/orders」、retryが3のorderApiConfigを作り、指定された形を満たすかsatisfiesで検査してください。",
         lead:
-          "通常の型注釈ではなく、完成したオブジェクトがurlはstring、retryはnumberという契約を満たすか検査します。表示は不要です。",
+          "通常の型注釈ではなく、完成したオブジェクトがordersUrlはstring、retryはnumberという契約を満たすか検査します。表示は不要です。",
         kind: "code",
-        starter: "// apiConfig の値を定義し、契約を検査する\n",
+        starter: "// orderApiConfig の値を定義し、契約を検査する\n",
         fileName: "script.ts",
         steps: [
-          "apiConfigにurlとretryを設定する",
+          "orderApiConfigにordersUrlとretryを設定する",
           "完成した値の直後へ適合検査を加える",
-          "urlとretryの型を指定した契約で検査を通す",
+          "ordersUrlとretryの型を指定した契約で検査を通す",
         ],
         hint:
           "オブジェクトを先に作り、その直後にsatisfiesと必要な2項目の型を続けます。",
         sample: "",
         answer:
-          'const apiConfig = { url: "/api", retry: 3 } satisfies { url: string; retry: number }',
+          'const orderApiConfig = { ordersUrl: "/api/orders", retry: 3 } satisfies { ordersUrl: string; retry: number }',
         explain:
           "satisfiesは契約への適合を検査し、変数には左側の式から推論した型を使います。",
       },

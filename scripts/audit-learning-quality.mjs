@@ -12,6 +12,7 @@ const COURSE_FILES = [
   "js-middle.ts",
   "js-modern.ts",
   "js-advanced.ts",
+  "js-dom.ts",
   "js-npm.ts",
   "ts-lessons.ts",
   "ts-modern.ts",
@@ -205,7 +206,7 @@ if (!reviewSession.includes("gradeCodeByBehavior")) {
 for (const marker of [
   "predict",
   'mode="exit"',
-  "ConfidenceScale",
+  "ConfidenceDialog",
   "materialReviewed",
   "comparisonResponse",
 ]) {
@@ -372,9 +373,9 @@ for (const file of [
 if (choiceCount !== 69) {
   issues.push(`選択問題数が想定外です: ${choiceCount}/69`);
 }
-if (lessonCount !== 49) issues.push(`講義数が想定外です: ${lessonCount}/49`);
-if (slideCount !== 269) issues.push(`スライド数が想定外です: ${slideCount}/269`);
-if (questionCount !== 220) issues.push(`問題数が想定外です: ${questionCount}/220`);
+if (lessonCount !== 57) issues.push(`講義数が想定外です: ${lessonCount}/57`);
+if (slideCount !== 309) issues.push(`スライド数が想定外です: ${slideCount}/309`);
+if (questionCount !== 252) issues.push(`問題数が想定外です: ${questionCount}/252`);
 
 if (issues.length > 0) {
   console.error("学習品質監査で問題が見つかりました:");

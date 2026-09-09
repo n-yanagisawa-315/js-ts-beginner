@@ -135,28 +135,30 @@ console.log(b);`,
       {
         id: "q2",
         slide: 1,
+        scenario: "同じ order を参照する別名から total を更新し、変更共有を確認する。",
+        projectRole: "build",
         prompt:
-          "`b` 側からプロパティ `n` を 5 に変更し、続けて `a.n` と、`a` と `b` が同じオブジェクトかどうかを表示してください。",
+          "`alias` 側からプロパティ `total` を 1200 に変更し、続けて `order.total` と、`order` と `alias` が同じオブジェクトかどうかを表示してください。",
         lead:
-          "`a` と `b` は、すでに同じオブジェクトを参照しています。一方からプロパティを変更すると、もう一方から見ても変更後の値になります。1行目が `5`、2行目が `true` になれば完了です。",
+          "`order` と `alias` は、すでに同じオブジェクトを参照しています。一方からプロパティを変更すると、もう一方から見ても変更後の値になります。1行目が `1200`、2行目が `true` になれば完了です。",
         kind: "code",
-        starter: "const a = { n: 1 };\nconst b = a;\n// 同じ束を変えて確認\n",
+        starter: "const order = { total: 1000 };\nconst alias = order;\n// 同じ束を変えて確認\n",
         fileName: "script.js",
         steps: [
-          "`b` が参照するオブジェクトの `n` を変更する",
-          "`a` から同じプロパティを読み、変更が共有されたことを確認する",
+          "`alias` が参照するオブジェクトの `total` を変更する",
+          "`order` から同じプロパティを読み、変更が共有されたことを確認する",
           "厳密等価比較で2つの変数が同じ参照か確認する",
         ],
         hint:
           "オブジェクトを代入すると、内容ではなく同じオブジェクトへの参照が共有されます。新しいオブジェクトは作りません。",
-        sample: "5\ntrue",
-        answer: `const a = { n: 1 };
-const b = a;
-b.n = 5;
-console.log(a.n);
-console.log(a === b);`,
+        sample: "1200\ntrue",
+        answer: `const order = { total: 1000 };
+const alias = order;
+alias.total = 1200;
+console.log(order.total);
+console.log(order === alias);`,
         explain:
-          "名前は2つでもオブジェクトは1つなので、a.n も 5、=== は true です。",
+          "名前は2つでもオブジェクトは1つなので、order.total も 1200、=== は true です。",
       },
       {
         id: "q3",
@@ -400,12 +402,14 @@ console.log({ ...user, age: 21 });`,
       {
         id: "q4",
         slide: 3,
+        scenario: "明細金額を可変長引数で受け、order.total を計算する関数を作る。",
+        projectRole: "build",
         prompt:
-          "購入点数が毎回異なる注文を合計するため、個数の決まっていない数値を残余引数 `nums` で受け取る `sum` 関数を作ってください。",
+          "明細数が毎回異なる注文の total を計算するため、個数の決まっていない数値を残余引数 `itemTotals` で受け取る `calculateTotal` 関数を作ってください。",
         lead:
           "入力は別々の引数として渡される `1`、`2`、`3` です。集計値を `acc`、現在値を `n` として0から合計し、引数がない注文でも計算できるようにします。表示が `6` になれば完了です。",
         kind: "code",
-        starter: "// 可変個の数値を受け取る sum を作る\n",
+        starter: "// 可変個の数値を受け取る calculateTotal を作る\n",
         fileName: "script.js",
         steps: [
           "個数の決まっていない引数を、関数内で配列として扱える形で受け取る",
@@ -416,12 +420,12 @@ console.log({ ...user, age: 21 });`,
         hint:
           "通常の配列を引数に渡す設計ではありません。仮引数側で「残りをまとめる」構文を使い、できた配列を初期値から集計します。",
         sample: "6",
-        answer: `function sum(...nums) {
-  return nums.reduce((acc, n) => acc + n, 0);
+        answer: `function calculateTotal(...itemTotals) {
+  return itemTotals.reduce((acc, n) => acc + n, 0);
 }
-console.log(sum(1, 2, 3));`,
+console.log(calculateTotal(1, 2, 3));`,
         explain:
-          "...nums は残りの引数の配列です。1件も無ければ空配列になります。",
+          "...itemTotals は残りの引数の配列です。1件も無ければ空配列になります。",
       },
     ],
   },
@@ -645,24 +649,26 @@ console.log(nums.find((n) => n > 2));`,
       {
         id: "q4",
         slide: 3,
+        scenario: "orders の各 total を reduce し、order-count が0でも安全な請求合計を作る。",
+        projectRole: "build",
         prompt:
-          "3件の購入金額 `nums` から請求合計を求めます。`reduce` を使って全要素を合計し、結果を表示してください。",
+          "3件の `orders` にある `total` から請求合計を求めます。`reduce` を使って全注文を合計し、結果を表示してください。",
         lead:
-          "入力は `[1, 2, 3]` で、空の明細でも合計0として扱える必要があります。初期値から各金額を順に加え、請求額 `6` が表示されれば完了です。",
+          "入力は `[{ total: 100 }, { total: 200 }, { total: 300 }]` で、空の明細でも合計0として扱える必要があります。初期値から各金額を順に加え、請求額 `600` が表示されれば完了です。",
         kind: "code",
-        starter: "const nums = [1, 2, 3];\n// 初期値 0 から足していく\n",
+        starter: "const orders = [{ total: 100 }, { total: 200 }, { total: 300 }];\n// 初期値 0 から足していく\n",
         fileName: "script.js",
         steps: [
           "合計の初期値を決める",
-          "これまでの合計accへ現在の要素nを加える集計を全要素に適用する",
+          "これまでの合計accへ現在の注文orderを加える集計を全注文に適用する",
           "最終的な集計結果を表示する",
         ],
         hint:
           "空配列でも安全に合計できるよう、加算を始める値を `reduce` に明示しましょう。",
-        sample: "6",
-        answer: `const nums = [1, 2, 3];
-console.log(nums.reduce((acc, n) => acc + n, 0));`,
-        explain: "0+1+2+3 で 6 です。reduce は配列を1つの値に畳みます。",
+        sample: "600",
+        answer: `const orders = [{ total: 100 }, { total: 200 }, { total: 300 }];
+console.log(orders.reduce((acc, order) => acc + order.total, 0));`,
+        explain: "0+100+200+300 で 600 です。reduce は配列を1つの値に畳みます。",
       },
       {
         id: "q5",
@@ -821,34 +827,36 @@ c2(); // 1 別の count`,
       {
         id: "q1",
         slide: 0,
+        scenario: "order-count を外部から直接触れないクロージャに保持する。",
+        projectRole: "build",
         prompt:
-          "ページ内のクリック回数を記録する `makeCounter` を完成させ、返された関数を呼ぶたびに `count` を1増やして返してください。",
+          "登録済みのorder-countを記録する`makeCounter`を完成させ、返された関数を呼ぶたびに`orderCount`を1増やして返してください。",
         lead:
           "入力には初期値0と、同じカウンターを2回呼ぶ表示処理があります。関数を呼び終えた後も前回の回数を保持し、`1`、`2` と表示されれば完了です。",
         kind: "code",
         starter:
-          "function makeCounter() {\n let count = 0;\n return function () {\n // count を増やして返す\n };\n}\nconst c = makeCounter();\nconsole.log(c());\nconsole.log(c());\n",
+          "function makeCounter() {\n let orderCount = 0;\n return function () {\n // orderCount を増やして返す\n };\n}\nconst c = makeCounter();\nconsole.log(c());\nconsole.log(c());\n",
         fileName: "script.js",
         steps: [
-          "内側の関数で、外側の `count` を現在値から1増やす",
+          "内側の関数で、外側の `orderCount` を現在値から1増やす",
           "更新後の値を呼び出し元へ返す",
           "2回目の呼び出しが1回目の状態を引き継ぐことを確認する",
         ],
         hint:
-          "`count` の初期化は外側に置いたままにします。内側で初期化し直すと、呼び出すたびに状態が失われます。",
+          "`orderCount` の初期化は外側に置いたままにします。内側で初期化し直すと、呼び出すたびに状態が失われます。",
         sample: "1\n2",
         answer: `function makeCounter() {
-  let count = 0;
+  let orderCount = 0;
   return function () {
-    count += 1;
-    return count;
+    orderCount += 1;
+    return orderCount;
   };
 }
 const c = makeCounter();
 console.log(c());
 console.log(c());`,
         explain:
-          "c が生きているあいだ count も生きるので、2回目は 2 になります。",
+          "c が生きているあいだ orderCount も生きるので、2回目は 2 になります。",
       },
       {
         id: "q2",
@@ -1064,30 +1072,32 @@ g(); // "Aya"`,
       {
         id: "q1",
         slide: 0,
+        scenario: "order メソッドから this.customer を読み、伝票の顧客名を表示する。",
+        projectRole: "build",
         prompt:
-          "会員 `user` の名前をあいさつ欄へ出すため、`hello` を会員自身のメソッドとして呼び、戻り値を表示してください。",
+          "`order` の customer を伝票へ出すため、`getCustomer` を注文自身のメソッドとして呼び、戻り値を表示してください。",
         lead:
-          "入力の `hello` は `this.name` を返し、`user` には名前 `Aya` が保存されています。メソッドを切り離さず会員を呼び出し元にして、`Aya` が表示されれば完了です。",
+          "入力の `getCustomer` は `this.customer` を返し、`order` には customer `Aya` が保存されています。メソッドを切り離さず注文を呼び出し元にして、`Aya` が表示されれば完了です。",
         kind: "code",
         starter:
-          'const user = {\n name: "Aya",\n hello() {\n return this.name;\n },\n};\n// メソッドとして呼び出す\n',
+          'const order = {\n customer: "Aya",\n getCustomer() {\n return this.customer;\n },\n};\n// メソッドとして呼び出す\n',
         fileName: "script.js",
         steps: [
-          "`user` を呼び出し元として保ったまま `hello` を実行する",
+          "`order` を呼び出し元として保ったまま `getCustomer` を実行する",
           "メソッドの戻り値を表示し、`this` が正しく決まったことを確認する",
         ],
         hint:
           "メソッドを別の変数へ取り外すと、呼び出し元の情報が失われます。ドットの左側を残してください。",
         sample: "Aya",
-        answer: `const user = {
-  name: "Aya",
-  hello() {
-    return this.name;
+        answer: `const order = {
+  customer: "Aya",
+  getCustomer() {
+    return this.customer;
   },
 };
-console.log(user.hello());`,
+console.log(order.getCustomer());`,
         explain:
-          "user.hello() なので this は user です。定義場所ではなく呼び出し方が決めます。",
+          "order.getCustomer() なので this は order です。定義場所ではなく呼び出し方が決めます。",
       },
       {
         id: "q2",
@@ -1290,33 +1300,35 @@ User.kind; // "user"`,
       {
         id: "q1",
         slide: 0,
+        scenario: "Order クラスから customer を持つ注文インスタンスを生成する。",
+        projectRole: "build",
         prompt:
-          "`User` クラスから名前が Aya のインスタンスを作り、`hello` メソッドの結果を表示してください。",
+          "`Order` クラスから customer が Aya のインスタンスを作り、`receipt` メソッドの結果を表示してください。",
         lead:
-          "クラスは同じ構造を持つオブジェクトを作る設計図です。コンストラクタへ名前を渡してインスタンスを作り、そのインスタンスのメソッドを使います。`hi Aya` が表示されれば完了です。",
+          "クラスは同じ構造を持つオブジェクトを作る設計図です。コンストラクタへ customerを渡してインスタンスを作り、そのインスタンスのメソッドを使います。`customer Aya` が表示されれば完了です。",
         kind: "code",
         starter:
-          'class User {\n constructor(name) {\n this.name = name;\n }\n hello() {\n return "hi " + this.name;\n }\n}\n// 個体を作って hello する\n',
+          'class Order {\n constructor(customer) {\n this.customer = customer;\n }\n receipt() {\n return "customer " + this.customer;\n }\n}\n// 個体を作って receipt する\n',
         fileName: "script.js",
         steps: [
           "クラスへ名前を渡して新しいインスタンスを作る",
-          "そのインスタンスの `hello` メソッドを呼び、戻り値を表示する",
+          "そのインスタンスの `receipt` メソッドを呼び、戻り値を表示する",
         ],
         hint:
           "クラスからオブジェクトを作るときは `new` が必要です。コンストラクタ自身にインスタンスを返す処理を足す必要はありません。",
         sample: "hi Aya",
-        answer: `class User {
-  constructor(name) {
-    this.name = name;
+        answer: `class Order {
+  constructor(customer) {
+    this.customer = customer;
   }
-  hello() {
-    return "hi " + this.name;
+  receipt() {
+    return "customer " + this.customer;
   }
 }
-const a = new User("Aya");
-console.log(a.hello());`,
+const a = new Order("Aya");
+console.log(a.receipt());`,
         explain:
-          "new すると空の個体に this が入り、constructor が name を付けます。",
+          "new すると空の個体に this が入り、constructor が customer を付けます。",
       },
       {
         id: "q2",

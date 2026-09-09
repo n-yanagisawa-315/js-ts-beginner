@@ -1,7 +1,31 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { IconClose, IconQuestion } from "@/components/icons";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import {
   askLocalAssistant,
   loadLocalAssistant,
@@ -48,11 +72,11 @@ export function LearningAssistant({
   context: LearningAssistantContext;
   onAssistance?: () => void;
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const generationIdRef = useRef(0);
-  const titleId = useId();
+  const questionId = useId();
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [status, setStatus] = useState<AssistantStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState("");
@@ -61,11 +85,12 @@ export function LearningAssistant({
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+    const media = window.matchMedia("(max-width: 620px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   async function prepare() {
     if (!supportsLocalAssistant()) {
@@ -134,39 +159,36 @@ export function LearningAssistant({
 
   return (
     <>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
         className="learning-assistant-trigger"
         aria-label="ここを質問"
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
-        <IconQuestion className="h-5 w-5" />
+        <IconQuestion data-icon="inline-start" />
         <span>ここを質問</span>
-      </button>
+      </Button>
 
-      <dialog
-        ref={dialogRef}
-        className="learning-assistant-dialog"
-        aria-labelledby={titleId}
-        onClose={() => setOpen(false)}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) setOpen(false);
-        }}
+      <AssistantOverlay
+        open={open}
+        mobile={isMobile}
+        onOpenChange={setOpen}
       >
         <section className="learning-assistant-panel">
           <header>
             <div>
               <p>端末内で動く学習アシスタント</p>
-              <h2 id={titleId}>どこが分からない？</h2>
+              <h2>どこが分からない？</h2>
             </div>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label="質問パネルを閉じる"
               onClick={() => setOpen(false)}
             >
-              <IconClose className="h-6 w-6" />
-            </button>
+              <IconClose />
+            </Button>
           </header>
 
           <div className="learning-assistant-context">
@@ -180,9 +202,9 @@ export function LearningAssistant({
                 質問は外部APIへ送らず、この端末だけで処理します。初回のみAIモデルを取得し、
                 端末メモリを約1.6GB使用します。
               </p>
-              <button type="button" className="btn btn-primary" onClick={() => void prepare()}>
+              <Button onClick={() => void prepare()}>
                 端末内AIを準備する
-              </button>
+              </Button>
               <small>モデルはブラウザに保存され、次回から再利用されます。</small>
             </div>
           ) : null}
@@ -193,35 +215,37 @@ export function LearningAssistant({
                 <strong>AIを準備中</strong>
                 <span>{progress}%</span>
               </div>
-              <progress max="100" value={progress} />
+              <Progress value={progress} aria-label="AIモデルの準備進捗" />
               <p>{progressText || "モデルを確認しています…"}</p>
               <small>この画面を閉じても取得は続きます。</small>
             </div>
           ) : null}
 
           {status === "unsupported" ? (
-            <div className="learning-assistant-notice" role="status">
-              <strong>この端末ではAIを動かせません</strong>
-              <p>
+            <Alert role="status">
+              <AlertTitle>この端末ではAIを動かせません</AlertTitle>
+              <AlertDescription>
                 WebGPU対応の最新版ChromeまたはEdgeで開くか、教材の「ヒント」と
                 「スライドで確認」を利用してください。
-              </p>
-            </div>
+              </AlertDescription>
+            </Alert>
           ) : null}
 
           {status === "error" ? (
-            <div className="learning-assistant-notice is-error" role="alert">
-              <strong>AIを準備できませんでした</strong>
-              <p>{error}</p>
-              <button type="button" className="btn btn-line" onClick={() => void prepare()}>
-                もう一度試す
-              </button>
-            </div>
+            <Alert variant="destructive">
+              <AlertTitle>AIを準備できませんでした</AlertTitle>
+              <AlertDescription className="flex flex-col gap-3">
+                <p>{error}</p>
+                <Button variant="outline" onClick={() => void prepare()}>
+                  もう一度試す
+                </Button>
+              </AlertDescription>
+            </Alert>
           ) : null}
 
           {status === "ready" || status === "generating" ? (
             <>
-              <div className="learning-assistant-messages" aria-live="polite">
+              <ScrollArea className="learning-assistant-messages" aria-live="polite">
                 {messages.length === 0 ? (
                   <p className="learning-assistant-empty">
                     分からない言葉や、コードの動きをそのまま質問できます。
@@ -242,19 +266,20 @@ export function LearningAssistant({
                     教材と照らし合わせて考えています…
                   </p>
                 ) : null}
-              </div>
+              </ScrollArea>
 
               {messages.length === 0 ? (
                 <div className="learning-assistant-suggestions">
                   {questionSuggestions.map((suggestion) => (
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       key={suggestion}
-                      type="button"
                       disabled={status === "generating"}
                       onClick={() => void send(suggestion)}
                     >
                       {suggestion}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               ) : null}
@@ -272,10 +297,11 @@ export function LearningAssistant({
                   void send();
                 }}
               >
-                <label htmlFor={`${titleId}-question`}>質問を書く</label>
-                <textarea
+                <Field>
+                <FieldLabel htmlFor={questionId}>質問を書く</FieldLabel>
+                <Textarea
                   ref={inputRef}
-                  id={`${titleId}-question`}
+                  id={questionId}
                   name="learning-assistant-question"
                   autoComplete="off"
                   value={input}
@@ -285,24 +311,23 @@ export function LearningAssistant({
                   placeholder="例: constは、なぜ後から値を変えられないの？…"
                   onChange={(event) => setInput(event.currentTarget.value)}
                 />
+                </Field>
                 <div>
                   <small>{input.length} / 500</small>
                   {status === "generating" ? (
-                    <button
-                      type="button"
-                      className="btn btn-line"
+                    <Button
+                      variant="outline"
                       onClick={() => void stopGeneration()}
                     >
                       生成を止める
-                    </button>
+                    </Button>
                   ) : (
-                    <button
+                    <Button
                       type="submit"
-                      className="btn btn-primary"
                       disabled={!input.trim()}
                     >
                       質問する
-                    </button>
+                    </Button>
                   )}
                 </div>
               </form>
@@ -312,8 +337,50 @@ export function LearningAssistant({
             </>
           ) : null}
         </section>
-      </dialog>
+      </AssistantOverlay>
     </>
+  );
+}
+
+function AssistantOverlay({
+  open,
+  mobile,
+  onOpenChange,
+  children,
+}: {
+  open: boolean;
+  mobile: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  if (mobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="learning-assistant-overlay is-mobile">
+          <DrawerHeader className="sr-only">
+            <DrawerTitle>学習アシスタント</DrawerTitle>
+            <DrawerDescription>
+              現在の講義内容について端末内AIへ質問します。
+            </DrawerDescription>
+          </DrawerHeader>
+          {children}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="learning-assistant-overlay">
+        <SheetHeader className="sr-only">
+          <SheetTitle>学習アシスタント</SheetTitle>
+          <SheetDescription>
+            現在の講義内容について端末内AIへ質問します。
+          </SheetDescription>
+        </SheetHeader>
+        {children}
+      </SheetContent>
+    </Sheet>
   );
 }
 

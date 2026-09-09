@@ -124,24 +124,6 @@ function vocabularyLines(slide: Slide): TalkLine[] | undefined {
   ]);
 }
 
-function storyLines(slide: Slide): TalkLine[] | undefined {
-  if (!slide.storyContext || !slide.storyBeat) return undefined;
-  const questionByBeat = {
-    problem: "今回の仕事では、何が必要になったのですか？",
-    prediction: "コードを見る前に、どんな動きになるか予想してもいいですか？",
-    trace: "注文管理の中で、どの動きを追えばよいですか？",
-    resolution: "ここまでの仕組みで、何を解決できますか？",
-    transfer: "この仕組みは、別の場面でも使えますか？",
-  } as const;
-  return [
-    { speaker: "beginner", text: questionByBeat[slide.storyBeat] },
-    {
-      speaker: "engineer",
-      text: `${slide.storyContext} まず結果を予想し、右のコードと図を同じ順番で追いましょう。`,
-    },
-  ];
-}
-
 const SYNC_STOP_WORDS = new Set([
   "JavaScript",
   "TypeScript",
@@ -351,10 +333,6 @@ function pagesFromExplicitTalk(slide: Slide, lines: TalkLine[]): ConversationPag
   if (vocabulary) {
     pages.push({ lines: vocabulary, focus: "vocabulary" });
   }
-  const story = storyLines(slide);
-  if (story) {
-    pages.push({ lines: story, focus: "story" });
-  }
   for (let index = 0; index < lines.length; index += 4) {
     const pointCount = slide.points?.length ?? 0;
     pages.push({
@@ -412,7 +390,6 @@ export function talkPages(slide: Slide): ConversationPage[] {
   }
 
   const vocabulary = vocabularyLines(slide);
-  const story = storyLines(slide);
   const pages: ConversationPage[] = [
     {
       lines: [
@@ -467,7 +444,6 @@ export function talkPages(slide: Slide): ConversationPage[] {
 
   return synchronizeConversationPages(slide, [
     ...(vocabulary ? [{ lines: vocabulary, focus: "vocabulary" as const }] : []),
-    ...(story ? [{ lines: story, focus: "story" as const }] : []),
     ...pages,
   ]);
 }

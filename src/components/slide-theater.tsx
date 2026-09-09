@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { LearningFlowHeader } from "@/components/learning-flow-header";
 import { SlideBoard } from "@/components/slide-board";
+import { Button } from "@/components/ui/button";
 import { IconChevron } from "@/components/icons";
-import type { Slide } from "@/lib/course";
+import type { Lesson, Slide } from "@/lib/course";
 
 export function SlideTheater({
-  kicker,
+  lesson,
   slide,
   index,
   total,
@@ -17,8 +18,9 @@ export function SlideTheater({
   onContinue,
   onPrev,
   onNext,
+  assistant,
 }: {
-  kicker: string;
+  lesson: Lesson;
   slide: Slide;
   index: number;
   total: number;
@@ -28,11 +30,22 @@ export function SlideTheater({
   onContinue?: () => void;
   onPrev: () => void;
   onNext: () => void;
+  assistant?: ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      const target = event.target;
+      if (
+        event.defaultPrevented ||
+        (target instanceof HTMLElement &&
+          target.closest(
+            "input, textarea, [contenteditable='true'], .monaco-editor, [role='dialog']",
+          ))
+      ) {
+        return;
+      }
       if (event.key === "ArrowRight") {
         event.preventDefault();
         onNext();
@@ -47,29 +60,23 @@ export function SlideTheater({
   }, [onNext, onPrev]);
 
   return (
-    <div
+    <main
+      id="main-content"
       ref={panelRef}
       className="slide-stage relative flex min-h-full min-w-0 flex-1 flex-col"
       aria-labelledby="slide-theater-title"
     >
-      <header className="flex items-center justify-between gap-3 px-5 pt-5 sm:px-10 lg:px-14">
-        <Link
-          href="/"
-          className="btn btn-ghost min-h-11 px-3 text-sm text-[var(--cream-mute)] hover:text-[var(--cream)]"
-        >
-          講座一覧
-        </Link>
-        <p className="font-mono text-xs tracking-widest text-[var(--cream-mute)]">
-          {kicker}
-          <span className="mx-3 text-[var(--figure-line)]">/</span>
-          {String(index + 1).padStart(2, "0")} · {String(total).padStart(2, "0")}
-          {conversationTotal > 1 ? (
-            <span className="ml-3 text-[var(--cream-mute)]">
-              会話 {conversationIndex + 1}/{conversationTotal}
-            </span>
-          ) : null}
-        </p>
-      </header>
+      <LearningFlowHeader
+        lesson={lesson}
+        stage={
+          conversationTotal > 1
+            ? `スライド・会話 ${conversationIndex + 1}/${conversationTotal}`
+            : "スライド"
+        }
+        current={index + 1}
+        total={total}
+        dark
+      />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 sm:px-10 lg:px-14">
         <SlideBoard
@@ -80,18 +87,19 @@ export function SlideTheater({
       </div>
 
       <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--figure-line)] px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-10 lg:px-14">
-        <button
-          type="button"
-          className="btn btn-ghost h-11 w-11 min-h-11 p-0"
+        {assistant ? <div className="mr-auto">{assistant}</div> : null}
+        <Button
+          variant="ghost"
+          size="icon"
           aria-label="前へ"
           onClick={onPrev}
           disabled={index === 0 && conversationIndex === 0}
         >
           <IconChevron dir="left" className="h-6 w-6" />
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost h-11 w-11 min-h-11 p-0"
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           aria-label="次へ"
           onClick={onNext}
           disabled={
@@ -100,17 +108,13 @@ export function SlideTheater({
           }
         >
           <IconChevron dir="right" className="h-6 w-6" />
-        </button>
+        </Button>
         {continueLabel && onContinue ? (
-          <button
-            type="button"
-            className="btn btn-studio ml-2"
-            onClick={onContinue}
-          >
+          <Button className="ml-2" onClick={onContinue}>
             {continueLabel}
-          </button>
+          </Button>
         ) : null}
       </footer>
-    </div>
+    </main>
   );
 }

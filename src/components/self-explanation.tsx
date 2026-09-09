@@ -1,6 +1,12 @@
 "use client";
 
 import { useId } from "react";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Textarea } from "@/components/ui/textarea";
 import type { Question } from "@/lib/course";
 
 export function SelfExplanation({
@@ -19,18 +25,18 @@ export function SelfExplanation({
   const id = useId();
   const reasoning = mode === "reasoning";
   return (
-    <section className={`self-explanation${dark ? " is-dark" : ""}`}>
-      <label htmlFor={id}>
+    <Field className={`self-explanation${dark ? " is-dark" : ""}`}>
+      <FieldLabel htmlFor={id}>
         {reasoning
           ? "次へ進む前に、使った判断基準を1文で説明する"
           : "次へ進む前に、考え方の違いを1文で説明する"}
-      </label>
-      <p>
+      </FieldLabel>
+      <FieldDescription>
         {reasoning
           ? "「まず ___ を確認し、その結果から ___ と判断した」の形で、答えではなく理由を書きます。"
           : "「最初は ___ と思った。実際は ___ の順で動く」の形で、答えではなく理由を書きます。"}
-      </p>
-      <textarea
+      </FieldDescription>
+      <Textarea
         id={id}
         name={`self-explanation-${question.id}`}
         autoComplete="off"
@@ -51,6 +57,6 @@ export function SelfExplanation({
       ) : (
         <small>説明を記録できます。</small>
       )}
-    </section>
+    </Field>
   );
 }

@@ -17,6 +17,8 @@
   言語機能を章立てで学ぶための Mozilla の解説。使いどころ: 構文や概念を初めて学び、動く例とともに全体像をつかむとき。
 - [MDN: JavaScript Reference](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference)
   組み込みオブジェクト、演算子、文、関数のリファレンス。使いどころ: API の引数、戻り値、例外、ブラウザー対応を確認するとき。
+- [MDN: Document Object Model](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
+  HTML要素の取得・作成・更新、イベント、フォームを確認する一次資料。DOM演習では`innerHTML`へ文字列を流し込まず、`createElement`と`textContent`を基本にする。
 - [ECMAScript Language Specification](https://tc39.es/ecma262/)
   JavaScript の規範となる TC39 の仕様。使いどころ: 暗黙の型変換、評価順序、言語機能の厳密な挙動を MDN より深く検証するとき。
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)

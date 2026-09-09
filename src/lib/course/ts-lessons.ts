@@ -167,22 +167,24 @@ age = "二十"; // 型エラー。実行ファイルには到達させない`,
       {
         id: "q4",
         slide: 3,
-        prompt: "数値を受け取り、税込価格を数値で返す addTax 関数を作ってください。",
+        scenario: "単価と個数から order.total を返す関数へ入出力型を付ける。",
+        projectRole: "build",
+        prompt: "単価priceと個数countを数値で受け取り、order.totalを数値で返すcalculateTotal関数を作ってください。",
         lead:
-          "外から使われる関数では、入口と出口の型が利用者への契約になります。価格を1.1倍する処理にその契約を書き、型検査に合格させてください。表示は不要です。",
+          "外から使われる関数では、入口と出口の型が利用者への契約になります。単価と個数を掛ける処理にその契約を書き、型検査に合格させてください。表示は不要です。",
         kind: "code",
-        starter: "// addTax をここで定義する\n",
+        starter: "// calculateTotal をここで定義する\n",
         fileName: "script.ts",
         steps: [
           "price という引数を1つ受け取る関数を定義する",
           "入口と出口がどちらも数値であることを明示する",
-          "受け取った価格を1.1倍して返す",
+          "受け取った単価と個数を掛けて返す",
         ],
         hint:
           "引数名の後ろが入口、丸括弧の後ろが出口の型です。",
         sample: "",
-        answer: `function addTax(price: number): number {
-  return price * 1.1;
+        answer: `function calculateTotal(price: number, count: number): number {
+  return price * count;
 }`,
         explain: "公開関数ほど、入り口と出口の型が契約になります。",
       },
@@ -309,20 +311,22 @@ const pair: [string, number] = ["age", 20];`,
       {
         id: "q1",
         slide: 0,
-        prompt: "文字列専用の displayName を「Mika」で初期化してください。",
+        scenario: "customer を string 型で宣言し、注文入力の基本フィールドを固定する。",
+        projectRole: "build",
+        prompt: "文字列専用の customer を「Mika」で初期化してください。",
         lead:
-          "利用者名へ数値などが混ざらないよう、変更可能な変数に文字列の契約を付けます。表示は不要で、型検査に合格すれば完成です。",
+          "注文の customerへ数値などが混ざらないよう、変更可能な変数に文字列の契約を付けます。表示は不要で、型検査に合格すれば完成です。",
         kind: "code",
-        starter: "// displayName をここで宣言する\n",
+        starter: "// customer をここで宣言する\n",
         fileName: "script.ts",
         steps: [
-          "変更可能な変数 displayName を定義する",
+          "変更可能な変数 customer を定義する",
           "文字列用の型を明示し、指定された文字列で初期化する",
           "値が引用符で囲まれているか確認する",
         ],
         hint: "型名と実際の文字列は書き分けます。型名には引用符を付けず、文字列の値には引用符が必要です。",
         sample: "",
-        answer: 'let displayName: string = "Mika"',
+        answer: 'let customer: string = "Mika"',
         explain:
           "名前の直後にコロンと型を書きます。実行時の変換ではありません。",
       },
@@ -525,21 +529,24 @@ interface UserI { name: string; age: number }`,
       {
         id: "q2",
         slide: 1,
-        prompt: "商品コードと価格を持つ Product 型を定義してください。",
+        scenario: "Order 型に orderId、customer、item、total、status の形を定義する。",
+        projectRole: "build",
+        prompt: "orderId、customer、item、total、statusを持つ Order 型を定義してください。",
         lead:
-          "同じ形の商品を何度も扱えるよう、オブジェクトの設計図に名前を付けます。値は作らず、型検査に使う型の別名だけを定義してください。",
+          "同じ形の注文を何度も扱えるよう、オブジェクトの設計図に名前を付けます。値は作らず、型検査に使う型の別名だけを定義してください。",
         kind: "code",
-        starter: "// Product の形を定義する\n",
+        starter: "// Order の形を定義する\n",
         fileName: "script.ts",
         steps: [
-          "type を使って Product という型名を作る",
-          "code を文字列、price を数値の必須項目にする",
+          "type を使って Order という型名を作る",
+          "orderId・customer・itemを文字列、totalを数値、statusをpaidまたはunpaidの必須項目にする",
           "値のオブジェクトを作っていないことを確認する",
         ],
         hint:
-          "型名へ、2つの項目とそれぞれの値の種類を持つ形を割り当てます。",
+          "型名へ、注文に必要な5項目とそれぞれの値の種類を持つ形を割り当てます。",
         sample: "",
-        answer: "type Product = { code: string; price: number }",
+        answer:
+          'type Order = { orderId: string; customer: string; item: string; total: number; status: "paid" | "unpaid" }',
         explain: "同じ形を何度も書くなら type で別名にします。",
       },
       {
@@ -677,9 +684,11 @@ const either: string[] | number[] = ["a"];`,
       {
         id: "q1",
         slide: 0,
+        scenario: "APIごとに形式が異なる orderId を string | number で表す。",
+        projectRole: "build",
         prompt: "文字列または数値で受け取る OrderId 型を定義してください。",
         lead:
-          "注文番号はシステムによって文字列または数値で届きます。両方を候補にし、それ以外は許さない型を作ってください。",
+          "orderIdはシステムによって文字列または数値で届きます。両方を候補にし、それ以外は許さない型を作ってください。",
         kind: "code",
         starter: "// OrderId をここで定義する\n",
         fileName: "script.ts",
@@ -853,11 +862,13 @@ function parse(x: string | number) {
       {
         id: "q1",
         slide: 0,
-        prompt: "単価と個数を受け取り、合計金額を返す total 関数を作ってください。",
+        scenario: "単価と個数から order.total を返す calculateTotal の型契約を作る。",
+        projectRole: "build",
+        prompt: "単価と個数を受け取り、order.calculateTotal を返す calculateTotal 関数を作ってください。",
         lead:
           "関数の利用者に、2つの入力と1つの出力がすべて数値だと伝えます。計算結果の表示は不要で、型検査に合格すれば完成です。",
         kind: "code",
-        starter: "// total をここで定義する\n",
+        starter: "// calculateTotal をここで定義する\n",
         fileName: "script.ts",
         steps: [
           "price と quantity が数値であることを明示する",
@@ -866,7 +877,7 @@ function parse(x: string | number) {
         ],
         hint: "引数ごとに入力の型が必要です。さらに、関数の閉じ括弧のあとで出力の型を示します。",
         sample: "",
-        answer: `function total(price: number, quantity: number): number {
+        answer: `function calculateTotal(price: number, quantity: number): number {
   return price * quantity;
 }`,
         explain: "呼び出し側が文字列を渡すと、実行前にエラーになります。",
@@ -1040,11 +1051,13 @@ function parse(x: string | number) {
       {
         id: "q1",
         slide: 0,
-        prompt: "文字列なら大文字、数値なら整数表記を返す formatId を作ってください。",
+        scenario: "string | number の orderId を絞り込み、表示用文字列へ変換する。",
+        projectRole: "build",
+        prompt: "文字列なら大文字、数値なら整数表記を返す formatOrderId を作ってください。",
         lead:
-          "1つの値が文字列か数値かを実行時に確かめ、それぞれでだけ使えるメソッドを呼びます。どちらの分岐も文字列を返し、型検査に合格させてください。",
+          "orderIdが文字列か数値かを実行時に確かめ、それぞれでだけ使えるメソッドを呼びます。どちらの分岐も文字列を返し、型検査に合格させてください。",
         kind: "code",
-        starter: "// formatId をここで定義する\n",
+        starter: "// formatOrderId をここで定義する\n",
         fileName: "script.ts",
         steps: [
           "文字列または数値の id を受け取る関数を定義する",
@@ -1054,7 +1067,7 @@ function parse(x: string | number) {
         hint:
           "typeofの結果が文字列を示す \"string\" か確認すると、一方の枝では文字列、残りでは数値として扱えます。",
         sample: "",
-        answer: `function formatId(id: string | number): string {
+        answer: `function formatOrderId(id: string | number): string {
   if (typeof id === "string") return id.toUpperCase();
   return id.toFixed(0);
 }`,
@@ -1284,22 +1297,24 @@ if (typeof raw === "string") {
       {
         id: "q4",
         slide: 3,
-        prompt: "name を持つオブジェクトか判定する型ガード isNamed を作ってください。",
+        scenario: "unknown のAPIデータが orderId を持つ Order か型ガードで検査する。",
+        projectRole: "build",
+        prompt: "orderId を持つオブジェクトか判定する型ガード isOrder を作ってください。",
         lead:
-          "外部の値を `{ name: string }` として使う前に、値がオブジェクトであり、name が文字列であることを実行時に確認します。",
+          "外部の値を `{ orderId: string }` として使う前に、値がオブジェクトであり、orderId が文字列であることを実行時に確認します。",
         kind: "code",
-        starter: "// isNamed をここで定義する\n",
+        starter: "// isOrder をここで定義する\n",
         fileName: "script.ts",
         steps: [
           "unknown の x を受け取り、成功時のオブジェクト型を型述語で示す",
           "x が null ではないオブジェクトか確認する",
-          "name の存在と、その値が文字列であることを確認して返す",
+          "orderId の存在と、その値が文字列であることを確認して返す",
         ],
         hint:
           "typeofの結果が \"object\" でnullではないと確認した後、`in` で項目の存在を調べます。",
         sample: "",
-        answer: `function isNamed(x: unknown): x is { name: string } {
-  return typeof x === "object" && x !== null && "name" in x && typeof x.name === "string";
+        answer: `function isOrder(x: unknown): x is { orderId: string } {
+  return typeof x === "object" && x !== null && "orderId" in x && typeof x.orderId === "string";
 }`,
         explain:
           "型述語だけでなく、保証する形を実行時の条件で実際に確認します。",
@@ -1440,25 +1455,27 @@ first([1, 2]); // number | undefined`,
       {
         id: "q3",
         slide: 2,
-        prompt: "title を持つ値xだけを受け取り、その title を返す getTitle 関数を作ってください。",
+        scenario: "customer を持つ任意の Order 派生型から customer を安全に取り出す。",
+        projectRole: "build",
+        prompt: "customer を持つ注文xだけを受け取り、その customer を返す getCustomer 関数を作ってください。",
         lead:
           "元の詳しい型を保ちながら、関数内で必要な項目だけを最低条件として要求します。画面への表示は不要で、型検査が通れば完成です。",
         kind: "code",
-        starter: "// getTitle をここで定義する\n",
+        starter: "// getCustomer をここで定義する\n",
         fileName: "script.ts",
         steps: [
-          "型引数に、文字列の title を持つという制約を付ける",
-          "制約された値を引数として受け取る getTitle 関数を定義する",
-          "引数の title を返す",
+          "型引数に、文字列の customer を持つという制約を付ける",
+          "制約された値を引数として受け取る getCustomer 関数を定義する",
+          "引数の customer を返す",
         ],
         hint:
           "型引数の後ろへ、関数内で必要な最小限のオブジェクト形を条件として付けます。",
         sample: "",
-        answer: `function getTitle<T extends { title: string }>(x: T) {
-  return x.title;
+        answer: `function getCustomer<T extends { customer: string }>(x: T) {
+  return x.customer;
 }`,
         explain:
-          "制約により title を安全に読め、引数が持つ他の詳しい型も保たれます。",
+          "制約により customer を安全に読め、引数が持つ他の詳しい型も保たれます。",
       },
       {
         id: "q4",
@@ -1582,22 +1599,24 @@ type R = ReturnType<typeof add>; // number`,
       {
         id: "q1",
         slide: 0,
-        prompt: "Profile の全項目を省略可能にした ProfilePatch 型を定義してください。",
+        scenario: "Order の一部更新入力を Partial<Order> から OrderPatch として作る。",
+        projectRole: "build",
+        prompt: "Order の全項目を省略可能にした OrderPatch 型を定義してください。",
         lead:
-          "プロフィールの一部だけを更新できる入力型を、元の型との関係を保って作ります。starter は変更せず、型検査に合格させてください。",
+          "注文の一部だけを更新できる入力型を、元の型との関係を保って作ります。starter は変更せず、型検査に合格させてください。",
         kind: "code",
         starter:
-          "type Profile = { nickname: string; bio: string };\n// 派生型を追加する\n",
+          "type Order = { nickname: string; bio: string };\n// 派生型を追加する\n",
         fileName: "script.ts",
         steps: [
-          "starter の Profile 型を変更せずに残す",
+          "starter の Order 型を変更せずに残す",
           "全項目を省略可能にする組み込み型を適用する",
-          "変換後の型に ProfilePatch という名前を付ける",
+          "変換後の型に OrderPatch という名前を付ける",
         ],
         hint: "各プロパティを手作業で書き直すのではなく、元の型全体を受け取って任意化する組み込み型を使います。",
         sample: "",
-        answer: `type Profile = { nickname: string; bio: string };
-type ProfilePatch = Partial<Profile>;`,
+        answer: `type Order = { nickname: string; bio: string };
+type OrderPatch = Partial<Order>;`,
         explain:
           "Partial<T> が全キーを任意にします。更新用の入力によく使います。",
       },
@@ -1796,7 +1815,9 @@ type X = Unwrap<Promise<number>>; // number`,
       {
         id: "q3",
         slide: 2,
-        prompt: "注文状態の分岐漏れを検出する assertNever 関数を作ってください。",
+        scenario: "paid/unpaid の注文状態追加時に分岐漏れを never で検出する。",
+        projectRole: "build",
+        prompt: "paid/unpaid を扱う注文状態の分岐漏れを検出する assertNever 関数を作ってください。",
         lead: "すべての状態を処理した後に残る、到達しない値だけを受け取ります。新しい状態の処理漏れは型エラーにし、万一実行された場合はメッセージ「unexpected」のエラーを投げて停止してください。",
         kind: "code",
         starter: "// assertNever をここで定義する\n",

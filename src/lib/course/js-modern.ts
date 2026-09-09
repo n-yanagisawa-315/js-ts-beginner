@@ -140,12 +140,14 @@ console.log(user.address?.city);`,
       {
         id: "q2",
         slide: 1,
+        scenario: "未登録と0件を区別し、order-count の0を保持する。",
+        projectRole: "build",
         prompt:
-          "在庫数 `n` は現在 0 件で、未登録時の初期表示は 10 件です。論理 OR と Null 合体演算子で初期値を指定した結果を、この順に表示してください。",
+          "`orderCount` は現在 0 件で、未登録時の初期表示は 10 件です。論理 OR と Null 合体演算子で初期値を指定した結果を、この順に表示してください。",
         lead:
-          "入力には有効な在庫数として `0` が用意されています。2つの演算子で同じ代替値 `10` を指定し、0件を未登録扱いする場合と保持する場合の違いを確認します。`10`、`0` の順に表示されれば完了です。",
+          "入力には有効な注文件数として `0` が用意されています。2つの演算子で同じ代替値 `10` を指定し、order-count 0を未登録扱いする場合と保持する場合の違いを確認します。`10`、`0` の順に表示されれば完了です。",
         kind: "code",
-        starter: "const n = 0;\n// || と ?? を順に表示\n",
+        starter: "const orderCount = 0;\n// || と ?? を順に表示\n",
         fileName: "script.js",
         steps: [
           "最初に、0を偽とみなす演算子で代替値を指定し、結果を表示する",
@@ -153,11 +155,11 @@ console.log(user.address?.city);`,
           "2つの結果の違いを確認する",
         ],
         hint:
-          "左側はどちらも `n`、代替値も同じです。違うのは、0を代替対象として扱うかどうかです。",
+          "左側はどちらも `orderCount`、代替値も同じです。違うのは、0を代替対象として扱うかどうかです。",
         sample: "10\n0",
-        answer: `const n = 0;
-console.log(n || 10);
-console.log(n ?? 10);`,
+        answer: `const orderCount = 0;
+console.log(orderCount || 10);
+console.log(orderCount ?? 10);`,
         explain: "|| は 0 を潰し、?? は 0 を残します。件数のデフォルトは ?? です。",
       },
       {
@@ -356,12 +358,14 @@ console.log(Error.isError({ message: "x" }));`,
       {
         id: "q1",
         slide: 0,
+        scenario: "order-list の末尾から最新 orderId を at で取得する。",
+        projectRole: "build",
         prompt:
-          "直近3回のテスト得点が `xs` に古い順で入っています。`at` を使って最新の得点を取得し、表示してください。",
+          "3件の orderId が `orders` に古い順で入っています。`at` を使って最新の orderIdを取得し、表示してください。",
         lead:
-          "入力は `[80, 90, 70]` で、最新値は配列の末尾です。配列の長さを計算せず後ろから位置を指定し、`70` が表示されれば完了です。",
+          '入力は `["order-1", "order-2", "order-3"]` で、最新 orderId は配列の末尾です。配列の長さを計算せず後ろから位置を指定し、`order-3` が表示されれば完了です。',
         kind: "code",
-        starter: "const xs = [80, 90, 70];\n// 最後の号車\n",
+        starter: 'const orders = ["order-1", "order-2", "order-3"];\n// 最新の orderId\n',
         fileName: "script.js",
         steps: [
           "末尾から1番目を表す負の位置を `at` に指定する",
@@ -369,9 +373,9 @@ console.log(Error.isError({ message: "x" }));`,
         ],
         hint:
           "通常の角括弧による参照では負の数を末尾からの位置として扱いません。`at` の負数対応を利用しましょう。",
-        sample: "70",
-        answer: `const xs = [80, 90, 70];
-console.log(xs.at(-1));`,
+        sample: "order-3",
+        answer: `const orders = ["order-1", "order-2", "order-3"];
+console.log(orders.at(-1));`,
         explain: "at(-1) が最後の号車です。範囲外は undefined です。",
       },
       {

@@ -374,23 +374,25 @@ hello();`,
       {
         id: "q3",
         slide: 2,
-        prompt: "用意済みのadd関数で、2商品と3商品、10商品と1商品の合計をそれぞれ表示してください。",
-        lead: "addは2つの個数を受け取って合計を返します。関数本体は変更せず、2組の入力で順に呼び出し、5と11が別々の行へ表示されれば完成です。",
+        scenario: "複数明細の金額を再利用可能な calculateTotal 関数で合計する。",
+        projectRole: "build",
+        prompt: "用意済みのcalculateTotal関数で、明細金額2と3、10と1の注文合計をそれぞれ表示してください。",
+        lead: "calculateTotalは2つの明細金額を受け取って合計を返します。関数本体は変更せず、2組の入力で順に呼び出し、5と11が別々の行へ表示されれば完成です。",
         kind: "code",
-        starter: "function add(a, b) {\n  return a + b;\n}\n// 2回呼び出す\n",
+        starter: "function calculateTotal(a, b) {\n  return a + b;\n}\n// 2件の注文合計を計算する\n",
         fileName: "script.js",
         steps: [
-          "最初の2値をaddへ渡して結果を表示する",
+          "最初の2値をcalculateTotalへ渡して結果を表示する",
           "次の2値でもaddを呼び出して結果を表示する",
           "2行の順番と値を確認する",
         ],
         hint: "関数の定義はすでに完成しています。同じ関数名に、呼び出すたび異なる引数を渡します。",
         sample: "5\n11",
-        answer: `function add(a, b) {
+        answer: `function calculateTotal(a, b) {
   return a + b;
 }
-console.log(add(2, 3));
-console.log(add(10, 1));`,
+console.log(calculateTotal(2, 3));
+console.log(calculateTotal(10, 1));`,
         explain: "呼び出すたびに別の実行領域が作られます。1回目はa=2・b=3から5を返して終了します。2回目は新しくa=10・b=1から始まるため、前回の途中状態は混ざりません。",
       },
       {
@@ -734,23 +736,25 @@ console.log(user.age); // 20`,
       {
         id: "q1",
         slide: 0,
-        prompt: "会員情報としてname欄がAya、age欄が20のuserを作り、name、age、未登録のcityを順に表示してください。",
-        lead: "1人分の会員情報を、名前付きの欄を持つオブジェクトにまとめます。nameは固定名として、ageは文字列のキーから読み、最後に存在しないcityを確認してください。Aya、20、undefinedの順に表示されれば完成です。",
+        scenario: "customer と total を持つ order オブジェクトを作り、未設定 status も確認する。",
+        projectRole: "build",
+        prompt: "注文情報としてcustomer欄がAya、total欄が112000のorderを作り、customer、total、未登録のstatusを順に表示してください。",
+        lead: "1件分の注文情報を、名前付きの欄を持つオブジェクトにまとめます。customerはドットで、totalは文字列のキーから読み、最後に存在しないstatusを確認してください。Aya、112000、undefinedの順に表示されれば完成です。",
         kind: "code",
-        starter: "// オブジェクト user を作ってください\n",
+        starter: "// オブジェクト order を作ってください\n",
         fileName: "script.js",
         steps: [
-          "指定された2つの欄を持つuserを作る",
-          "nameを固定名の方法で読み表示する",
-          "ageを文字列キーの方法で読み表示する",
-          "cityを読み、未定義になることを確認する",
+          "指定された2つの欄を持つorderを作る",
+          "customerを固定名の方法で読み表示する",
+          "totalを文字列キーの方法で読み表示する",
+          "statusを読み、未定義になることを確認する",
         ],
         hint: "欄を作るときはキーと値を対応させます。存在しない欄を読むだけなら停止せず、未定義の値が返ります。",
-        sample: "Aya\n20\nundefined",
-        answer: `const user = { name: "Aya", age: 20 };
-console.log(user.name);
-console.log(user["age"]);
-console.log(user.city);`,
+        sample: "Aya\n1200\nundefined",
+        answer: `const order = { customer: "Aya", total: 1200 };
+console.log(order.customer);
+console.log(order["total"]);
+console.log(order.status);`,
         explain: "名刺の欄をドットや括弧で読みます。無い欄は undefined です。",
       },
       {
@@ -1058,23 +1062,25 @@ console.log(scores.length);`,
       {
         id: "q2",
         slide: 1,
-        prompt: "注文番号の一覧xsへ新しい番号3を末尾追加し、全一覧と先頭2件の控えを順に表示してください。",
-        lead: "starterには注文番号1、2の配列があります。元の一覧へ3を追加したあと全体を表示し、続けて先頭2要素だけを新しい配列として切り出してください。[1,2,3]と[1,2]の順に表示されれば完成です。",
+        scenario: "order-list に新しい orderId を追加し、一覧と先頭2件を確認する。",
+        projectRole: "build",
+        prompt: "orderId の order-list `orders`へ新しい番号3を末尾追加し、全一覧と先頭2件の控えを順に表示してください。",
+        lead: "starterには orderId 1、2 の `orders`があります。元の一覧へ3を追加したあと全体を表示し、続けて先頭2要素だけを新しい配列として切り出してください。[1,2,3]と[1,2]の順に表示されれば完成です。",
         kind: "code",
-        starter: "const xs = [1, 2];\n// push してから、本体と slice を表示\n",
+        starter: "const orders = [1, 2];\n// push してから、本体と slice を表示\n",
         fileName: "script.js",
         steps: [
-          "xsの末尾へ数値3を追加する",
-          "変更後のxs全体を表示する",
+          "ordersの末尾へ数値3を追加する",
+          "変更後のorders全体を表示する",
           "開始位置0から終了位置2の直前までを、新しい配列として得る",
           "切り出した配列を表示する",
         ],
         hint: "末尾追加のメソッドと、元を変更しない切り出しメソッドを順に使います。切り出しの終了位置は範囲に含まれません。",
         sample: "[1,2,3]\n[1,2]",
-        answer: `const xs = [1, 2];
-xs.push(3);
-console.log(xs);
-console.log(xs.slice(0, 2));`,
+        answer: `const orders = [1, 2];
+orders.push(3);
+console.log(orders);
+console.log(orders.slice(0, 2));`,
         explain:
           "push は列の後ろに並びます。slice は写真なので、列そのものは変わりません。",
       },
@@ -1449,24 +1455,26 @@ while (n > 0) {
       {
         id: "q1",
         slide: 0,
-        prompt: "starterの商品数nに在庫がある場合だけ、「正の数」と表示してください。",
-        lead: "nには在庫数5が用意されています。0より大きいときだけ指定文を表示し、0個や負の値なら何も表示しない構造にしてください。現在の入力では1行表示されれば完成です。",
+        scenario: "order.total が正なら、集計対象の注文として分岐する。",
+        projectRole: "build",
+        prompt: "starterの注文金額totalが0より大きい場合だけ、「集計対象」と表示してください。",
+        lead: "totalには注文金額1200が用意されています。0より大きいときだけ指定文を表示し、0円や負の値なら何も表示しない構造にしてください。現在の入力では1行表示されれば完成です。",
         kind: "code",
-        starter: "const n = 5;\n// if で判定して表示\n",
+        starter: "const total = 1200;\n// if で判定して表示\n",
         fileName: "script.js",
         steps: [
-          "nが0より大きいかを条件として評価する",
+          "totalが0より大きいかを条件として評価する",
           "条件が成り立つ範囲内だけで指定文を表示する",
           "不要な別経路を追加していないか確認する",
         ],
         hint: "条件が真のときだけ動くブロックを作ります。今回は条件が偽の場合の処理は必要ありません。",
-        sample: "正の数",
-        answer: `const n = 5;
-if (n > 0) {
-  console.log("正の数");
+        sample: "集計対象",
+        answer: `const total = 1200;
+if (total > 0) {
+  console.log("集計対象");
 }`,
         explain:
-          "条件が true のときだけ { } の中が動きます。n は 5 なので表示されます。",
+          "条件が true のときだけ { } の中が動きます。total は 1200 なので表示されます。",
       },
       {
         id: "q2",
@@ -1817,11 +1825,13 @@ xs.forEach((x) => {
       {
         id: "q1",
         slide: 0,
-        prompt: "買い物リストの配列を番号付きforループで確認し、りんご、みかんの順に1行ずつ表示してください。",
-        lead: "starterには2つの商品名が順に用意されています。添字を0から始め、要素数に達する前まで繰り返して、各位置の商品名を表示してください。",
+        scenario: "order-list を先頭から走査し、各 orderId を表示する。",
+        projectRole: "build",
+        prompt: "order-listを番号付きforループで確認し、order-1、order-2の順に1行ずつ表示してください。",
+        lead: "starterには2つの orderIdが順に用意されています。添字を0から始め、要素数に達する前まで繰り返して、各位置のorderIdを表示してください。",
         kind: "code",
         starter:
-          'const xs = ["りんご", "みかん"];\n// i を 0 から length 未満まで\n',
+          'const orders = ["order-1", "order-2"];\n// i を 0 から length 未満まで\n',
         fileName: "script.js",
         steps: [
           "添字を0から開始する",
@@ -1831,12 +1841,12 @@ xs.forEach((x) => {
         ],
         hint: "配列の長さと同じ位置は範囲外です。現在の添字を角括弧で配列に渡すと、その位置の値を読めます。",
         sample: "りんご\nみかん",
-        answer: `const xs = ["りんご", "みかん"];
-for (let i = 0; i < xs.length; i++) {
-  console.log(xs[i]);
+        answer: `const orders = ["order-1", "order-2"];
+for (let i = 0; i < orders.length; i++) {
+  console.log(orders[i]);
 }`,
         explain:
-          "番号 i で xs[i] を取ります。終わる条件は i < xs.length です。",
+          "番号 i で orders[i] を取ります。終わる条件は i < orders.length です。",
       },
       {
         id: "q2",
@@ -2190,11 +2200,13 @@ console.log(leaked);`,
       {
         id: "q4",
         slide: 3,
-        prompt: "1回の処理回数だけを数えるfを完成させ、2回呼んでも毎回1から始まることを確認してください。",
-        lead: "fの中には局所変数nを0で用意し、その呼び出し中に1増やして返します。starterはfを2回呼んで結果を表示します。前回の状態を持ち越さず、どちらも1になれば完成です。",
+        scenario: "注文ごとの処理回数をローカル変数に保ち、別の注文へ持ち越さない。",
+        projectRole: "build",
+        prompt: "1件の注文内の処理回数だけを数える processOrderを完成させ、2回呼んでも毎回1から始まることを確認してください。",
+        lead: "processOrderの中には局所変数orderCountを0で用意し、その呼び出し中に1増やして返します。starterはprocessOrderを2回呼んで結果を表示します。前回の状態を持ち越さず、どちらも1になれば完成です。",
         kind: "code",
         starter:
-          "function f() {\n // 局所変数 n を 0 から 1 増やす\n}\nconsole.log(f());\nconsole.log(f());\n",
+          "function processOrder() {\n // 局所変数 n を 0 から 1 増やす\n}\nconsole.log(processOrder());\nconsole.log(processOrder());\n",
         fileName: "script.js",
         steps: [
           "関数内に0から始まる局所変数nを作る",
@@ -2204,13 +2216,13 @@ console.log(leaked);`,
         ],
         hint: "nを関数の外へ出すと状態が残ります。今回は関数の内側で毎回作り直されるスコープを使います。",
         sample: "1\n1",
-        answer: `function f() {
-  let n = 0;
+        answer: `function processOrder() {
+  let orderCount = 0;
   n++;
-  return n;
+  return orderCount;
 }
-console.log(f());
-console.log(f());`,
+console.log(processOrder());
+console.log(processOrder());`,
         explain:
           "前回の滞在の荷物は残りません。残したいなら戻り値で渡すか、外側の変数を使います。",
       },

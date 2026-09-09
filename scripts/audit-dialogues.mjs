@@ -11,6 +11,7 @@ const COURSE_FILES = [
   "js-middle.ts",
   "js-modern.ts",
   "js-advanced.ts",
+  "js-dom.ts",
   "js-npm.ts",
   "ts-lessons.ts",
   "ts-modern.ts",

@@ -11,7 +11,7 @@ const INLINE_TOKEN =
 const KEYWORD_TOKEN =
   /^(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|npm|npx|LTS|stdout|stderr)$/;
 const STORY_BEAT_LABEL = {
-  problem: "起きたこと",
+  problem: "今回の作業",
   prediction: "予想する",
   trace: "動きを追う",
   resolution: "解決する",

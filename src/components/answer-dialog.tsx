@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { HighlightEditor } from "@/components/highlight-editor";
-import { IconCloseCircle, IconFile } from "@/components/icons";
+import { IconFile } from "@/components/icons";
 import { NodeTermLines, NodeTermPrompt } from "@/components/node-terminal";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { TermLine } from "@/lib/course";
 
 export function AnswerDialog({
@@ -31,44 +40,43 @@ export function AnswerDialog({
   termAlive?: boolean;
   onClose: () => void;
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
   const [compare, setCompare] = useState(false);
-  if (!open && compare) {
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  function close() {
     setCompare(false);
+    onClose();
   }
 
-  useEffect(() => {
-    const node = dialogRef.current;
-    if (!node) return;
-    if (open) {
-      if (!node.open) node.showModal();
-    } else if (node.open) {
-      node.close();
-    }
-  }, [open]);
-
   return (
-    <dialog
-      ref={dialogRef}
-      className="answer-dialog"
-      aria-labelledby={titleId}
-      onClose={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) close();
       }}
     >
-      <button
-        type="button"
-        className="answer-close"
-        aria-label="閉じる"
-        onClick={onClose}
+      <DialogContent
+        className="answer-dialog-content"
+        onOpenAutoFocus={() => {
+          returnFocusRef.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          returnFocusRef.current?.focus();
+        }}
       >
-        <IconCloseCircle className="h-9 w-9" />
-      </button>
-      <div className="answer-modal">
+        <DialogHeader className="sr-only">
+          <DialogTitle>解答例</DialogTitle>
+          <DialogDescription>
+            解答例と自分のコードを比較できます。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="answer-modal">
         <div className="answer-tabs">
-          <p id={titleId} className="answer-tab is-on">
+          <p className="answer-tab is-on">
             答え
           </p>
         </div>
@@ -95,16 +103,16 @@ export function AnswerDialog({
               </span>
             )}
             {shell ? null : (
-              <button
-                type="button"
-                className="answer-compare"
-                role="switch"
-                aria-checked={compare}
-                onClick={() => setCompare((on) => !on)}
-              >
-                <span>自分のコードと比べてみる</span>
-                <span className={`answer-switch${compare ? " is-on" : ""}`} />
-              </button>
+              <div className="answer-compare">
+                <Label htmlFor="answer-compare">
+                  自分のコードと比べてみる
+                </Label>
+                <Switch
+                  id="answer-compare"
+                  checked={compare}
+                  onCheckedChange={setCompare}
+                />
+              </div>
             )}
           </header>
           {shell ? (
@@ -124,7 +132,7 @@ export function AnswerDialog({
               <section className="answer-split-pane">
                 <p className="answer-split-label">自分のコード</p>
                 <HighlightEditor
-                  id={`${titleId}-mine`}
+                  id="answer-mine"
                   value={mine}
                   language={language}
                   readOnly
@@ -134,7 +142,7 @@ export function AnswerDialog({
               <section className="answer-split-pane">
                 <p className="answer-split-label">答え</p>
                 <HighlightEditor
-                  id={`${titleId}-answer`}
+                  id="answer-example"
                   value={code}
                   language={language}
                   readOnly
@@ -144,7 +152,7 @@ export function AnswerDialog({
             </div>
           ) : (
             <HighlightEditor
-              id={`${titleId}-code`}
+              id="answer-code"
               value={code}
               language={language}
               readOnly
@@ -153,6 +161,7 @@ export function AnswerDialog({
           )}
         </div>
       </div>
-    </dialog>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -36,7 +36,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ja"
       className={`${serif.variable} ${rounded.variable} ${code.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-desk">{children}</body>
+      <body className="flex min-h-full flex-col bg-desk">
+        <a href="#main-content" className="skip-link">
+          メインコンテンツへ移動
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

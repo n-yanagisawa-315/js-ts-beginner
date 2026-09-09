@@ -401,6 +401,73 @@ console.log(text);
 });
 // 新規を断り、進行中を待ってから終了`,
   },
+  "dom-tree": {
+    label: "index.html",
+    code: `<main id="orders">
+  <p id="order-count">0件</p>
+  <ul id="order-list"></ul>
+</main>`,
+  },
+  "dom-query": {
+    label: "orders.js",
+    code: `const count = document.querySelector("#order-count");
+console.log(count.textContent);`,
+  },
+  "dom-update": {
+    label: "orders.js",
+    code: `const count = document.querySelector("#order-count");
+count.textContent = "3件";
+count.classList.add("is-ready");`,
+  },
+  "dom-create": {
+    label: "orders.js",
+    code: `const row = document.createElement("li");
+row.textContent = "ORD-1042 Aya";
+document.querySelector("#order-list").append(row);`,
+  },
+  "dom-event": {
+    label: "orders.js",
+    code: `const button = document.querySelector("[data-pay]");
+button.addEventListener("click", () => {
+  button.textContent = "支払済み";
+});`,
+  },
+  "dom-form": {
+    label: "orders.js",
+    code: `const form = document.querySelector("#order-form");
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const data = new FormData(form);
+  console.log(data.get("customer"));
+});`,
+  },
+  "dom-render": {
+    label: "orders.js",
+    code: `function render(orders) {
+  const list = document.querySelector("#order-list");
+  list.replaceChildren();
+  orders.forEach((order) => {
+    const row = document.createElement("li");
+    row.textContent = order.customer;
+    list.append(row);
+  });
+}`,
+  },
+  "dom-storage": {
+    label: "orders.js",
+    code: `localStorage.setItem("orders", JSON.stringify(orders));
+const saved = JSON.parse(localStorage.getItem("orders") ?? "[]");`,
+  },
+  "dom-fetch": {
+    label: "orders.js",
+    code: `status.textContent = "読込中";
+try {
+  const response = await fetch("/api/demo-orders");
+  render(await response.json());
+} catch {
+  status.textContent = "再読み込みしてください";
+}`,
+  },
 };
 
 export function listingsFor(slide: {

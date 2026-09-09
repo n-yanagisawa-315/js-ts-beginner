@@ -120,6 +120,12 @@ function contextVariant(question: Question, attemptCount: number): Question {
 }
 
 export function reviewVariant(question: Question, attemptCount: number): Question {
+  if (question.runtime === "dom") {
+    return {
+      ...contextVariant(question, attemptCount),
+      scenario: `同じ注文画面を白紙からもう一度組み立てます。${question.scenario ?? ""}`,
+    };
+  }
   const replacement = replacementFor(question);
   if (!replacement) return contextVariant(question, attemptCount);
 

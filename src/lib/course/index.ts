@@ -1,6 +1,7 @@
 import { jsAdvanced } from "./js-advanced";
 import { jsBasic } from "./js-basic";
 import { jsCallback } from "./js-callback";
+import { jsDom } from "./js-dom";
 import { jsMiddle } from "./js-middle";
 import { jsModern } from "./js-modern";
 import { jsNpm } from "./js-npm";
@@ -21,6 +22,7 @@ export type {
   Lesson,
   Level,
   Question,
+  ProjectRole,
   ScaffoldLevel,
   Slide,
   StoryBeat,
@@ -46,6 +48,7 @@ const rawLessons: Lesson[] = [
   ...jsMiddle,
   ...jsModern,
   ...jsAdvanced,
+  ...jsDom,
   ...jsNpm,
   ...tsLessons,
   ...tsModern,

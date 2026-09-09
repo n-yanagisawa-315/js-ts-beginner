@@ -72,7 +72,16 @@ export type DiagramId =
   | "node-stream"
   | "node-libuv"
   | "node-error"
-  | "node-prod";
+  | "node-prod"
+  | "dom-tree"
+  | "dom-query"
+  | "dom-update"
+  | "dom-create"
+  | "dom-event"
+  | "dom-form"
+  | "dom-render"
+  | "dom-storage"
+  | "dom-fetch";
 
 export type TalkLine = {
   speaker: "engineer" | "beginner";
@@ -126,6 +135,7 @@ export type ExerciseKind =
 
 export type ScaffoldLevel = "worked" | "guided" | "faded" | "independent";
 export type TransferLevel = "same" | "near" | "far";
+export type ProjectRole = "drill" | "build" | "transfer";
 
 export type Question = {
   id: string;
@@ -142,6 +152,9 @@ export type Question = {
   aliases?: string[];
   termOutput?: TermLine[];
   termAlive?: boolean;
+  runtime?: "console" | "dom";
+  fixtureHtml?: string;
+  domProbe?: string;
   steps?: string[];
   hint?: string;
   sample?: string;
@@ -155,6 +168,7 @@ export type Question = {
   scaffoldLevel?: ScaffoldLevel;
   contrastGroup?: string;
   transferLevel?: TransferLevel;
+  projectRole?: ProjectRole;
   misconceptionId?: string;
   feedbackByAnswer?: Record<string, string>;
   misconceptionByAnswer?: Record<
@@ -175,6 +189,7 @@ export type ChapterId =
   | "js-ref"
   | "js-class"
   | "js-async"
+  | "js-dom"
   | "js-module"
   | "js-npm"
   | "ts-intro"

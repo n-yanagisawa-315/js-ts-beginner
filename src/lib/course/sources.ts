@@ -116,6 +116,51 @@ const TOPIC_SOURCES: Partial<Record<DiagramId, CourseSource>> = {
     url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_classes",
     publisher: "MDN",
   },
+  "dom-tree": {
+    title: "Introduction to the DOM",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Introduction",
+    publisher: "MDN",
+  },
+  "dom-query": {
+    title: "Document.querySelector()",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector",
+    publisher: "MDN",
+  },
+  "dom-update": {
+    title: "Node.textContent",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent",
+    publisher: "MDN",
+  },
+  "dom-create": {
+    title: "Document.createElement()",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement",
+    publisher: "MDN",
+  },
+  "dom-event": {
+    title: "EventTarget.addEventListener()",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener",
+    publisher: "MDN",
+  },
+  "dom-form": {
+    title: "FormData",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/FormData",
+    publisher: "MDN",
+  },
+  "dom-render": {
+    title: "Element: replaceChildren()",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Element/replaceChildren",
+    publisher: "MDN",
+  },
+  "dom-storage": {
+    title: "Window.localStorage",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage",
+    publisher: "MDN",
+  },
+  "dom-fetch": {
+    title: "Using the Fetch API",
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch",
+    publisher: "MDN",
+  },
   narrow: {
     title: "Narrowing",
     url: "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",

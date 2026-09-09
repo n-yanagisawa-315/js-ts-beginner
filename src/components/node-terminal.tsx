@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useId, useRef, type FormEvent, type ReactNode } from "react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import type { TermLine } from "@/lib/course";
 
 export function NodeTermPrompt({ cwd }: { cwd: string }) {
@@ -60,6 +66,7 @@ export function NodeTermInput({
       <input
         ref={inputRef}
         id={id}
+        name="node-command"
         value={value}
         disabled={disabled}
         autoCapitalize="off"
@@ -86,29 +93,29 @@ export function NodeTermChrome({
 }) {
   return (
     <section className="node-term">
-      <header className="node-term-tabs">
-        <button
-          type="button"
-          className={`node-term-tab${active === 1 ? " is-on" : ""}`}
-          onClick={() => onSelect(1)}
-        >
+      <Tabs
+        value={String(active)}
+        onValueChange={(value) => onSelect(value === "2" ? 2 : 1)}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+      <TabsList className="node-term-tabs">
+        <TabsTrigger value="1" className="node-term-tab">
           <span className="node-term-glyph" aria-hidden="true">
             &gt;_
           </span>
           ターミナル1
-        </button>
-        <button
-          type="button"
-          className={`node-term-tab${active === 2 ? " is-on" : ""}`}
-          onClick={() => onSelect(2)}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="2" className="node-term-tab">
           <span className="node-term-glyph" aria-hidden="true">
             &gt;_
           </span>
           ターミナル2
-        </button>
-      </header>
-      <div className="node-term-body">{children}</div>
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value={String(active)} forceMount className="node-term-body mt-0">
+        {children}
+      </TabsContent>
+      </Tabs>
       {footer}
     </section>
   );

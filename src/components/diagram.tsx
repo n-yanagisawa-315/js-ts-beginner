@@ -738,6 +738,86 @@ function DiagramContent({ id }: { id: DiagramId }) {
           ]}
         />
       );
+    case "dom-tree":
+      return (
+        <Rail
+          steps={[
+            { title: "document", note: "ページ全体の入口" },
+            { title: "main", note: "注文管理のまとまり" },
+            { title: "#order-list", note: "注文行を置く場所" },
+          ]}
+        />
+      );
+    case "dom-query":
+      return (
+        <Flow>
+          <Cell label="CSS セレクター" value='"#order-count"' />
+          <Arrow label="querySelector" />
+          <Cell label="見つかった要素" value="<span>" tone="mark" />
+        </Flow>
+      );
+    case "dom-update":
+      return (
+        <Flow>
+          <Cell label="変更前" value="注文 0件" tone="gone" />
+          <Arrow label="textContent" />
+          <Cell label="変更後" value="注文 3件" tone="mark" />
+        </Flow>
+      );
+    case "dom-create":
+      return (
+        <Rail
+          steps={[
+            { title: "createElement", note: "空の li を作る" },
+            { title: "textContent", note: "注文内容を入れる" },
+            { title: "append", note: "一覧へつなぐ" },
+          ]}
+        />
+      );
+    case "dom-event":
+      return (
+        <Flow>
+          <Cell label="利用者" value="クリック" />
+          <Arrow label="event" />
+          <Cell label="listener" value="支払状態を更新" tone="mark" />
+        </Flow>
+      );
+    case "dom-form":
+      return (
+        <Rail
+          steps={[
+            { title: "submit を受け取る" },
+            { title: "preventDefault で再読込を止める" },
+            { title: "FormData から注文を作る" },
+          ]}
+        />
+      );
+    case "dom-render":
+      return (
+        <Flow>
+          <Cell label="state" value="orders + filter" />
+          <Arrow label="render" />
+          <Cell label="DOM" value="表示する注文だけ" tone="mark" />
+        </Flow>
+      );
+    case "dom-storage":
+      return (
+        <Flow>
+          <Cell label="配列" value="orders" />
+          <Arrow label="JSON.stringify" />
+          <Cell label="localStorage" value="文字列で保存" tone="mark" />
+        </Flow>
+      );
+    case "dom-fetch":
+      return (
+        <Rail
+          steps={[
+            { title: "読込中を表示" },
+            { title: "fetch で注文APIへ依頼" },
+            { title: "成功は一覧、失敗は案内を表示" },
+          ]}
+        />
+      );
     default:
       return null;
   }

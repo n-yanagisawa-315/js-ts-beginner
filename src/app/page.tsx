@@ -1,43 +1,68 @@
 import { HomeTracks } from "@/components/home-tracks";
+import { OrderProjectPreview } from "@/components/order-project-preview";
+import { Badge } from "@/components/ui/badge";
 import { lessonsByTrack } from "@/lib/course";
 
 export default function Home() {
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="bg-desk px-5 py-12 sm:px-10 lg:px-14 lg:py-16">
-        <p className="font-mono text-xs tracking-[0.18em] text-studio">
-          しくみ講座 · JS / TS / NODE
-        </p>
-        <h1 className="mt-4 max-w-3xl font-serif text-[2.15rem] font-medium leading-[1.2] tracking-tight sm:text-5xl">
-          値の動きを見てから、
-          <br className="hidden sm:block" />
-          型と実行環境へ進む。
-        </h1>
-        <p className="mt-5 max-w-xl text-base leading-7 text-mute">
-          各講義は編に分かれていて、基礎から上級まで順に厚くなります。図と参考コードのスライドのあと、同じ内容の演習です。
-        </p>
-        <ol className="mt-10 grid max-w-3xl gap-4 sm:grid-cols-2">
-          <li className="neo-card p-5">
-            <p className="font-mono text-xs tracking-widest text-studio">01 見る</p>
-            <p className="mt-2 text-xl font-medium">図とコードのスライド</p>
-            <p className="mt-2 text-sm leading-6 text-mute">
-              仕組みを図で示し、すぐ横に動くコードを置く
-            </p>
+    <div className="course-catalog-page">
+      <header className="course-catalog-hero">
+        <div>
+          <Badge>基礎をしっかり</Badge>
+          <p className="course-catalog-brand">しくみ講座 · JS / TS / NODE</p>
+          <h1>
+            注文管理を作りながら、
+            <br />
+            プログラムの基礎を学ぶ。
+          </h1>
+          <p>
+            まずJavaScriptで値の動きを理解し、TypeScriptの型、
+            Node.jsの実行環境へ進みます。読むだけでなく、すべての講義でコードを書きます。
+          </p>
+          <a href="#course-catalog" className="course-catalog-jump">
+            講座を選ぶ
+            <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </header>
+
+      <main id="main-content">
+        <HomeTracks
+          js={lessonsByTrack("js")}
+          ts={lessonsByTrack("ts")}
+          node={lessonsByTrack("node")}
+        />
+
+        <section className="course-project-showcase" aria-labelledby="project-title">
+        <div className="course-section-heading">
+          <div>
+            <p className="course-section-kicker">3講座で作るもの</p>
+            <h2 id="project-title">注文台帳を、少しずつ完成させる</h2>
+          </div>
+          <p>
+            先に完成形を触り、各講座でどの部分を作るか確認できます。
+          </p>
+        </div>
+        <OrderProjectPreview />
+        <ol className="project-roadmap" aria-label="注文管理システムの完成まで">
+          <li>
+            <span>JavaScript</span>
+            <strong>画面を動かす</strong>
+            <p>注文を並べ、追加と支払更新を操作できるようにする</p>
           </li>
-          <li className="neo-card p-5">
-            <p className="font-mono text-xs tracking-widest text-studio">02 書く</p>
-            <p className="mt-2 text-xl font-medium">同じ内容の演習</p>
-            <p className="mt-2 text-sm leading-6 text-mute">
-              できた、と提出してから次のスライドへ進む
-            </p>
+          <li>
+            <span>TypeScript</span>
+            <strong>データを守る</strong>
+            <p>注文番号・金額・状態の取り違えを実行前に見つける</p>
+          </li>
+          <li>
+            <span>Node.js</span>
+            <strong>APIへつなぐ</strong>
+            <p>注文を読み書きし、安全に起動・停止できるようにする</p>
           </li>
         </ol>
-      </header>
-      <HomeTracks
-        js={lessonsByTrack("js")}
-        ts={lessonsByTrack("ts")}
-        node={lessonsByTrack("node")}
-      />
+        </section>
+      </main>
     </div>
   );
 }

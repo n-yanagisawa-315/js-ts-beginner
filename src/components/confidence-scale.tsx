@@ -1,6 +1,19 @@
 "use client";
 
-import { useId } from "react";
+import { useRef } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/components/ui/toggle-group";
 
 const LEVELS = [
   { value: 25, label: "まだ迷う" },
@@ -22,8 +35,6 @@ export function ConfidenceScale({
   disabled?: boolean;
   result?: boolean | null;
 }) {
-  const noteId = useId();
-  const feedbackId = useId();
   const gap =
     value === null || result === null
       ? null
@@ -38,35 +49,91 @@ export function ConfidenceScale({
           : "予想と結果に差がありました。解説と自分の考えの違いを1つ確認しましょう。";
 
   return (
-    <fieldset
-      className={`confidence-scale is-${tone}`}
-      aria-describedby={`${noteId}${feedback ? ` ${feedbackId}` : ""}`}
-    >
+    <fieldset className={`confidence-scale is-${tone}`}>
       <legend>答える前の自信は？</legend>
-      <p id={noteId}>
+      <p>
         {disabled
           ? "回答前に選んだ値です。成績には影響しません。"
-          : "自信を選ぶと解答できます。成績には影響しません。"}
+          : "今の感覚に一番近いものを選びます。成績には影響しません。"}
       </p>
-      <div>
+      <ToggleGroup
+        type="single"
+        value={value === null ? "" : String(value)}
+        onValueChange={(next) => {
+          if (next) onChange(Number(next));
+        }}
+        disabled={disabled}
+        aria-label="答える前の自信"
+        className="confidence-options"
+      >
         {LEVELS.map((level) => (
-          <button
-            key={level.value}
-            type="button"
-            aria-pressed={value === level.value}
-            disabled={disabled}
-            onClick={() => onChange(level.value)}
-          >
+          <ToggleGroupItem key={level.value} value={String(level.value)}>
             <span>{level.label}</span>
             <small>{level.value}%</small>
-          </button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
       {feedback && value !== null && result !== null ? (
-        <p id={feedbackId} className="confidence-feedback" role="status">
+        <p className="confidence-feedback" role="status">
           自信 {value}% ／ 結果 {result ? "正解" : "不正解"}。{feedback}
         </p>
       ) : null}
     </fieldset>
+  );
+}
+
+export function ConfidenceDialog({
+  open,
+  value,
+  onChange,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  value: number | null;
+  onChange: (value: number) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onCancel();
+      }}
+    >
+      <DialogContent
+        className="confidence-dialog"
+        onOpenAutoFocus={() => {
+          returnFocusRef.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          returnFocusRef.current?.focus();
+        }}
+      >
+        <DialogHeader>
+          <p className="confidence-dialog-step">解答する前の確認</p>
+          <DialogTitle>今の自信はどのくらい？</DialogTitle>
+          <DialogDescription>
+            正解を見た後ではなく、今の感覚を残します。成績には影響しません。
+          </DialogDescription>
+        </DialogHeader>
+        <ConfidenceScale value={value} onChange={onChange} />
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
+            戻る
+          </Button>
+          <Button disabled={value === null} onClick={onConfirm}>
+            この自信で解答する
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

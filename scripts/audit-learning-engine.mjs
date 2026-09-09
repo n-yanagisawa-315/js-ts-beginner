@@ -288,6 +288,17 @@ assert.match(designed[1].story.incident, /前の講義で「結果1」まで確�
 assert.match(designed[0].slides[1].storyContext, /値を調べる.*値を保存する/);
 assert.equal(designed[0].questions[0].exerciseKind, "worked");
 assert.equal(designed[0].questions[0].scaffoldLevel, "worked");
+assert.equal(designed[0].questions[0].projectRole, "drill");
+assert.match(designed[0].questions[0].scenario, /^基礎練習/);
+const domRoleLesson = fixtureLesson("dom-role", 1);
+domRoleLesson.chapter = "js-dom";
+domRoleLesson.questions[0].runtime = "dom";
+domRoleLesson.questions[0].fixtureHtml = '<p id="order-count">0件</p>';
+domRoleLesson.questions[0].domProbe =
+  'return document.querySelector("#order-count").textContent === "1件";';
+const domRoleDesigned = applyLearningDesign(domRoleLesson);
+assert.equal(domRoleDesigned.questions[0].projectRole, "build");
+assert.match(domRoleDesigned.questions[0].scenario, /^注文管理画面を進める工程/);
 const workedCodeLesson = fixtureLesson("worked-code", 1);
 workedCodeLesson.questions[0] = {
   id: "q1",

@@ -154,8 +154,10 @@ which node`,
       {
         id: "q3",
         slide: 2,
+        scenario: "注文集計CLIとorder APIをNode.jsで動かす役割を確認する。",
+        projectRole: "build",
         prompt:
-          "社内用コマンドと、ブラウザからの要求に応答するAPIをJavaScriptで作ります。Node.jsの利用場面として適切な組み合わせを1つ選んでください。",
+          "注文集計CLIと、orders を返す order APIをJavaScriptで作ります。Node.jsの利用場面として適切な組み合わせを1つ選んでください。",
         lead:
           "どちらもWebページ内のDOMを操作する仕事ではなく、ターミナルやサーバーマシン上で動く処理です。2つの用途をともに実現できる選択肢を選びます。",
         kind: "choice",
@@ -318,8 +320,10 @@ console.error("警告");`,
       {
         id: "q1",
         slide: 0,
+        scenario: "orders.js をNode.jsで実行し、注文集計処理を開始する。",
+        projectRole: "build",
         prompt:
-          "ターミナルから、現在の作業ディレクトリにあるapp.jsをNode.jsで一括実行してください。",
+          "ターミナルから、現在の作業ディレクトリにあるorders.jsをNode.jsで一括実行してください。",
         lead:
           "対話モードではなく、指定したスクリプトファイルを先頭から実行します。実行後にhelloと表示され、待機する処理がなければ終了することが達成条件です。",
         kind: "shell",
@@ -332,10 +336,10 @@ console.error("警告");`,
         hint:
           "対話モードを開始するのではなく、実行対象のファイル名をランタイムへ渡します。",
         termOutput: [{ text: "hello", tone: "out" }],
-        answer: "node app.js",
-        aliases: ["node ./app.js"],
+        answer: "node orders.js",
+        aliases: ["node ./orders.js"],
         explain:
-          "引数なしの node は REPL、node app.js はファイルの一括実行です。",
+          "引数なしの node は REPL、node orders.js はファイルの一括実行です。",
       },
       {
         id: "q2",
@@ -502,18 +506,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));`,
       {
         id: "q1",
         slide: 0,
+        scenario: "order-total.js の calculateTotal を orders.js から名前付きimportできるよう公開する。",
+        projectRole: "build",
         prompt:
-          "料金計算を共通化するため、math.jsのadd関数をcheckout.jsから名前付きimportできるようにします。math.js側に置く宣言を1つ選んでください。",
+          "注文合計を共通化するため、order-total.jsのcalculateTotal関数をorders.jsから名前付きimportできるようにします。order-total.js側に置く宣言を1つ選んでください。",
         lead:
-          "現在のadd関数はmath.jsの中だけで使える状態です。関数名と処理は変えず、ES Modulesとして外部へ公開し、checkout.jsから同じ名前で取り込める形にします。",
+          "現在のcalculateTotal関数はorder-total.jsの中だけで使える状態です。関数名と処理は変えず、ES Modulesとして外部へ公開し、orders.jsから同じ名前で取り込める形にします。",
         kind: "choice",
         options: [
-          "export function add(a, b) { return a + b; }",
-          "public function add(a, b) { return a + b; }",
-          "expose function add(a, b) { return a + b; }",
-          "global function add(a, b) { return a + b; }",
+          "export function calculateTotal(a, b) { return a + b; }",
+          "public function calculateTotal(a, b) { return a + b; }",
+          "expose function calculateTotal(a, b) { return a + b; }",
+          "global function calculateTotal(a, b) { return a + b; }",
         ],
-        answer: "export function add(a, b) { return a + b; }",
+        answer: "export function calculateTotal(a, b) { return a + b; }",
         steps: [
           "関数定義だけの候補と、外部へ公開する候補を区別する",
           "ES Modulesの名前付き公開に使う宣言を選ぶ",
@@ -679,23 +685,25 @@ process.argv;
       {
         id: "q1",
         slide: 0,
+        scenario: "CLI引数として orderId を渡し、対象注文を選択して処理する。",
+        projectRole: "build",
         prompt:
-          "現在の作業ディレクトリにあるapp.jsへユーザー引数fooを渡し、Node.jsで実行してください。",
+          "現在の作業ディレクトリにあるorders.jsへorderId order-1を渡し、Node.jsで実行してください。",
         lead:
-          "スクリプト名の後ろに利用者から渡す値を置いて起動します。アプリが起動引数からその値を読み、fooの1行を表示すれば完了です。",
+          "スクリプト名の後ろに利用者から渡す値を置いて起動します。アプリが起動引数からその値を読み、order-1の1行を表示すれば完了です。",
         kind: "shell",
         cwd: "app",
         starter: "",
         steps: [
           "JavaScriptランタイムへ実行対象のファイルを渡す",
           "ファイル名より後ろへユーザー引数を1つ追加する",
-          "出力がfooの1行になることを確認する",
+          "出力がorder-1の1行になることを確認する",
         ],
         hint:
           "ランタイムやファイル名の情報ではなく、スクリプトの後ろに置いた値がユーザー引数として届きます。",
-        aliases: ["node ./app.js foo"],
-        termOutput: [{ text: "foo", tone: "out" }],
-        answer: "node app.js foo",
+        aliases: ["node ./orders.js order-1"],
+        termOutput: [{ text: "order-1", tone: "out" }],
+        answer: "node orders.js order-1",
         explain: "0 が node、1 がスクリプト、2 からが付けた引数です。",
       },
       {
@@ -861,22 +869,24 @@ await writeFile("./out.txt", "hello\n", "utf8");`,
       {
         id: "q1",
         slide: 0,
+        scenario: "orders.json をUTF-8で読み、order-list を非同期に取得する。",
+        projectRole: "build",
         prompt:
-          "config.txtをUTF-8の文字列として読む処理になるよう、3つのコード断片を並べてください。",
+          "orders.jsonをUTF-8の文字列として読む処理になるよう、3つのコード断片を並べてください。",
         lead:
-          "Promise版のreadFileを読み込み、完了を待ってtextへ保存します。encodingを省略するとBufferになるため、文字列として受け取る指定も必要です。",
+          "Promise版のreadFileを読み込み、完了を待ってorderListへ保存します。encodingを省略するとBufferになるため、文字列として受け取る指定も必要です。",
         kind: "order",
         fragments: [
-          'console.log(text);',
-          'const text = await readFile("./config.txt", "utf8");',
+          'console.log(orderList);',
+          'const orderList = await readFile("./orders.json", "utf8");',
           'import { readFile } from "node:fs/promises";',
         ],
         answer: `import { readFile } from "node:fs/promises";
-const text = await readFile("./config.txt", "utf8");
-console.log(text);`,
+const orderList = await readFile("./orders.json", "utf8");
+console.log(orderList);`,
         steps: [
           "最初にreadFileを読み込む",
-          "awaitで読み取り完了を待ち、結果をtextへ入れる",
+          "awaitで読み取り完了を待ち、結果をorderListへ入れる",
           "最後に読み取った文字列を表示する",
         ],
         hint:
@@ -1042,17 +1052,19 @@ const conf = path.join(here, "config.json");`,
       {
         id: "q1",
         slide: 0,
+        scenario: "data と orders.json を結合し、注文データの保存先を作る。",
+        projectRole: "build",
         prompt:
-          "logsフォルダとapp.logからOSに合うパスを作る処理になるよう、2つのコード断片を並べてください。",
+          "dataフォルダとorders.jsonからOSに合うパスを作る処理になるよう、2つのコード断片を並べてください。",
         lead:
           "区切り文字を文字列で足さず、Node.jsのpathモジュールを読み込んでjoinを使います。",
         kind: "order",
         fragments: [
-          'const logPath = path.join("logs", "app.log");',
+          'const ordersPath = path.join("data", "orders.json");',
           'import path from "node:path";',
         ],
         answer: `import path from "node:path";
-const logPath = path.join("logs", "app.log");`,
+const ordersPath = path.join("data", "orders.json");`,
         steps: [
           "最初にpathモジュールを読み込む",
           "joinへフォルダ名とファイル名を順に渡す",

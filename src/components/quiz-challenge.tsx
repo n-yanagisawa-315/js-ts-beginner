@@ -1,11 +1,34 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { CopyableText } from "@/components/copyable-text";
-import { ConfidenceScale } from "@/components/confidence-scale";
-import { GradeToast } from "@/components/grade-toast";
+import {
+  ConfidenceDialog,
+  ConfidenceScale,
+} from "@/components/confidence-scale";
 import { IconCopy, IconReset } from "@/components/icons";
 import { SelfExplanation } from "@/components/self-explanation";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import {
+  Field,
+  FieldContent,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
 import type { Question } from "@/lib/course";
 
 export function QuizChallenge({
@@ -17,7 +40,6 @@ export function QuizChallenge({
   typed,
   checked,
   failReason,
-  failTick,
   onChoice,
   onTyped,
   onSubmit,
@@ -30,6 +52,7 @@ export function QuizChallenge({
   attempted,
   reflection,
   onReflection,
+  assistant,
 }: {
   question: Question;
   index: number;
@@ -40,7 +63,6 @@ export function QuizChallenge({
   checked: boolean;
   isCorrect: boolean;
   failReason: string | null;
-  failTick: number;
   onChoice: (value: string) => void;
   onTyped: (value: string) => void;
   onSubmit: () => void;
@@ -53,23 +75,33 @@ export function QuizChallenge({
   attempted: boolean;
   reflection: string;
   onReflection: (value: string) => void;
+  assistant?: ReactNode;
 }) {
   const inputId = useId();
   const explainId = useId();
   const hintId = useId();
   const explainRef = useRef<HTMLParagraphElement>(null);
   const [hintLevel, setHintLevel] = useState(0);
+  const [confidenceOpen, setConfidenceOpen] = useState(false);
   const [selectedFragmentIndexes, setSelectedFragmentIndexes] = useState<number[]>([]);
   const requiresExplanation = question.exerciseKind === "transfer";
   const hints = question.hints?.length ? question.hints : question.hint ? [question.hint] : [];
   const canSubmit =
     !checked &&
-    confidence !== null &&
     (question.kind === "choice"
       ? Boolean(choice)
       : question.kind === "order"
         ? selectedFragmentIndexes.length === (question.fragments?.length ?? 0)
         : typed.trim() !== "");
+
+  function requestSubmit() {
+    if (!canSubmit) return;
+    if (confidence === null) {
+      setConfidenceOpen(true);
+      return;
+    }
+    onSubmit();
+  }
 
   function selectFragment(fragmentIndex: number) {
     if (selectedFragmentIndexes.includes(fragmentIndex)) return;
@@ -87,18 +119,21 @@ export function QuizChallenge({
   }, [checked]);
 
   return (
-    <article className="relative flex min-h-0 flex-1 flex-col bg-paper">
+    <main
+      id="main-content"
+      className="relative flex min-h-0 flex-1 flex-col bg-paper"
+    >
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-8 sm:px-10">
         <p className="font-mono text-xs tracking-[0.16em] text-mute">
           問題 {String(index + 1).padStart(2, "0")} · {String(total).padStart(2, "0")}
         </p>
         {question.scenario ? (
           <p className="mt-3 max-w-2xl border-l-2 border-studio pl-3 text-sm leading-6 text-mute">
-            {question.exerciseKind === "transfer"
-              ? "応用課題: "
-              : question.exerciseKind === "worked"
-                ? "完成例から再現: "
-                : "今回の場面: "}
+            {question.projectRole === "transfer"
+              ? "別の場面へ応用: "
+              : question.projectRole === "build"
+                ? "注文画面を作る: "
+                : "基礎練習: "}
             {question.scenario}
           </p>
         ) : null}
@@ -113,34 +148,42 @@ export function QuizChallenge({
         {question.code ? <Snippet code={question.code} /> : null}
 
         {question.kind === "choice" && question.options ? (
-          <ul className="mt-8 flex max-w-xl flex-col gap-2">
+          <RadioGroup
+            className="mt-8 max-w-xl"
+            value={choice ?? ""}
+            onValueChange={onChoice}
+            disabled={checked}
+            aria-label="回答の選択肢"
+          >
             {question.options.map((option, optionIndex) => {
               const selected = choice === option;
               const mark = String.fromCharCode(65 + optionIndex);
-              let border = "border-line";
-              if (checked && option === question.answer) border = "border-ok";
-              else if (failReason && selected) border = "border-ng";
-              else if (selected) border = "border-ink";
+              const correctOption = checked && option === question.answer;
+              const incorrectOption = Boolean(failReason && selected);
               return (
-                <li key={option}>
-                  <button
-                    type="button"
-                    disabled={checked}
-                    aria-pressed={selected}
-                    onClick={() => onChoice(option)}
-                    className={`neo-card flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left transition-transform duration-200 ${border} ${
-                      checked ? "" : "hover:-translate-y-0.5"
-                    }`}
-                  >
-                    <span className="mt-0.5 w-6 shrink-0 font-mono text-sm text-mute">
-                      {mark}
-                    </span>
-                    <span>{option}</span>
-                  </button>
-                </li>
+                <FieldLabel
+                  key={option}
+                  className="quiz-choice-field"
+                  data-correct={correctOption || undefined}
+                  data-incorrect={incorrectOption || undefined}
+                >
+                  <Field orientation="horizontal">
+                    <RadioGroupItem
+                      id={`${inputId}-${optionIndex}`}
+                      value={option}
+                    />
+                    <span className="quiz-choice-mark">{mark}</span>
+                    <FieldContent>
+                      <FieldTitle>{option}</FieldTitle>
+                    </FieldContent>
+                    {selected && !checked ? (
+                      <small className="quiz-choice-selected">選択中</small>
+                    ) : null}
+                  </Field>
+                </FieldLabel>
               );
             })}
-          </ul>
+          </RadioGroup>
         ) : null}
 
         {question.kind === "order" && question.fragments ? (
@@ -173,38 +216,37 @@ export function QuizChallenge({
                 <p>左の断片を、最初に実行するものから選びます。</p>
               )}
               {!checked && selectedFragmentIndexes.length > 0 ? (
-                <button
-                  type="button"
-                  className="btn btn-line"
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setSelectedFragmentIndexes([]);
                     onTyped("");
                   }}
                 >
                   並べ直す
-                </button>
+                </Button>
               ) : null}
             </div>
           </section>
         ) : null}
 
         {question.kind === "input" ? (
-          <div className="mt-8 max-w-xl">
-            <label htmlFor={inputId} className="block text-sm text-mute">
-              答え
-            </label>
-            <input
+          <Field className="mt-8 max-w-xl">
+            <FieldLabel htmlFor={inputId}>答え</FieldLabel>
+            <Input
               id={inputId}
+              name="quiz-answer"
+              autoComplete="off"
               value={typed}
               onChange={(event) => onTyped(event.currentTarget.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") onSubmit();
+                if (event.key === "Enter") requestSubmit();
               }}
               disabled={checked}
               aria-describedby={checked ? explainId : undefined}
-              className="mt-2 w-full border-b-2 border-ink bg-transparent py-2 font-mono"
+              className="font-mono"
             />
-          </div>
+          </Field>
         ) : null}
 
         {question.kind === "code" ? (
@@ -219,20 +261,21 @@ export function QuizChallenge({
           />
         ) : null}
 
+        {attempted ? (
         <div className="mt-6 max-w-xl">
           <ConfidenceScale
             value={confidence}
             onChange={onConfidence}
-            disabled={attempted}
-            result={attempted ? checked : null}
+            disabled
+            result={checked}
           />
         </div>
+        ) : null}
 
         {hints.length > 0 ? (
-          <div className="mt-6 max-w-xl">
-            <button
-              type="button"
-              className="btn btn-hint"
+          <Collapsible open={hintLevel > 0} className="mt-6 max-w-xl">
+            <Button
+              variant="secondary"
               aria-expanded={hintLevel > 0}
               aria-controls={hintId}
               onClick={() => {
@@ -246,18 +289,23 @@ export function QuizChallenge({
                 : hintLevel < hints.length
                   ? "次のヒントを見る"
                   : "ヒントを確認済み"}
-            </button>
-            {hintLevel > 0 ? (
-              <ol id={hintId} className="mt-2 space-y-2 px-3 py-2 text-sm leading-6 text-mute">
-                {hints.slice(0, hintLevel).map((hint, index) => (
-                  <li key={hint}>
-                    <span className="mr-2 font-mono">{index + 1}.</span>
-                    <CopyableText text={hint} />
-                  </li>
-                ))}
-              </ol>
-            ) : null}
-          </div>
+            </Button>
+            <CollapsibleContent id={hintId}>
+              <Alert className="mt-2" role="status">
+                <AlertTitle>ヒント {hintLevel}/{hints.length}</AlertTitle>
+                <AlertDescription>
+                  <ol className="flex flex-col gap-2">
+                    {hints.slice(0, hintLevel).map((hint, index) => (
+                      <li key={hint}>
+                        <span className="mr-2 font-mono">{index + 1}.</span>
+                        <CopyableText text={hint} />
+                      </li>
+                    ))}
+                  </ol>
+                </AlertDescription>
+              </Alert>
+            </CollapsibleContent>
+          </Collapsible>
         ) : null}
 
         {checked ? (
@@ -271,10 +319,25 @@ export function QuizChallenge({
             正解。 {question.explain}
           </p>
         ) : null}
-        {failReason && choice && question.feedbackByAnswer?.[choice] ? (
-          <p className="mt-4 max-w-xl text-sm leading-6 text-ng">
-            {question.feedbackByAnswer[choice]}
-          </p>
+        {failReason ? (
+          <Alert variant="destructive" className="mt-5 max-w-xl">
+            <AlertTitle>まだ一致していません</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3">
+              <p>
+                {choice && question.feedbackByAnswer?.[choice]
+                  ? question.feedbackByAnswer[choice]
+                  : failReason}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="self-start"
+                onClick={onDismissFail}
+              >
+                閉じる
+              </Button>
+            </AlertDescription>
+          </Alert>
         ) : null}
         {failReason || (checked && requiresExplanation) ? (
           <div className="mt-5 max-w-xl">
@@ -288,57 +351,51 @@ export function QuizChallenge({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-3 sm:px-10">
-        <p className="text-sm text-mute">
-          ここまでの正解 {correctCount} / {total}
-        </p>
+      <footer className="flex items-center justify-between gap-3 border-t border-line px-5 py-3 sm:px-10">
+        <div className="flex flex-wrap items-center gap-3">
+          {assistant}
+          <p className="text-sm text-mute">
+            ここまでの正解 {correctCount} / {total}
+          </p>
+        </div>
         {checked ? (
-          <button
-            type="button"
+          <Button
             onClick={onNext}
             disabled={requiresExplanation && reflection.trim().length < 10}
-            className="btn btn-primary disabled:bg-line disabled:text-mute"
           >
             {nextLabel}
-          </button>
+          </Button>
         ) : (
           <div className="flex flex-wrap justify-end gap-2">
             {failReason ? (
-              <button
-                type="button"
+              <Button
+                variant="outline"
                 onClick={onNext}
                 disabled={reflection.trim().length < 10}
-                className="btn btn-line disabled:opacity-40"
               >
                 あとで解き直す
-              </button>
+              </Button>
             ) : null}
-            <button
-              type="button"
-              onClick={onSubmit}
+            <Button
+              onClick={requestSubmit}
               disabled={!canSubmit}
-              className={`${
-                question.kind === "code" ? "btn btn-ok" : "btn btn-primary"
-              } disabled:bg-line disabled:text-mute`}
             >
               {failReason ? "もう一度確かめる" : question.kind === "code" ? "できた！" : "解答する"}
-            </button>
+            </Button>
           </div>
         )}
-      </div>
-      {failReason ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[4.75rem] z-20 px-5 pb-2 sm:px-10">
-          <div className="pointer-events-auto mx-auto max-w-xl">
-            <GradeToast
-              key={failTick}
-              message={failReason}
-              tone="light"
-              onClose={onDismissFail}
-            />
-          </div>
-        </div>
-      ) : null}
-    </article>
+      </footer>
+      <ConfidenceDialog
+        open={confidenceOpen}
+        value={confidence}
+        onChange={onConfidence}
+        onCancel={() => setConfidenceOpen(false)}
+        onConfirm={() => {
+          setConfidenceOpen(false);
+          onSubmit();
+        }}
+      />
+    </main>
   );
 }
 
@@ -357,14 +414,15 @@ function Snippet({ code }: { code: string }) {
 
   return (
     <div className="quiz-code mt-6 max-w-2xl">
-      <button
-        type="button"
-        className="quiz-copy btn btn-ghost h-11 w-11 min-h-11 p-0 text-paper hover:bg-white/10"
+      <Button
+        variant="ghost"
+        size="icon"
+        className="quiz-copy text-paper hover:bg-white/10"
         aria-label={copied ? "コピーしました" : "コードをコピー"}
         onClick={() => void copy()}
       >
-        <IconCopy className="h-4 w-4" />
-      </button>
+        <IconCopy aria-hidden="true" />
+      </Button>
       <pre>{code}</pre>
       <span className="sr-only" aria-live="polite">
         {copied ? "コピーしました" : ""}
@@ -395,16 +453,16 @@ function CodeEditor({
     <div className="mt-6 max-w-3xl overflow-hidden bg-editor text-paper">
       <div className="flex h-11 items-center justify-between border-b border-white/10 px-3">
         <span className="bg-white/10 px-3 py-1 font-mono text-xs">{fileName}</span>
-        <button
-          type="button"
-          className="btn btn-ghost h-11 min-h-11 px-3 text-sm text-paper hover:bg-white/10"
+        <Button
+          variant="ghost"
+          className="text-paper hover:bg-white/10"
           aria-label="エディタをリセット"
           disabled={disabled}
           onClick={onReset}
         >
-          <IconReset className="h-4 w-4" />
+          <IconReset aria-hidden="true" />
           リセット
-        </button>
+        </Button>
       </div>
       <div className="relative">
         <label htmlFor={id} className="sr-only">
@@ -417,11 +475,13 @@ function CodeEditor({
         </div>
         <textarea
           id={id}
+          name="code-answer"
+          autoComplete="off"
+          spellCheck={false}
           value={value}
           onChange={(event) => onChange(event.currentTarget.value)}
           disabled={disabled}
           aria-describedby={describedBy}
-          spellCheck={false}
           className="min-h-[16rem] w-full resize-y bg-transparent py-3 pr-4 pl-12 font-mono text-sm leading-7 text-paper"
         />
       </div>

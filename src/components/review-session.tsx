@@ -4,6 +4,27 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { CodeLab } from "@/components/code-lab";
 import { QuizChallenge } from "@/components/quiz-challenge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BookOpen, RotateCcw } from "lucide-react";
 import {
   getChapter,
   type Lesson,
@@ -152,49 +173,73 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
 
   if (!queue) {
     return (
-      <main className="flex flex-1 items-center justify-center p-8">
-        <p role="status" className="text-mute">
-          復習問題を準備しています…
-        </p>
+      <main id="main-content" className="review-state-page">
+        <Card className="review-state-card" role="status" aria-label="復習問題を準備中">
+          <CardHeader>
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-10 w-3/4" />
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+          </CardContent>
+        </Card>
       </main>
     );
   }
 
   if (queue.items.length === 0) {
     return (
-      <main className="flex flex-1 flex-col items-start justify-center px-5 py-16 sm:px-10">
-        <p className="font-mono text-xs tracking-[0.16em] text-studio">復習</p>
-        <h1 className="mt-3 font-serif text-4xl font-medium">
-          まず講義の演習に挑戦しましょう
-        </h1>
-        <p className="mt-4 max-w-xl leading-7 text-mute">
-          一度解いた問題がここに集まり、教材で設定した期限にもう一度出題されます。
-          間隔は学習履歴に応じて変わり、全員に共通の最適値とはみなしません。
-        </p>
-        <Link href="/" className="btn btn-primary mt-8">
-          講座一覧へ
-        </Link>
+      <main id="main-content" className="review-state-page">
+        <Empty className="review-state-card border bg-card">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <BookOpen aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyTitle>
+              <h1>まず講義の演習に挑戦しましょう</h1>
+            </EmptyTitle>
+            <EmptyDescription>
+              一度解いた問題がここに集まり、学習履歴に応じた時期にもう一度出題されます。
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button asChild>
+              <Link href="/">講座一覧へ</Link>
+            </Button>
+          </EmptyContent>
+        </Empty>
       </main>
     );
   }
 
   if (!item) {
+    const resultPercent = queue.items.length
+      ? (correctCount / queue.items.length) * 100
+      : 0;
     return (
-      <main className="flex flex-1 flex-col items-start justify-center px-5 py-16 sm:px-10">
-        <p className="font-mono text-xs tracking-[0.16em] text-studio">
-          復習おわり
-        </p>
-        <h1 className="mt-3 font-serif text-5xl font-medium">
-          {correctCount} / {queue.items.length}
-        </h1>
-        <p className="mt-4 text-mute">
-          {queue.isPreview
-            ? "期限前の先取り結果を記録しました。次の復習期限は進めていません。"
-            : "期限後の解答結果を記録し、条件を満たした問題の復習時期を更新しました。"}
-        </p>
-        <Link href="/" className="btn btn-primary mt-8">
-          講座一覧へ
-        </Link>
+      <main id="main-content" className="review-state-page">
+        <Card className="review-state-card">
+          <CardHeader>
+            <Badge variant="secondary">復習おわり</Badge>
+            <CardTitle asChild>
+              <h1>{correctCount} / {queue.items.length}</h1>
+            </CardTitle>
+            <CardDescription>
+              {queue.isPreview
+                ? "期限前の先取り結果を記録しました。次の復習期限は進めていません。"
+                : "期限後の解答結果を記録し、条件を満たした問題の復習時期を更新しました。"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Progress value={resultPercent} aria-label="今回の復習正解率" />
+          </CardContent>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/">講座一覧へ</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       </main>
     );
   }
@@ -211,6 +256,8 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
           chapter={chapterTitle}
           lesson={item.lesson.title}
           preview={queue.isPreview}
+          current={position + 1}
+          total={queue.items.length}
         />
         <CodeLab
           track={item.lesson.track}
@@ -245,9 +292,11 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
         chapter={chapterTitle}
         lesson={item.lesson.title}
         preview={queue.isPreview}
+        current={position + 1}
+        total={queue.items.length}
       />
       <QuizChallenge
-        key={question.id}
+        key={`${position}-${question.id}-${question.variantId ?? "base"}`}
         question={question}
         index={position}
         total={queue.items.length}
@@ -257,7 +306,6 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
         checked={checked}
         isCorrect={isCorrect}
         failReason={failReason}
-        failTick={failTick}
         onChoice={setChoice}
         onTyped={setTyped}
         onSubmit={submit}
@@ -279,23 +327,34 @@ function ReviewHeader({
   chapter,
   lesson,
   preview,
+  current,
+  total,
 }: {
   chapter?: string;
   lesson: string;
   preview: boolean;
+  current: number;
+  total: number;
 }) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-desk px-4 py-3 sm:px-6">
-      <Link href="/" className="btn btn-ghost min-h-11 px-3 text-sm text-mute">
-        講座一覧
-      </Link>
-      <div className="text-right">
-        <p className="font-mono text-[11px] tracking-[0.14em] text-studio">
-          {preview ? "先取り復習" : "期限到来"}
-        </p>
-        <p className="text-sm text-mute">
-          {[chapter, lesson].filter(Boolean).join(" · ")}
-        </p>
+    <header className="learning-flow-header">
+      <div className="learning-flow-header-main">
+        <Button asChild variant="ghost" size="sm" className="w-fit">
+          <Link href="/">講座一覧へ戻る</Link>
+        </Button>
+        <div className="learning-flow-title">
+          <Badge variant="secondary">
+            <RotateCcw aria-hidden="true" />
+            {preview ? "先取り復習" : "期限到来"}
+          </Badge>
+          <strong>{[chapter, lesson].filter(Boolean).join(" · ")}</strong>
+        </div>
+      </div>
+      <div className="learning-flow-status">
+        <div>
+          <span>{current}/{total}</span>
+          <Progress value={(current / total) * 100} aria-label="復習の進捗" />
+        </div>
       </div>
     </header>
   );
