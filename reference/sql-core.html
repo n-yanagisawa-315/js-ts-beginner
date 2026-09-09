@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SQL 初学者向けの印刷対応クイックリファレンス">
+  <title>SQL — Quick Reference</title>
+  <link rel="stylesheet" href="../assets/reference.css">
+</head>
+<body>
+  <a class="back-link" href="/">講座一覧へ戻る</a>
+  <header>
+    <p class="eyebrow">Quick Reference 04</p>
+    <h1>SQL</h1>
+    <p class="lead">読む、絞る、並べる、集計する、結ぶ、更新する。変更系SQLは対象行をSELECTで確かめてから実行する。</p>
+  </header>
+  <main>
+    <section aria-labelledby="read">
+      <h2 id="read">検索と集計</h2>
+      <div class="grid">
+        <article class="card"><h2>SELECT</h2><pre><code>SELECT id, customer, total
+FROM orders
+WHERE status = 'unpaid'
+ORDER BY total DESC
+LIMIT 10;</code></pre></article>
+        <article class="card"><h2>GROUP BY</h2><pre><code>SELECT status,
+  COUNT(*) AS count,
+  SUM(total) AS amount
+FROM orders
+GROUP BY status;</code></pre></article>
+      </div>
+    </section>
+    <section aria-labelledby="join">
+      <h2 id="join">JOINと更新</h2>
+      <div class="grid">
+        <article class="card"><h2>JOIN</h2><pre><code>SELECT o.id, c.name
+FROM orders AS o
+JOIN customers AS c
+  ON c.id = o.customer_id;</code></pre></article>
+        <article class="card"><h2>安全な更新</h2><pre><code>BEGIN;
+UPDATE orders
+SET status = 'paid'
+WHERE id = 3;
+COMMIT;</code></pre></article>
+      </div>
+      <div class="callout"><strong>確認の軸:</strong> FROMで表、WHEREで行、SELECTで列、ORDER BYで順番を決める。NULLは<code>= NULL</code>ではなく<code>IS NULL</code>で調べる。</div>
+    </section>
+    <section aria-labelledby="sources"><h2 id="sources">公式一次資料</h2><ul class="sources"><li><a href="https://www.sqlite.org/lang.html">SQLite SQL Language</a></li><li><a href="https://www.sqlite.org/lang_transaction.html">SQLite Transactions</a></li></ul></section>
+  </main>
+  <footer>UPDATEとDELETEの前に、同じWHEREを使ったSELECTで対象行を確認する。</footer>
+</body>
+</html>

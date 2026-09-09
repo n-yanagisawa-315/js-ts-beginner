@@ -44,7 +44,7 @@ import {
   teachingSlideEntries,
 } from "@/lib/course/slide-layout";
 import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
-import { gradeCodeByBehavior } from "@/lib/grade-behavior";
+import { gradeQuestion } from "@/lib/grade-question";
 import {
   recordQuestionAssistance,
   recordQuestionAttempt,
@@ -108,19 +108,23 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   const currentSlide = lesson.slides[slide];
   const conversationPages = currentSlide ? talkPages(currentSlide) : [];
   const lastConversationPage = Math.max(conversationPages.length - 1, 0);
-  const referenceTopic =
-    lesson.track === "js"
-      ? "javascript"
-      : lesson.track === "ts"
-        ? "typescript"
-        : "node";
+  const referenceTopic = {
+    js: "javascript",
+    ts: "typescript",
+    node: "node",
+    sql: "sql",
+    github: "github",
+  }[lesson.track];
   const slideCount = lesson.slides.length;
   const teaching = teachingSlideEntries(lesson);
   const quizTotal = teaching.length;
   const quizIndex = teaching.findIndex((entry) => entry.index === slide);
   const codeQuiz =
     phase === "quiz" &&
-    (question?.kind === "code" || question?.kind === "shell");
+    (question?.kind === "code" ||
+      question?.kind === "shell" ||
+      question?.kind === "sql" ||
+      question?.kind === "git");
   const nextIndex = nextSlideIndex(lesson, slide);
   const quizDone = question ? attempted.has(slide) : true;
   const allQuizzesDone = teaching.every((entry) => attempted.has(entry.index));
@@ -160,6 +164,12 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
     attempted: assistantQuestion ? attemptNumber > 0 : undefined,
     correct: assistantQuestion ? checked : undefined,
     feedback: assistantQuestion ? (failReason ?? undefined) : undefined,
+    runtimeState:
+      assistantQuestion?.kind === "sql"
+        ? `初期データ:\n${assistantQuestion.sqlSeed ?? "なし"}\n現在のSQL:\n${currentAnswer}`
+        : assistantQuestion?.kind === "git"
+          ? `初期状態:\n${JSON.stringify(assistantQuestion.gitInitialState ?? {})}\n実行したコマンド:\n${currentAnswer}`
+          : undefined,
   };
 
   const assistant = (
@@ -210,16 +220,21 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
     resetAttempt();
   }
 
-  async function submit() {
+  async function submit(correctOverride?: boolean) {
     if (!question || checked) return;
     if (confidence === null) return;
     if (question.kind === "choice" ? !choice : currentAnswer.trim() === "") {
       return;
     }
-    const correct =
-      question.kind === "code"
-        ? await gradeCodeByBehavior(question, currentAnswer, lesson.track)
-        : isCorrect;
+    const gradeResult =
+      correctOverride === undefined
+        ? await gradeQuestion(question, currentAnswer, lesson.track)
+        : {
+            passed: correctOverride,
+            feedback: question.explain,
+            diagnostics: [] as string[],
+          };
+    const correct = gradeResult.passed;
     recordQuestionAttempt({
       lessonId: lesson.id,
       questionId: question.id,
@@ -250,7 +265,9 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
       setFailReason(
         question.kind === "choice" && choice
           ? (question.feedbackByAnswer?.[choice] ?? question.explain)
-          : feedbackForIncorrectAnswer(question, currentAnswer),
+          : question.kind === "sql" || question.kind === "git"
+            ? [gradeResult.feedback, ...gradeResult.diagnostics].join("\n")
+            : feedbackForIncorrectAnswer(question, currentAnswer),
       );
       setFailTick((n) => n + 1);
       return;

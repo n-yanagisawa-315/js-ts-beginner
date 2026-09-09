@@ -1,6 +1,6 @@
-# JS / TS / Node しくみ講座
+# JS / TS / Node / SQL / GitHub しくみ講座
 
-JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で学ぶ初心者向けWeb教材です。57講義、309スライド、252問を収録しています。
+JavaScript、TypeScript、Node.js、SQL、GitHubを、コード・会話・図解・演習で学ぶ初心者向けWeb教材です。97講義、429スライド、372問を収録しています。
 
 公開サイト: [https://js-ts-beginner.vercel.app](https://js-ts-beginner.vercel.app)
 
@@ -8,6 +8,8 @@ JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で�
 
 - 初心者とエンジニアの会話で、専門用語を日常語から説明
 - 注文管理画面から型安全な設計、注文APIへ続く実務ストーリー
+- Worker内SQLiteとメモリ内Git/GitHubで、実環境を変更せずに操作を練習
+- JavaScript・TypeScript・Node.jsに各12問の厳選チャレンジ
 - 最初に触れる完成見本と、隔離された画面プレビューで進めるDOM実習
 - コード行と実行状態を対応させた図解
 - 予想、完成例、1行穴埋め、行並べ替え、独力問題、転移問題
@@ -20,9 +22,11 @@ JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で�
 
 ## 講座構成
 
-- JavaScript 33講義: 実行順、値、関数、配列、非同期、DOM、モジュール、npm
-- TypeScript 12講義: 型注釈、オブジェクト、ユニオン、関数型、unknown、ジェネリクス、条件型
-- Node.js 12講義: ランタイム、CLI、CJS/ESM、process、fs、HTTP、ストリーム、libuv、本番運用
+- JavaScript 37講義: 実行順、値、関数、配列、非同期、DOM、モジュール、npm、チャレンジ
+- TypeScript 16講義: 型注釈、オブジェクト、ユニオン、unknown、ジェネリクス、条件型、チャレンジ
+- Node.js 16講義: ランタイム、CLI、process、fs、HTTP、非同期I/O、本番運用、チャレンジ
+- SQL 14講義: SELECT、WHERE、並べ替え、集計、JOIN、更新、制約、トランザクション
+- GitHub 14講義: commit、branch、remote、Pull Request、競合、Issue、Actions、保護ルール
 
 アカウント登録は不要です。個人情報は収集しません。
 
@@ -35,3 +39,12 @@ JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で�
 - [JavaScript早見表](./reference/javascript-core.html)
 - [TypeScript早見表](./reference/typescript-core.html)
 - [Node.js早見表](./reference/node-core.html)
+- [SQL早見表](./reference/sql-core.html)
+- [Git・GitHub早見表](./reference/github-core.html)
+
+## ライセンスと帰属
+
+TypeScriptチャレンジの構成検討ではMITライセンスの
+[type-challenges](https://github.com/type-challenges/type-challenges)を参考にしています。
+問題文・注文管理ストーリー・テストケースは本教材向けに独自作成しており、
+原典の問題文は複製していません。

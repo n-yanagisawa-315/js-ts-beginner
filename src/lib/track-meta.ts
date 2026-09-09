@@ -48,4 +48,28 @@ export const TRACK_META: Record<Track, TrackMeta> = {
     accent: "var(--node)",
     soft: "#eaf8ef",
   },
+  sql: {
+    name: "SQL",
+    heading: "データを問い合わせる",
+    shortDescription:
+      "注文データベースを実際に操作し、検索・集計・更新・トランザクションを学びます。",
+    description:
+      "SQLはデータベースへ質問し、必要なデータを安全に更新する言葉です。ブラウザ内SQLiteで注文表を操作し、SELECTからJOIN・トランザクションまで段階的に学びます。",
+    outcome: "注文データベースを設計・操作できる",
+    badge: "検索〜トランザクション",
+    accent: "var(--sql)",
+    soft: "#fff3df",
+  },
+  github: {
+    name: "GitHub",
+    heading: "変更を安全に共有する",
+    shortDescription:
+      "模擬ターミナルでcommit・branch・push・Pull Requestの流れを練習します。",
+    description:
+      "GitHubはコードと変更履歴を共有し、チームで確認する場所です。実リポジトリを変更しない模擬環境で、Gitの記録からPull Request・共同開発運用まで学びます。",
+    outcome: "安全な共同開発フローを実践できる",
+    badge: "Git基礎〜共同開発",
+    accent: "var(--github)",
+    soft: "#eeeafd",
+  },
 };

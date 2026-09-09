@@ -818,6 +818,72 @@ function DiagramContent({ id }: { id: DiagramId }) {
           ]}
         />
       );
+    case "sql-table":
+      return (
+        <Flow>
+          <Cell label="表" value="orders" />
+          <Arrow label="SELECT" />
+          <Cell label="結果" value="必要な列と行" tone="mark" />
+        </Flow>
+      );
+    case "sql-filter":
+      return (
+        <Flow>
+          <Cell label="全注文" value="5行" />
+          <Arrow label="WHERE" />
+          <Cell label="対象" value="条件に合う行" tone="mark" />
+        </Flow>
+      );
+    case "sql-sort":
+      return <Rail steps={[{ title: "WHEREで絞る" }, { title: "ORDER BYで並べる" }, { title: "LIMITで件数を決める" }]} />;
+    case "sql-group":
+      return <Rail steps={[{ title: "同じ値でグループ化" }, { title: "COUNT・SUMで集計" }, { title: "1グループを1行で返す" }]} />;
+    case "sql-join":
+      return (
+        <Flow>
+          <Cell label="orders" value="customer_id" />
+          <Arrow label="JOIN ON id" />
+          <Cell label="customers" value="name" tone="mark" />
+        </Flow>
+      );
+    case "sql-write":
+      return <Rail steps={[{ title: "WHEREで対象確認" }, { title: "INSERT・UPDATE・DELETE" }, { title: "SELECTで結果確認" }]} />;
+    case "sql-transaction":
+      return <Rail steps={[{ title: "BEGIN" }, { title: "複数の更新" }, { title: "COMMIT または ROLLBACK" }]} />;
+    case "git-repository":
+      return (
+        <Flow>
+          <Cell label="作業場所" value="ファイル" />
+          <Arrow label="git init" />
+          <Cell label="repository" value="履歴を保存" tone="mark" />
+        </Flow>
+      );
+    case "git-staging":
+      return <Rail steps={[{ title: "working tree" }, { title: "git add → stage" }, { title: "git commit → 履歴" }]} />;
+    case "git-history":
+      return <Rail steps={[{ title: "commit C" }, { title: "commit B" }, { title: "commit A" }]} />;
+    case "git-branch":
+      return (
+        <Flow>
+          <Cell label="main" value="安定版" />
+          <Arrow label="switch -c" />
+          <Cell label="feature" value="機能開発" tone="mark" />
+        </Flow>
+      );
+    case "git-remote":
+      return (
+        <Flow>
+          <Cell label="local" value="手元の履歴" />
+          <Arrow label="push / pull" />
+          <Cell label="origin" value="共有する履歴" tone="mark" />
+        </Flow>
+      );
+    case "git-pr":
+      return <Rail steps={[{ title: "branchをpush" }, { title: "Pull Request作成" }, { title: "レビュー後merge" }]} />;
+    case "git-conflict":
+      return <Rail steps={[{ title: "両方の変更を読む" }, { title: "残す内容を編集" }, { title: "addして解決を記録" }]} />;
+    case "git-actions":
+      return <Rail steps={[{ title: "push / PR" }, { title: "Actionsで検査" }, { title: "保護ルールを満たしてmerge" }]} />;
     default:
       return null;
   }

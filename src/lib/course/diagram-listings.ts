@@ -468,6 +468,66 @@ try {
   status.textContent = "再読み込みしてください";
 }`,
   },
+  "sql-table": {
+    label: "query.sql",
+    code: "SELECT id, customer, total FROM orders;",
+  },
+  "sql-filter": {
+    label: "query.sql",
+    code: "SELECT * FROM orders WHERE status = 'unpaid';",
+  },
+  "sql-sort": {
+    label: "query.sql",
+    code: "SELECT * FROM orders ORDER BY total DESC LIMIT 3;",
+  },
+  "sql-group": {
+    label: "query.sql",
+    code: "SELECT status, COUNT(*) FROM orders GROUP BY status;",
+  },
+  "sql-join": {
+    label: "query.sql",
+    code: "SELECT o.id, c.name FROM orders o JOIN customers c ON c.id = o.customer_id;",
+  },
+  "sql-write": {
+    label: "query.sql",
+    code: "UPDATE orders SET status = 'paid' WHERE id = 1;",
+  },
+  "sql-transaction": {
+    label: "query.sql",
+    code: "BEGIN;\nUPDATE orders SET status = 'paid' WHERE id = 1;\nCOMMIT;",
+  },
+  "git-repository": {
+    label: "terminal",
+    code: "git init\ngit status",
+  },
+  "git-staging": {
+    label: "terminal",
+    code: "git add src/orders.js\ngit commit -m \"注文表示を追加\"",
+  },
+  "git-history": {
+    label: "terminal",
+    code: "git log --oneline",
+  },
+  "git-branch": {
+    label: "terminal",
+    code: "git switch -c feature/order-filter",
+  },
+  "git-remote": {
+    label: "terminal",
+    code: "git remote add origin https://github.com/example/orders.git\ngit push -u origin main",
+  },
+  "git-pr": {
+    label: "terminal",
+    code: "gh pr create --base main --head feature/order-filter",
+  },
+  "git-conflict": {
+    label: "terminal",
+    code: "git status\ngit add src/orders.js\ngit commit",
+  },
+  "git-actions": {
+    label: "terminal",
+    code: "gh pr status\ngh run list",
+  },
 };
 
 export function listingsFor(slide: {

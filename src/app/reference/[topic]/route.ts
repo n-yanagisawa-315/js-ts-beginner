@@ -6,6 +6,8 @@ const FILES: Record<string, string> = {
   javascript: "javascript-core.html",
   typescript: "typescript-core.html",
   node: "node-core.html",
+  sql: "sql-core.html",
+  github: "github-core.html",
 };
 
 export function generateStaticParams() {

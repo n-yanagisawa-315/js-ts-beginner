@@ -30,6 +30,18 @@ const NPM_DOCS: CourseSource = {
   publisher: "npm",
 };
 
+const SQLITE_DOCS: CourseSource = {
+  title: "SQLite Language Reference",
+  url: "https://www.sqlite.org/lang.html",
+  publisher: "SQLite",
+};
+
+const GITHUB_DOCS: CourseSource = {
+  title: "GitHub CLI manual",
+  url: "https://cli.github.com/manual/",
+  publisher: "GitHub",
+};
+
 const TOPIC_SOURCES: Partial<Record<DiagramId, CourseSource>> = {
   "fn-box": {
     title: "Functions",
@@ -243,6 +255,8 @@ const TYPESCRIPT_DIAGRAMS = new Set<DiagramId>([
 
 export function sourcesForDiagram(id: DiagramId): CourseSource[] {
   const topic = TOPIC_SOURCES[id];
+  if (id.startsWith("sql-")) return [SQLITE_DOCS];
+  if (id.startsWith("git-")) return [GITHUB_DOCS];
   if (id === "node-npm") return [NPM_DOCS, NODE_API];
   if (id.startsWith("node-")) return topic ? [topic, NODE_API] : [NODE_API];
   if (TYPESCRIPT_DIAGRAMS.has(id)) {

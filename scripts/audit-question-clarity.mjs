@@ -2,25 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { COURSE_FILES, EXPECTED_TOTALS } from "./course-manifest.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const COURSE_DIR = path.join(ROOT, "src/lib/course");
-const COURSE_FILES = [
-  "js-start.ts",
-  "js-basic.ts",
-  "js-callback.ts",
-  "js-middle.ts",
-  "js-modern.ts",
-  "js-advanced.ts",
-  "js-dom.ts",
-  "js-npm.ts",
-  "ts-lessons.ts",
-  "ts-modern.ts",
-  "node-start.ts",
-  "node-core.ts",
-];
 const VISIBLE_FIELDS = ["prompt", "lead", "starter", "steps", "hint", "sample"];
-const EXPECTED_QUESTION_COUNT = 252;
+const EXPECTED_QUESTION_COUNT = EXPECTED_TOTALS.questions;
 
 function propertyName(node) {
   if (ts.isIdentifier(node) || ts.isStringLiteral(node)) return node.text;
@@ -53,12 +40,26 @@ function collectQuestions(sourceFile) {
   const questions = [];
   function visit(node) {
     if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "challengeQuestion" &&
+      ts.isObjectLiteralExpression(node.arguments[0])
+    ) {
+      questions.push(node.arguments[0]);
+    }
+    if (
       ts.isPropertyAssignment(node) &&
       propertyName(node.name) === "questions" &&
       ts.isArrayLiteralExpression(node.initializer)
     ) {
       for (const element of node.initializer.elements) {
         if (ts.isObjectLiteralExpression(element)) questions.push(element);
+        if (
+          ts.isCallExpression(element) &&
+          ts.isObjectLiteralExpression(element.arguments[0])
+        ) {
+          questions.push(element.arguments[0]);
+        }
       }
     }
     ts.forEachChild(node, visit);

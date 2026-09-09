@@ -1,4 +1,6 @@
 import { jsAdvanced } from "./js-advanced";
+import { githubAdvanced } from "./github-advanced";
+import { githubStart } from "./github-start";
 import { jsBasic } from "./js-basic";
 import { jsCallback } from "./js-callback";
 import { jsDom } from "./js-dom";
@@ -8,10 +10,13 @@ import { jsNpm } from "./js-npm";
 import { jsStart } from "./js-start";
 import { nodeCore } from "./node-core";
 import { nodeStart } from "./node-start";
+import { languageChallenges } from "./language-challenges";
+import { sqlAdvanced } from "./sql-advanced";
+import { sqlStart } from "./sql-start";
 import { tsLessons } from "./ts-lessons";
 import { tsModern } from "./ts-modern";
 import { applyCourseLearningDesign } from "./learning-design";
-import type { Lesson, Track } from "./types";
+import { TRACK_ORDER, type Lesson, type Track } from "./types";
 
 export type {
   Chapter,
@@ -19,6 +24,8 @@ export type {
   ConversationPage,
   DiagramId,
   ExerciseKind,
+  GitAssertion,
+  GitRepositoryState,
   Lesson,
   Level,
   Question,
@@ -30,9 +37,11 @@ export type {
   TermLine,
   TermTone,
   Track,
+  BehaviorCase,
+  QuestionVariant,
   TransferLevel,
 } from "./types";
-export { LEVEL_LABEL, TRACK_ACCENT, TRACK_LABEL } from "./types";
+export { LEVEL_LABEL, TRACK_ACCENT, TRACK_LABEL, TRACK_ORDER } from "./types";
 export {
   CHAPTERS,
   chaptersByTrack,
@@ -54,6 +63,11 @@ const rawLessons: Lesson[] = [
   ...tsModern,
   ...nodeStart,
   ...nodeCore,
+  ...languageChallenges,
+  ...sqlStart,
+  ...sqlAdvanced,
+  ...githubStart,
+  ...githubAdvanced,
 ];
 
 export const lessons: Lesson[] = applyCourseLearningDesign(rawLessons);
@@ -72,10 +86,16 @@ export function lessonsByTrack(track: Track): Lesson[] {
 export function nextLessonId(id: string): string | undefined {
   const current = getLesson(id);
   if (!current) return undefined;
-  const inTrack = lessonsByTrack(current.track).find(
-    (lesson) => lesson.order === current.order + 1,
+  const trackLessons = lessonsByTrack(current.track);
+  const currentLessonIndex = trackLessons.findIndex(
+    (lesson) => lesson.id === current.id,
   );
+  const inTrack = trackLessons[currentLessonIndex + 1];
   if (inTrack) return inTrack.id;
-  if (current.track === "js") return lessonsByTrack("ts")[0]?.id;
+  const currentTrackIndex = TRACK_ORDER.indexOf(current.track);
+  for (const nextTrack of TRACK_ORDER.slice(currentTrackIndex + 1)) {
+    const first = lessonsByTrack(nextTrack)[0];
+    if (first) return first.id;
+  }
   return undefined;
 }

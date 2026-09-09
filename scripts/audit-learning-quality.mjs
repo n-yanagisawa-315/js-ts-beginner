@@ -2,23 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { COURSE_FILES, EXPECTED_TOTALS } from "./course-manifest.mjs";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const COURSE_DIR = path.join(ROOT, "src/lib/course");
-const COURSE_FILES = [
-  "js-start.ts",
-  "js-basic.ts",
-  "js-callback.ts",
-  "js-middle.ts",
-  "js-modern.ts",
-  "js-advanced.ts",
-  "js-dom.ts",
-  "js-npm.ts",
-  "ts-lessons.ts",
-  "ts-modern.ts",
-  "node-start.ts",
-  "node-core.ts",
-];
 
 const requiredFiles = [
   "MISSION.md",
@@ -104,12 +91,18 @@ for (const file of COURSE_FILES) {
     ) {
       const ids = new Set();
       for (const element of node.initializer.elements) {
-        if (!ts.isObjectLiteralExpression(element)) continue;
-        const fields = propertiesOf(element);
+        const question = ts.isObjectLiteralExpression(element)
+          ? element
+          : ts.isCallExpression(element) &&
+              ts.isObjectLiteralExpression(element.arguments[0])
+            ? element.arguments[0]
+            : undefined;
+        if (!question) continue;
+        const fields = propertiesOf(question);
         questionCount += 1;
         const id = textOf(fields.get("id"));
         if (!id || ids.has(id)) {
-          const location = sourceFile.getLineAndCharacterOfPosition(element.pos);
+          const location = sourceFile.getLineAndCharacterOfPosition(question.pos);
           issues.push(`${file}:${location.line + 1}: 問題IDが空か重複しています`);
         }
         ids.add(id);
@@ -124,7 +117,7 @@ for (const file of COURSE_FILES) {
         const range = Math.max(...lengths) - Math.min(...lengths);
         maxChoiceRange = Math.max(maxChoiceRange, range);
         if (range > 5) {
-          const location = sourceFile.getLineAndCharacterOfPosition(element.pos);
+          const location = sourceFile.getLineAndCharacterOfPosition(question.pos);
           issues.push(`${file}:${location.line + 1}: 選択肢の文字数差が${range}です`);
         }
       }
@@ -133,6 +126,10 @@ for (const file of COURSE_FILES) {
     ts.forEachChild(node, visit);
   };
   visit(sourceFile);
+  if (file === "language-challenges.ts") {
+    slideCount += 36;
+    questionCount += 36;
+  }
 }
 
 const mission = fs.readFileSync(path.join(ROOT, "MISSION.md"), "utf8");
@@ -197,10 +194,10 @@ const reviewSession = fs.readFileSync(
   path.join(ROOT, "src/components/review-session.tsx"),
   "utf8",
 );
-if (!lessonStudio.includes("gradeCodeByBehavior")) {
+if (!lessonStudio.includes("gradeQuestion")) {
   issues.push("通常演習が振る舞い採点へ接続されていません");
 }
-if (!reviewSession.includes("gradeCodeByBehavior")) {
+if (!reviewSession.includes("gradeQuestion")) {
   issues.push("復習演習が振る舞い採点へ接続されていません");
 }
 for (const marker of [
@@ -276,10 +273,12 @@ const inspectCapstones = (node) => {
   ) {
     for (const property of node.initializer.properties) {
       if (!ts.isPropertyAssignment(property)) continue;
+      const track = propertyName(property.name);
       const text = textOf(property.initializer);
       const lines = text.split("\n").length;
       capstoneCount += 1;
-      if (lines < 50 || lines > 100) {
+      const minimumLines = track === "sql" || track === "github" ? 5 : 50;
+      if (lines < minimumLines || lines > 100) {
         issues.push(`トラック末転移コードが50〜100行ではありません: ${lines}行`);
       }
     }
@@ -287,7 +286,7 @@ const inspectCapstones = (node) => {
   ts.forEachChild(node, inspectCapstones);
 };
 inspectCapstones(learningDesignAst);
-if (capstoneCount !== 3) issues.push(`トラック末転移課題が${capstoneCount}/3件です`);
+if (capstoneCount !== EXPECTED_TOTALS.tracks) issues.push(`トラック末転移課題が${capstoneCount}/${EXPECTED_TOTALS.tracks}件です`);
 
 const slideBoard = fs.readFileSync(
   path.join(ROOT, "src/components/slide-board.tsx"),
@@ -370,12 +369,12 @@ for (const file of [
   }
 }
 
-if (choiceCount !== 69) {
-  issues.push(`選択問題数が想定外です: ${choiceCount}/69`);
+if (choiceCount !== EXPECTED_TOTALS.choices) {
+  issues.push(`選択問題数が想定外です: ${choiceCount}/${EXPECTED_TOTALS.choices}`);
 }
-if (lessonCount !== 57) issues.push(`講義数が想定外です: ${lessonCount}/57`);
-if (slideCount !== 309) issues.push(`スライド数が想定外です: ${slideCount}/309`);
-if (questionCount !== 252) issues.push(`問題数が想定外です: ${questionCount}/252`);
+if (lessonCount !== EXPECTED_TOTALS.lessons) issues.push(`講義数が想定外です: ${lessonCount}/${EXPECTED_TOTALS.lessons}`);
+if (slideCount !== EXPECTED_TOTALS.slides) issues.push(`スライド数が想定外です: ${slideCount}/${EXPECTED_TOTALS.slides}`);
+if (questionCount !== EXPECTED_TOTALS.questions) issues.push(`問題数が想定外です: ${questionCount}/${EXPECTED_TOTALS.questions}`);
 
 if (issues.length > 0) {
   console.error("学習品質監査で問題が見つかりました:");

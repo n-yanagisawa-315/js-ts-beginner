@@ -97,10 +97,11 @@ export function HighlightEditor({
   errorLines = [],
   onChange,
   onValidate,
+  typeTests,
 }: {
   id: string;
   value: string;
-  language?: "javascript" | "typescript";
+  language?: "javascript" | "typescript" | "sql";
   disabled?: boolean;
   readOnly?: boolean;
   hideGutter?: boolean;
@@ -108,6 +109,7 @@ export function HighlightEditor({
   errorLines?: number[];
   onChange?: (value: string) => void;
   onValidate?: (errors: string[]) => void;
+  typeTests?: string;
 }) {
   const editorRef = useRef<EditorInstance | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
@@ -132,13 +134,22 @@ export function HighlightEditor({
             setErrorMarkers(editor, monaco, errorLines);
           }}
           onChange={(nextValue) => onChange?.(nextValue ?? "")}
-          onValidate={(markers) =>
-            onValidate?.(
-              markers
-                .filter((marker) => marker.severity === 8)
-                .map((marker) => marker.message),
-            )
-          }
+          onValidate={async (markers) => {
+            const errors = markers
+              .filter((marker) => marker.severity === 8)
+              .map((marker) => marker.message);
+            if (typeTests && monacoRef.current) {
+              errors.push(
+                ...(await validateTypeTests(
+                  monacoRef.current,
+                  id,
+                  value,
+                  typeTests,
+                )),
+              );
+            }
+            onValidate?.(errors);
+          }}
           loading={<EditorLoading />}
           wrapperProps={{
             id,
@@ -199,4 +210,39 @@ export function HighlightEditor({
       </div>
     </div>
   );
+}
+
+async function validateTypeTests(
+  monaco: Monaco,
+  id: string,
+  source: string,
+  tests: string,
+): Promise<string[]> {
+  const uri = monaco.Uri.parse(
+    `file:///course-type-tests/${encodeURIComponent(id)}.ts`,
+  );
+  monaco.editor.getModel(uri)?.dispose();
+  const model = monaco.editor.createModel(
+    `${source}\n\n// 教材の型テスト\n${tests}`,
+    "typescript",
+    uri,
+  );
+  try {
+    const workerFactory =
+      await monaco.languages.typescript.getTypeScriptWorker();
+    const worker = await workerFactory(uri);
+    const [syntactic, semantic] = await Promise.all([
+      worker.getSyntacticDiagnostics(uri.toString()),
+      worker.getSemanticDiagnostics(uri.toString()),
+    ]);
+    return [...syntactic, ...semantic].map((diagnostic) =>
+      typeof diagnostic.messageText === "string"
+        ? diagnostic.messageText
+        : diagnostic.messageText.messageText,
+    );
+  } catch {
+    return ["型テストを実行できませんでした。"];
+  } finally {
+    model.dispose();
+  }
 }

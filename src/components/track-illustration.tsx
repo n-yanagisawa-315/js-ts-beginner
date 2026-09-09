@@ -5,6 +5,8 @@ const LABEL: Record<Track, string> = {
   js: "JS",
   ts: "TS",
   node: ">_",
+  sql: "SQL",
+  github: "GH",
 };
 
 export function TrackIllustration({

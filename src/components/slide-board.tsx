@@ -7,9 +7,9 @@ import { sourcesForDiagram } from "@/lib/course/sources";
 import type { Slide } from "@/lib/course";
 
 const INLINE_TOKEN =
-  /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|npm|npx|LTS|stdout|stderr)\b)/g;
+  /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
 const KEYWORD_TOKEN =
-  /^(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|npm|npx|LTS|stdout|stderr)$/;
+  /^(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)$/;
 const STORY_BEAT_LABEL = {
   problem: "今回の作業",
   prediction: "予想する",

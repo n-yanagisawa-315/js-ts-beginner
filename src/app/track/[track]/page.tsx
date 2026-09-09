@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
 import { TrackDetail } from "@/components/track-detail";
-import { lessonsByTrack, type Track } from "@/lib/course";
+import { lessonsByTrack, TRACK_ORDER, type Track } from "@/lib/course";
 import { TRACK_META } from "@/lib/track-meta";
 
-const TRACKS: Track[] = ["js", "ts", "node"];
-
 export function generateStaticParams() {
-  return TRACKS.map((track) => ({ track }));
+  return TRACK_ORDER.map((track) => ({ track }));
 }
 
 export async function generateMetadata({
@@ -15,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ track: string }>;
 }) {
   const { track } = await params;
-  if (!TRACKS.includes(track as Track)) return {};
+  if (!TRACK_ORDER.includes(track as Track)) return {};
   const meta = TRACK_META[track as Track];
   return {
     title: `${meta.name}入門`,
@@ -29,7 +27,7 @@ export default async function TrackPage({
   params: Promise<{ track: string }>;
 }) {
   const { track } = await params;
-  if (!TRACKS.includes(track as Track)) notFound();
+  if (!TRACK_ORDER.includes(track as Track)) notFound();
   const currentTrack = track as Track;
   return (
     <TrackDetail

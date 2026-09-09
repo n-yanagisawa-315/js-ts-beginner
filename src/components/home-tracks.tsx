@@ -20,7 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { Lesson, Track } from "@/lib/course";
+import { TRACK_ORDER, type Lesson, type Track } from "@/lib/course";
 import {
   emptyLearningStateSnapshot,
   learningStateSnapshot,
@@ -32,15 +32,7 @@ import { TRACK_META } from "@/lib/track-meta";
 
 type TrackLessons = Record<Track, Lesson[]>;
 
-export function HomeTracks({
-  js,
-  ts,
-  node,
-}: {
-  js: Lesson[];
-  ts: Lesson[];
-  node: Lesson[];
-}) {
+export function HomeTracks({ lessons }: { lessons: Lesson[] }) {
   const json = useSyncExternalStore(
     subscribeLearningState,
     learningStateSnapshot,
@@ -48,7 +40,12 @@ export function HomeTracks({
   );
   const state = useMemo(() => JSON.parse(json) as LearningState, [json]);
   const stats = useMemo(() => learningStats(state), [state]);
-  const tracks: TrackLessons = { js, ts, node };
+  const tracks = Object.fromEntries(
+    TRACK_ORDER.map((track) => [
+      track,
+      lessons.filter((lesson) => lesson.track === track),
+    ]),
+  ) as TrackLessons;
 
   return (
     <section id="course-catalog" className="course-catalog-main">
@@ -56,19 +53,20 @@ export function HomeTracks({
         <div className="course-section-heading">
           <div>
             <p className="course-section-kicker">言語ごとに選ぶ</p>
-            <h2 id="catalog-title">3つの講座を、順番に進める</h2>
+            <h2 id="catalog-title">5つの講座で、作る力をつなげる</h2>
           </div>
           <p>
-            JavaScriptで動きを理解し、TypeScriptでデータを守り、
-            Node.jsでAPIへつなぎます。
+            プログラム、API、データベース、共同開発を、
+            注文管理システムの完成まで一つずつつなぎます。
           </p>
         </div>
 
         <div className="course-card-grid">
-          {(Object.keys(tracks) as Track[]).map((track) => (
+          {TRACK_ORDER.map((track, index) => (
             <TrackCard
               key={track}
               track={track}
+              order={index + 1}
               lessons={tracks[track]}
               state={state}
             />
@@ -129,10 +127,12 @@ export function HomeTracks({
 
 function TrackCard({
   track,
+  order,
   lessons,
   state,
 }: {
   track: Track;
+  order: number;
   lessons: Lesson[];
   state: LearningState;
 }) {
@@ -158,7 +158,7 @@ function TrackCard({
           <div className="flex items-center justify-between gap-3">
             <Badge variant="secondary">{meta.badge}</Badge>
             <span className="course-card-order">
-              {track === "js" ? "01" : track === "ts" ? "02" : "03"}
+              {String(order).padStart(2, "0")}
             </span>
           </div>
           <CardTitle>{meta.name}</CardTitle>

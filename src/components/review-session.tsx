@@ -30,7 +30,7 @@ import {
   type Lesson,
 } from "@/lib/course";
 import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
-import { gradeCodeByBehavior } from "@/lib/grade-behavior";
+import { gradeQuestion } from "@/lib/grade-question";
 import {
   readLearningState,
   recordQuestionAssistance,
@@ -79,7 +79,7 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
     [answer, item],
   );
 
-  async function submit() {
+  async function submit(correctOverride?: boolean) {
     if (!item || checked) return;
     if (confidence === null) return;
     if (
@@ -89,10 +89,15 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
     ) {
       return;
     }
-    const correct =
-      item.question.kind === "code"
-        ? await gradeCodeByBehavior(item.question, answer, item.lesson.track)
-        : isCorrect;
+    const gradeResult =
+      correctOverride === undefined
+        ? await gradeQuestion(item.question, answer, item.lesson.track)
+        : {
+            passed: correctOverride,
+            feedback: item.question.explain,
+            diagnostics: [] as string[],
+          };
+    const correct = gradeResult.passed;
     recordQuestionAttempt({
       lessonId: item.lesson.id,
       questionId: item.question.id,
@@ -118,7 +123,9 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
       setFailReason(
         item.question.kind === "choice" && choice
           ? (item.question.feedbackByAnswer?.[choice] ?? item.question.explain)
-          : feedbackForIncorrectAnswer(item.question, answer),
+          : item.question.kind === "sql" || item.question.kind === "git"
+            ? [gradeResult.feedback, ...gradeResult.diagnostics].join("\n")
+            : feedbackForIncorrectAnswer(item.question, answer),
       );
       setFailTick((current) => current + 1);
       return;

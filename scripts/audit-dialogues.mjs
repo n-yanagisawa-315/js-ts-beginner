@@ -1,23 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
+import { COURSE_FILES } from "./course-manifest.mjs";
 
 const ROOT = process.cwd();
 const COURSE_DIR = path.join(ROOT, "src/lib/course");
-const COURSE_FILES = [
-  "js-start.ts",
-  "js-basic.ts",
-  "js-callback.ts",
-  "js-middle.ts",
-  "js-modern.ts",
-  "js-advanced.ts",
-  "js-dom.ts",
-  "js-npm.ts",
-  "ts-lessons.ts",
-  "ts-modern.ts",
-  "node-start.ts",
-  "node-core.ts",
-];
 
 function propertyName(node) {
   if (ts.isIdentifier(node) || ts.isStringLiteral(node)) return node.text;
@@ -65,6 +52,13 @@ const issues = [];
 const beginnerLines = new Map();
 let slideCount = 0;
 let talkLineCount = 0;
+const GENERATED_CONVERSATION_FILES = new Set([
+  "language-challenges.ts",
+  "sql-start.ts",
+  "sql-advanced.ts",
+  "github-start.ts",
+  "github-advanced.ts",
+]);
 
 for (const file of COURSE_FILES) {
   const fullPath = path.join(COURSE_DIR, file);
@@ -91,6 +85,12 @@ for (const file of COURSE_FILES) {
     const talk = fields.get("talk");
     const location = sourceFile.getLineAndCharacterOfPosition(slide.pos);
     const label = `${file}:${location.line + 1} (${title})`;
+    if (GENERATED_CONVERSATION_FILES.has(file)) {
+      if (!lead || !pointsNode) {
+        issues.push(`${label}: 会話生成に必要なleadまたはpointsがありません`);
+      }
+      continue;
+    }
     if (!talk || !ts.isArrayLiteralExpression(talk)) {
       issues.push(`${label}: talk がありません`);
       continue;

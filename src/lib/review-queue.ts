@@ -120,6 +120,18 @@ function contextVariant(question: Question, attemptCount: number): Question {
 }
 
 export function reviewVariant(question: Question, attemptCount: number): Question {
+  if (question.reviewVariants?.length) {
+    const selected =
+      question.reviewVariants[attemptCount % question.reviewVariants.length]!;
+    return {
+      ...contextVariant(question, attemptCount),
+      ...selected,
+      variantId: `${question.variantId ?? question.id}:${selected.id}`,
+    };
+  }
+  if (question.runtime === "sql" || question.runtime === "git") {
+    return contextVariant(question, attemptCount);
+  }
   if (question.runtime === "dom") {
     return {
       ...contextVariant(question, attemptCount),

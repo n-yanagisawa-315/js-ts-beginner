@@ -50,6 +50,7 @@ export type LearningAssistantContext = {
   attempted?: boolean;
   correct?: boolean;
   feedback?: string;
+  runtimeState?: string;
 };
 
 type AssistantStatus =
@@ -390,7 +391,7 @@ function createSystemPrompt(context: LearningAssistantContext) {
     : `学習者はまだ正解していません。最終解答、正しい選択肢、完成コードを直接示してはいけません。
 短い問い返しか、次に確認する一点だけをヒントとして示してください。`;
 
-  return `あなたはJavaScript・TypeScript・Node.js初学者のための日本語チューターです。
+  return `あなたはJavaScript・TypeScript・Node.js・SQL・GitHub初学者のための日本語チューターです。
 「この内容」は、下記の「いま表示中の内容」だけを指します。講義全体の別の概念へ話を広げないでください。
 いま表示中のタイトルと会話を最優先の根拠にして、やさしい日本語の1〜3文、180文字程度までで答えてください。
 専門用語は最初に日常語へ言い換えます。ユーザーが明示的にコードを求めた場合だけ、短いコード片を1つ使います。
@@ -410,6 +411,7 @@ ${answerPolicy}
 - 段階: ${context.phase}
 - 問題: ${context.questionPrompt ?? "なし"}
 - 学習者の入力: ${context.learnerAnswer?.slice(0, 1000) || "なし"}
+- SQL/Git演習の現在状態: ${context.runtimeState?.slice(0, 1600) || "なし"}
 - 解答済み: ${context.attempted ? "はい" : "いいえ"}
 - 正解済み: ${context.correct ? "はい" : "いいえ"}
 - 教材からのフィードバック: ${context.feedback ?? "なし"}`;

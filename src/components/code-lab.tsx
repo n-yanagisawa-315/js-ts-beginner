@@ -8,8 +8,10 @@ import {
   ConfidenceScale,
 } from "@/components/confidence-scale";
 import { HighlightEditor } from "@/components/highlight-editor";
+import { GitTerminal } from "@/components/git-terminal";
 import { IconEye, IconFile, IconPlay, IconReset } from "@/components/icons";
 import { OrderProjectPreview } from "@/components/order-project-preview";
+import { SqlConsole } from "@/components/sql-console";
 import { SelfExplanation } from "@/components/self-explanation";
 import {
   Alert,
@@ -46,7 +48,7 @@ export function CodeLab(props: {
   failReason: string | null;
   failTick: number;
   onTyped: (value: string) => void;
-  onSubmit: () => void | Promise<void>;
+  onSubmit: (correctOverride?: boolean) => void | Promise<void>;
   onDismissFail: () => void;
   onNext: () => void;
   nextLabel?: string;
@@ -105,7 +107,7 @@ function CodeLabInner({
   failReason: string | null;
   failTick: number;
   onTyped: (value: string) => void;
-  onSubmit: () => void | Promise<void>;
+  onSubmit: (correctOverride?: boolean) => void | Promise<void>;
   onDismissFail: () => void;
   onNext: () => void;
   nextLabel?: string;
@@ -133,8 +135,10 @@ function CodeLabInner({
   const [pane, setPane] = useState<"file" | "term">("file");
   const [shellLog, setShellLog] = useState<TermLine[]>([]);
   const [typeErrors, setTypeErrors] = useState<string[]>([]);
+  const [typeValidationReady, setTypeValidationReady] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [terminalRevision, setTerminalRevision] = useState(0);
   const [domDocument, setDomDocument] = useState(() =>
     question.runtime === "dom"
       ? createDomDocument({
@@ -143,19 +147,26 @@ function CodeLabInner({
         })
       : "",
   );
-  const fileName = question.fileName ?? (track === "ts" ? "script.ts" : "script.js");
+  const isSql = question.kind === "sql";
+  const isGit = question.kind === "git";
+  const fileName =
+    question.fileName ??
+    (isSql ? "query.sql" : track === "ts" ? "script.ts" : "script.js");
   const isNode = track === "node";
   const isShell = question.kind === "shell";
   const isDom = question.runtime === "dom";
   const cwd = question.cwd ?? "app";
-  const canRun = track !== "ts";
+  const canRun = track !== "ts" && !isSql && !isGit;
   const hasOutputSample = Boolean(question.sample?.trim());
   const expectedResult = hasOutputSample
     ? question.sample
     : track === "ts"
       ? "型エラーがなく、指定された型の約束を満たせば完了です。"
       : "この問題は表示結果ではなく、指定されたコードの形と動作を採点します。";
-  const canSubmit = !checked && typed.trim() !== "";
+  const canSubmit =
+    !checked &&
+    typed.trim() !== "" &&
+    (!question.typeTests || typeValidationReady);
   const requiresExplanation = question.exerciseKind === "transfer";
   const hints = question.hints?.length
     ? question.hints
@@ -265,11 +276,15 @@ function CodeLabInner({
         const result = await runDomQuestion(question, typed);
         setLogs(result.logs);
         setRunError(result.error ?? null);
-      } else {
+      } else if (!isSql && !isGit) {
         await runJs();
         if (isNode) setPane("term");
       }
-      await onSubmit();
+      await onSubmit(
+        track === "ts" && question.typeTests
+          ? typeErrors.length === 0
+          : undefined,
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -291,6 +306,8 @@ function CodeLabInner({
         setRunError(null);
         setShellLog([]);
         setTypeErrors([]);
+        setTypeValidationReady(false);
+        setTerminalRevision((revision) => revision + 1);
         if (isDom) {
           setDomDocument(
             createDomDocument({
@@ -332,7 +349,15 @@ function CodeLabInner({
               演習
             </p>
             <h1 className="mt-2 font-serif text-xl font-medium leading-8">
-              <CopyableText text={question.prompt} />
+              <CopyableText
+                text={question.prompt}
+                code={question.answer}
+                copyValues={
+                  isShell
+                    ? [question.answer, ...(question.aliases ?? [])]
+                    : undefined
+                }
+              />
             </h1>
             {question.scenario ? (
               <p className="mt-3 border-l-2 border-studio pl-3 text-sm leading-6 text-mute">
@@ -352,7 +377,6 @@ function CodeLabInner({
           ) : null}
           <QuestionGuide
             question={question}
-            track={track}
             fileName={fileName}
             isShell={isShell}
           />
@@ -382,7 +406,7 @@ function CodeLabInner({
             {hints.length > 0 ? (
               <Button
                 variant="secondary"
-                className="w-full"
+                className="w-full border border-[#73bfb1] bg-[#d5f0ea] text-[#075f56] hover:border-[#4fa897] hover:bg-[#c2e8df] hover:text-[#054d46]"
                 aria-expanded={hintLevel > 0}
                 onClick={() => {
                   const next = Math.min(hintLevel + 1, hints.length);
@@ -405,7 +429,15 @@ function CodeLabInner({
                     {hints.slice(0, hintLevel).map((hint, index) => (
                       <li key={hint}>
                         <span className="mr-2 font-mono">{index + 1}.</span>
-                        <CopyableText text={hint} />
+                        <CopyableText
+                          text={hint}
+                          code={question.answer}
+                          copyValues={
+                            isShell
+                              ? [question.answer, ...(question.aliases ?? [])]
+                              : undefined
+                          }
+                        />
                       </li>
                     ))}
                   </ol>
@@ -472,6 +504,58 @@ function CodeLabInner({
               </p>
             )}
           </NodeTermChrome>
+        ) : isSql ? (
+          <section className="editor-shell overflow-y-auto bg-background text-foreground">
+            <SqlConsole
+              source={typed}
+              question={question}
+              disabled={checked || isSubmitting}
+              onChange={onTyped}
+              onError={(error) => setRunError(error.message)}
+            />
+            {checked ? (
+              <p
+                ref={explainRef}
+                id={explainId}
+                role="status"
+                tabIndex={-1}
+                className="editor-note"
+              >
+                正解。 {question.explain}
+              </p>
+            ) : null}
+            {toolbar}
+            {failReason ? (
+              <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
+            ) : null}
+          </section>
+        ) : isGit ? (
+          <section className="editor-shell overflow-y-auto bg-[#10141c]">
+            <GitTerminal
+              key={`${question.id}-${terminalRevision}`}
+              initialState={question.gitInitialState}
+              assertions={question.gitAssertions}
+              disabled={checked || isSubmitting}
+              onCommand={(command) =>
+                onTyped([typed, command].filter(Boolean).join("\n"))
+              }
+            />
+            {checked ? (
+              <p
+                ref={explainRef}
+                id={explainId}
+                role="status"
+                tabIndex={-1}
+                className="editor-note"
+              >
+                正解。 {question.explain}
+              </p>
+            ) : null}
+            {toolbar}
+            {failReason ? (
+              <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
+            ) : null}
+          </section>
         ) : isNode ? (
           <section className="editor-shell is-term">
             <Tabs
@@ -564,7 +648,11 @@ function CodeLabInner({
                 describedBy={checked ? explainId : undefined}
                 errorLines={errorLines}
                 onChange={onTyped}
-                onValidate={setTypeErrors}
+                onValidate={(errors) => {
+                  setTypeErrors(errors);
+                  setTypeValidationReady(true);
+                }}
+                typeTests={question.typeTests}
               />
               {checked ? (
                 <p
@@ -646,12 +734,10 @@ function CodeLabInner({
 
 function QuestionGuide({
   question,
-  track,
   fileName,
   isShell,
 }: {
   question: Question;
-  track: Track;
   fileName: string;
   isShell: boolean;
 }) {
@@ -662,14 +748,6 @@ function QuestionGuide({
       : question.scaffoldLevel === "faded"
         ? allSteps.slice(0, 1)
         : allSteps;
-  const result =
-    question.sample?.trim()
-      ? question.sample
-      : track === "ts"
-        ? "型エラーなしでチェックを通過"
-        : isShell
-          ? "指定されたコマンドが実行される"
-          : "指定された処理が完成する";
 
   return (
     <section className="question-guide" aria-label="問題の進め方">
@@ -688,16 +766,20 @@ function QuestionGuide({
         <div className="question-guide-block">
           <p className="question-guide-label">イメージ</p>
           <p className="question-guide-copy">
-            <CopyableText text={question.lead} />
+            <CopyableText
+              text={question.lead}
+              code={question.answer}
+              copyValues={
+                isShell
+                  ? [question.answer, ...(question.aliases ?? [])]
+                  : undefined
+              }
+            />
           </p>
         </div>
       ) : null}
 
       <div className="question-goal">
-        <div>
-          <p className="question-guide-label">完成すると</p>
-          <pre>{result}</pre>
-        </div>
         <p className="question-material">
           <span>{isShell ? "入力場所" : "用意済み"}</span>
           <strong>{isShell ? "ターミナル" : fileName}</strong>
@@ -715,7 +797,15 @@ function QuestionGuide({
               <li key={step}>
                 <span>{stepIndex + 1}</span>
                 <p>
-                  <CopyableText text={step} />
+                  <CopyableText
+                    text={step}
+                    code={question.answer}
+                    copyValues={
+                      isShell
+                        ? [question.answer, ...(question.aliases ?? [])]
+                        : undefined
+                    }
+                  />
                 </p>
               </li>
             ))}

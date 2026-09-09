@@ -1,4 +1,5 @@
-export type Track = "js" | "ts" | "node";
+export const TRACK_ORDER = ["js", "ts", "node", "sql", "github"] as const;
+export type Track = (typeof TRACK_ORDER)[number];
 
 export type Level = "start" | "basic" | "middle" | "advanced";
 
@@ -13,12 +14,16 @@ export const TRACK_LABEL: Record<Track, string> = {
   js: "JavaScript",
   ts: "TypeScript",
   node: "Node.js",
+  sql: "SQL",
+  github: "GitHub",
 };
 
 export const TRACK_ACCENT: Record<Track, string> = {
   js: "var(--js)",
   ts: "var(--ts)",
   node: "var(--node)",
+  sql: "var(--sql)",
+  github: "var(--github)",
 };
 
 export type DiagramId =
@@ -81,7 +86,22 @@ export type DiagramId =
   | "dom-form"
   | "dom-render"
   | "dom-storage"
-  | "dom-fetch";
+  | "dom-fetch"
+  | "sql-table"
+  | "sql-filter"
+  | "sql-sort"
+  | "sql-group"
+  | "sql-join"
+  | "sql-write"
+  | "sql-transaction"
+  | "git-repository"
+  | "git-staging"
+  | "git-history"
+  | "git-branch"
+  | "git-remote"
+  | "git-pr"
+  | "git-conflict"
+  | "git-actions";
 
 export type TalkLine = {
   speaker: "engineer" | "beginner";
@@ -143,7 +163,7 @@ export type Question = {
   prompt: string;
   lead?: string;
   code?: string;
-  kind: "choice" | "input" | "code" | "shell" | "order";
+  kind: "choice" | "input" | "code" | "shell" | "order" | "sql" | "git";
   options?: string[];
   fragments?: string[];
   starter?: string;
@@ -152,9 +172,18 @@ export type Question = {
   aliases?: string[];
   termOutput?: TermLine[];
   termAlive?: boolean;
-  runtime?: "console" | "dom";
+  runtime?: "console" | "dom" | "node" | "sql" | "git";
   fixtureHtml?: string;
   domProbe?: string;
+  sqlSchema?: string;
+  sqlSeed?: string;
+  sqlExpectedRows?: Array<Record<string, string | number | null>>;
+  sqlExpectedTable?: string;
+  gitInitialState?: GitRepositoryState;
+  gitAssertions?: GitAssertion[];
+  behaviorCases?: BehaviorCase[];
+  typeTests?: string;
+  reviewVariants?: QuestionVariant[];
   steps?: string[];
   hint?: string;
   sample?: string;
@@ -176,6 +205,42 @@ export type Question = {
     { id: string; feedback: string; nextCheck: string }
   >;
   hints?: string[];
+};
+
+export type BehaviorCase = {
+  args?: unknown[];
+  expected?: unknown;
+  expectedLogs?: string[];
+};
+
+export type GitRepositoryState = {
+  files?: Record<string, string>;
+  branch?: string;
+  branches?: string[];
+  remote?: string;
+  initialized?: boolean;
+};
+
+export type GitAssertion =
+  | { kind: "staged"; path: string }
+  | { kind: "commit-count"; count: number }
+  | { kind: "branch"; name: string }
+  | { kind: "remote"; name: string }
+  | { kind: "pushed"; branch: string }
+  | { kind: "pr-open"; base: string; head: string }
+  | { kind: "clean" }
+  | { kind: "remote-tracked"; remote: string; branch: string }
+  | { kind: "merged"; branch: string }
+  | { kind: "initialized" };
+
+export type QuestionVariant = {
+  id: string;
+  prompt?: string;
+  sqlSchema?: string;
+  sqlSeed?: string;
+  sqlExpectedRows?: Array<Record<string, string | number | null>>;
+  gitInitialState?: GitRepositoryState;
+  gitAssertions?: GitAssertion[];
 };
 
 export type ChapterId =
@@ -202,7 +267,24 @@ export type ChapterId =
   | "node-http"
   | "node-npm"
   | "node-async"
-  | "node-prod";
+  | "node-prod"
+  | "js-challenge"
+  | "ts-challenge"
+  | "node-challenge"
+  | "sql-select"
+  | "sql-filter"
+  | "sql-sort"
+  | "sql-group"
+  | "sql-join"
+  | "sql-write"
+  | "sql-transaction"
+  | "github-repository"
+  | "github-commit"
+  | "github-branch"
+  | "github-remote"
+  | "github-pr"
+  | "github-conflict"
+  | "github-automation";
 
 export type Chapter = {
   id: ChapterId;

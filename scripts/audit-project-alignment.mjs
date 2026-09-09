@@ -1,23 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
+import { COURSE_FILES, EXPECTED_TOTALS } from "./course-manifest.mjs";
 
 const ROOT = process.cwd();
 const COURSE_DIR = path.join(ROOT, "src/lib/course");
-const COURSE_FILES = [
-  "js-start.ts",
-  "js-basic.ts",
-  "js-callback.ts",
-  "js-middle.ts",
-  "js-modern.ts",
-  "js-advanced.ts",
-  "js-dom.ts",
-  "js-npm.ts",
-  "ts-lessons.ts",
-  "ts-modern.ts",
-  "node-start.ts",
-  "node-core.ts",
-];
 const PROJECT_TERMS =
   /(注文|受注|order|customer|paid|unpaid|支払|顧客|商品|price|quantity|status|在庫|金額|合計|API|HTTP)/i;
 const issues = [];
@@ -51,13 +38,23 @@ for (const file of COURSE_FILES) {
     issues.push(`${file}: ファイルがありません`);
     continue;
   }
+  const sourceText = fs.readFileSync(fullPath, "utf8");
   const sourceFile = ts.createSourceFile(
     fullPath,
-    fs.readFileSync(fullPath, "utf8"),
+    sourceText,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.TS,
   );
+  if (file === "language-challenges.ts") {
+    const challengeCount = sourceText.match(/challengeQuestion\(\{/g)?.length ?? 0;
+    lessonCount += 12;
+    buildCount += challengeCount;
+    if (challengeCount !== 36 || !PROJECT_TERMS.test(sourceText)) {
+      issues.push(`${file}: 注文題材のチャレンジ36問を確認できません`);
+    }
+    continue;
+  }
   function visit(node) {
     if (ts.isObjectLiteralExpression(node)) {
       const fields = fieldsOf(node);
@@ -77,7 +74,8 @@ for (const file of COURSE_FILES) {
             const questionFields = fieldsOf(question);
             return (
               textOf(questionFields.get("projectRole")) === "build" ||
-              textOf(questionFields.get("runtime")) === "dom"
+              ["dom", "sql", "git"].includes(textOf(questionFields.get("runtime"))) ||
+              ["sql", "git"].includes(textOf(questionFields.get("kind")))
             );
           });
         if (buildQuestions.length === 0) {
@@ -111,7 +109,7 @@ for (const file of COURSE_FILES) {
   visit(sourceFile);
 }
 
-if (lessonCount !== 57) issues.push(`講義数: ${lessonCount}/57`);
+if (lessonCount !== EXPECTED_TOTALS.lessons) issues.push(`講義数: ${lessonCount}/${EXPECTED_TOTALS.lessons}`);
 
 if (issues.length > 0) {
   console.error("プロジェクト接続監査で問題が見つかりました:");

@@ -1,6 +1,7 @@
+import os
 from playwright.sync_api import expect, sync_playwright
 
-BASE_URL = "http://localhost:3000"
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:3000")
 
 
 def no_horizontal_overflow(page):

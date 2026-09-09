@@ -1,23 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
+import { COURSE_FILES } from "./course-manifest.mjs";
 
 const ROOT = process.cwd();
 const COURSE_DIR = path.join(ROOT, "src/lib/course");
-const COURSE_FILES = [
-  "js-start.ts",
-  "js-basic.ts",
-  "js-callback.ts",
-  "js-middle.ts",
-  "js-modern.ts",
-  "js-advanced.ts",
-  "js-dom.ts",
-  "js-npm.ts",
-  "ts-lessons.ts",
-  "ts-modern.ts",
-  "node-start.ts",
-  "node-core.ts",
-];
 
 function propertyName(node) {
   if (ts.isIdentifier(node) || ts.isStringLiteral(node)) return node.text;
@@ -33,6 +20,7 @@ function propertiesOf(object) {
 }
 
 function textOf(node) {
+  if (!node) return "";
   if (
     ts.isStringLiteral(node) ||
     ts.isNoSubstitutionTemplateLiteral(node)

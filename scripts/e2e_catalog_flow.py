@@ -20,15 +20,15 @@ with sync_playwright() as playwright:
             "heading", name=re.compile(r"注文管理を作りながら、\s*プログラムの基礎を学ぶ。")
         )
     ).to_be_visible()
-    expect(desktop.get_by_role("heading", name="3つの講座を、順番に進める")).to_be_visible()
-    for name in ["JavaScript", "TypeScript", "Node.js"]:
+    expect(desktop.get_by_role("heading", name="5つの講座で、作る力をつなげる")).to_be_visible()
+    for name in ["JavaScript", "TypeScript", "Node.js", "SQL", "GitHub"]:
         expect(desktop.get_by_role("heading", name=name, exact=True)).to_be_visible()
         expect(desktop.get_by_role("link", name=f"{name}講座を見る")).to_be_visible()
 
     desktop.get_by_role("link", name="JavaScript講座を見る").click()
     desktop.wait_for_url(f"{BASE_URL}/track/js")
     expect(desktop.get_by_role("heading", name="JavaScript 入門")).to_be_visible()
-    expect(desktop.get_by_text("33講義", exact=True).first).to_be_visible()
+    expect(desktop.get_by_text("37講義", exact=True).first).to_be_visible()
     expect(desktop.get_by_role("navigation", name="JavaScriptの編一覧")).to_be_visible()
     expect(desktop.get_by_role("heading", name="基礎文法編")).to_be_visible()
     expect(desktop.get_by_role("link", name="この編を始める").first).to_be_visible()
@@ -38,6 +38,8 @@ with sync_playwright() as playwright:
     for track, heading in [
         ("ts", "TypeScript 入門"),
         ("node", "Node.js 入門"),
+        ("sql", "SQL 入門"),
+        ("github", "GitHub 入門"),
     ]:
         page = browser.new_page(viewport={"width": 1024, "height": 800})
         page.goto(f"{BASE_URL}/track/{track}")
@@ -68,4 +70,4 @@ with sync_playwright() as playwright:
     desktop.screenshot(path=str(RESULTS / "track-catalog-desktop.png"))
     browser.close()
 
-print("講座カード、3トラック詳細、章ナビ、進捗、375px表示、キーボード焦点、reduced-motionを確認しました。")
+print("講座カード、5トラック詳細、章ナビ、進捗、375px表示、キーボード焦点、reduced-motionを確認しました。")

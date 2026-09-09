@@ -15,12 +15,16 @@ const PROJECT_BY_TRACK: Record<Track, string> = {
   js: "注文管理画面",
   ts: "型安全な注文管理",
   node: "注文API",
+  sql: "注文データベース",
+  github: "注文管理アプリの共同開発",
 };
 
 const INCIDENT_BY_TRACK: Record<Track, string> = {
   js: "店員が迷わず注文を処理できるよう、画面の動きを1つずつ組み立てます。",
   ts: "注文データの取り違えを実行前に見つけられるよう、コードへ約束を加えます。",
   node: "注文をファイル・通信・プロセスへ安全につなぎ、運用できる形へ育てます。",
+  sql: "注文を正しく探して更新できるよう、データベースへ質問する手順を組み立てます。",
+  github: "注文管理アプリの変更を失わず共有できるよう、履歴と共同作業の流れを整えます。",
 };
 
 const PROJECT_MILESTONE_BY_CHAPTER: Record<ChapterId, string> = {
@@ -48,6 +52,23 @@ const PROJECT_MILESTONE_BY_CHAPTER: Record<ChapterId, string> = {
   "node-npm": "注文APIをどの環境でも同じ手順で起動する",
   "node-async": "複数の注文通信を止めずに処理する",
   "node-prod": "失敗を記録し、注文処理を途中で壊さず終了する",
+  "js-challenge": "JavaScriptの仕組みを組み合わせ、未知の注文処理を解く",
+  "ts-challenge": "型の道具を組み合わせ、注文データの制約を型で表す",
+  "node-challenge": "Node.jsのAPIを組み合わせ、注文サービスの課題を解く",
+  "sql-select": "注文テーブルから必要な列を読み出す",
+  "sql-filter": "状態や金額を条件に必要な注文だけを選ぶ",
+  "sql-sort": "注文を金額や日時で並べ、表示件数を絞る",
+  "sql-group": "顧客や状態ごとの件数・合計を集計する",
+  "sql-join": "注文と顧客をキーで結び、表示情報を完成させる",
+  "sql-write": "注文の追加・支払更新・取消を安全に行う",
+  "sql-transaction": "制約と取引で複数更新の整合性を守る",
+  "github-repository": "注文管理アプリを履歴管理できる状態にする",
+  "github-commit": "変更を選び、意味のある単位で記録する",
+  "github-branch": "機能開発をmainから分けて安全に統合する",
+  "github-remote": "ローカルの履歴を共有先と同期する",
+  "github-pr": "変更内容をPull Requestとして提案・確認する",
+  "github-conflict": "同じ箇所の変更を読み、意図を保って解決する",
+  "github-automation": "Issue・Actions・保護ルールで共同開発を整える",
 };
 
 const PROJECT_TERMS =
@@ -243,6 +264,20 @@ process.on("SIGTERM", () => {
 // コンテナ基盤は標準出力と標準エラーを収集する
 // 一時ファイルだけへログを残さない
 // ここまでを読み、最後の設問へ答える`,
+  sql: `-- 注文データベースの引き継ぎクエリ
+SELECT c.name, COUNT(o.id) AS order_count, SUM(o.total) AS paid_total
+FROM customers AS c
+JOIN orders AS o ON o.customer_id = c.id
+WHERE o.status = 'paid'
+GROUP BY c.id, c.name
+ORDER BY paid_total DESC;`,
+  github: `# 注文管理アプリの共同開発フロー
+git status
+git switch -c feature/order-filter
+git add src/order-filter.js
+git commit -m "注文状態の絞り込みを追加"
+git push -u origin feature/order-filter
+gh pr create --base main --head feature/order-filter`,
 };
 
 const CONTRAST_GROUP: Partial<Record<Slide["diagram"], string>> = {
@@ -645,7 +680,7 @@ function transferQuestion(
     answer = options[0];
     explain =
       "型アサーションは値を変換しません。外部境界ではunknownとして形を検証し、変換後の値へ型を付けます。";
-  } else if (far) {
+  } else if (far && lesson.track === "node") {
     code = TRACK_CAPSTONE_CODE.node;
     prompt =
       "複数コンテナで動く注文APIを安全に運用します。非同期I/O、ログ収集、終了処理をまとめた判断を選んでください。";
@@ -658,6 +693,32 @@ function transferQuestion(
     answer = options[0];
     explain =
       "待ち時間は非同期処理へ渡し、診断可能な標準ストリームへ記録し、通常終了要求では新規受付を止めて処理中の要求を待ちます。";
+  } else if (far && lesson.track === "sql") {
+    code = TRACK_CAPSTONE_CODE.sql;
+    prompt =
+      "支払済み注文を顧客ごとに集計します。表を安全に結び、集計結果を大きい順で表示する考え方を選んでください。";
+    options = [
+      "顧客IDでJOINし、WHEREで支払済みに絞ってからGROUP BYし、合計でORDER BYする",
+      "名前の一部が似ている行を結び、全注文を集計して順序を指定しない",
+      "JOINせず全行を掛け合わせ、重複した合計をそのまま使う",
+      "UPDATEで元データを書き換えてから画面用の合計を作る",
+    ];
+    answer = options[0];
+    explain =
+      "テーブルの関係はIDで結び、対象行を絞ってから集計します。表示順はORDER BYで明示します。";
+  } else if (far && lesson.track === "github") {
+    code = TRACK_CAPSTONE_CODE.github;
+    prompt =
+      "注文絞り込み機能をmainへ直接置かず、レビューして共有する流れを選んでください。";
+    options = [
+      "機能branchでcommitし、originへpushしてPull Requestを作る",
+      "mainの履歴を削除し、作業ファイルだけをチャットへ貼る",
+      "未commitのままPull Requestを作り、差分確認を省く",
+      "別機能の変更も同じcommitへ混ぜ、説明なしでmergeする",
+    ];
+    answer = options[0];
+    explain =
+      "branchへ意味のあるcommitを作り、remoteへ共有してPull Requestで差分を確認します。";
   } else {
     const objectives = relatedObjectives.map((objective) => objective.label);
     const first = objectives[0] ?? "入力の状態";
@@ -680,6 +741,8 @@ function transferQuestion(
     js: ["map", "fn-box", "modules"],
     ts: ["unknown", "shape", "narrow"],
     node: ["node-fs", "node-http", "node-prod"],
+    sql: ["sql-join", "sql-group", "sql-transaction"],
+    github: ["git-branch", "git-remote", "git-pr"],
   };
   const farConceptIds = availableConceptIds.filter((conceptId) =>
     farConceptSuffixes[lesson.track].some((suffix) =>

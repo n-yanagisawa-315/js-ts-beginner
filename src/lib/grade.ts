@@ -64,11 +64,40 @@ export function normalizeAnswer(value: string): string {
     if (char === '"' || char === "'" || char === "`") {
       quote = char;
       result += char === "`" ? "`" : '"';
-    } else if (!/\s/.test(char) && char !== ";") {
+    } else if (!/\s/.test(char)) {
       result += char;
     }
   }
   return result;
+}
+
+function semicolonCount(value: string): number {
+  let count = 0;
+  let quote = "";
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+    if (quote) {
+      if (char === "\\") {
+        index += 1;
+      } else if (char === quote) {
+        quote = "";
+      }
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+    } else if (char === ";") {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+export function hasRequiredSemicolons(expected: string, given: string): boolean {
+  return (
+    semicolonCount(stripCodeNoise(given)) >=
+    semicolonCount(stripCodeNoise(expected))
+  );
 }
 
 export function normalizeShell(value: string): string {
@@ -111,7 +140,7 @@ export function grade(question: Question, raw: string): boolean {
   );
 
   if (question.id === "q3" && question.prompt.includes("こんにちは")) {
-    return /^(let|const)message:string="こんにちは"$/.test(given);
+    return /^(let|const)message:string="こんにちは";$/.test(given);
   }
   if (expected === "node-v") {
     return given === "node-v" || given === "node--version";
@@ -165,6 +194,9 @@ export function feedbackForIncorrectAnswer(
     return `先頭から${Math.max(0, mismatch) + 1}番目の処理で順序が分かれています。その行が必要とする値を、直前の行が作っているか確認してください。 ${question.explain}`;
   }
   if (question.kind === "code") {
+    if (!hasRequiredSemicolons(question.answer, raw)) {
+      return `文の終わりに必要なセミコロン（;）が不足しています。完成例と同じ位置にセミコロンを付けてください。 ${question.explain}`;
+    }
     const lines = mismatchLines(raw, question.answer);
     const location =
       lines.length > 0

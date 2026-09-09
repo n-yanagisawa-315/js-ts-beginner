@@ -1,7 +1,7 @@
 import { HomeTracks } from "@/components/home-tracks";
 import { OrderProjectPreview } from "@/components/order-project-preview";
 import { Badge } from "@/components/ui/badge";
-import { lessonsByTrack } from "@/lib/course";
+import { lessons } from "@/lib/course";
 
 export default function Home() {
   return (
@@ -9,15 +9,15 @@ export default function Home() {
       <header className="course-catalog-hero">
         <div>
           <Badge>基礎をしっかり</Badge>
-          <p className="course-catalog-brand">しくみ講座 · JS / TS / NODE</p>
+          <p className="course-catalog-brand">しくみ講座 · CODE / DATA / TEAM</p>
           <h1>
             注文管理を作りながら、
             <br />
             プログラムの基礎を学ぶ。
           </h1>
           <p>
-            まずJavaScriptで値の動きを理解し、TypeScriptの型、
-            Node.jsの実行環境へ進みます。読むだけでなく、すべての講義でコードを書きます。
+            JavaScript・TypeScript・Node.jsに加え、SQLとGitHubもブラウザ内で実際に操作します。
+            読むだけでなく、すべての講義で手を動かします。
           </p>
           <a href="#course-catalog" className="course-catalog-jump">
             講座を選ぶ
@@ -27,16 +27,12 @@ export default function Home() {
       </header>
 
       <main id="main-content">
-        <HomeTracks
-          js={lessonsByTrack("js")}
-          ts={lessonsByTrack("ts")}
-          node={lessonsByTrack("node")}
-        />
+        <HomeTracks lessons={lessons} />
 
         <section className="course-project-showcase" aria-labelledby="project-title">
         <div className="course-section-heading">
           <div>
-            <p className="course-section-kicker">3講座で作るもの</p>
+            <p className="course-section-kicker">5講座で作るもの</p>
             <h2 id="project-title">注文台帳を、少しずつ完成させる</h2>
           </div>
           <p>
@@ -59,6 +55,16 @@ export default function Home() {
             <span>Node.js</span>
             <strong>APIへつなぐ</strong>
             <p>注文を読み書きし、安全に起動・停止できるようにする</p>
+          </li>
+          <li>
+            <span>SQL</span>
+            <strong>注文を保存して探す</strong>
+            <p>検索・集計・更新を使い、注文データベースを整える</p>
+          </li>
+          <li>
+            <span>GitHub</span>
+            <strong>変更を安全に共有する</strong>
+            <p>履歴・ブランチ・Pull Requestで共同開発を進める</p>
           </li>
         </ol>
         </section>

@@ -33,6 +33,14 @@ function expect(label, condition) {
 
 expect("正しいコードを受理できない", grade(codeQuestion, codeQuestion.answer));
 expect(
+  "セミコロンのないコードを誤って受理する",
+  !grade(codeQuestion, 'const message = "hi "'),
+);
+expect(
+  "セミコロン不足の案内を返せない",
+  /セミコロン/.test(feedbackForIncorrectAnswer(codeQuestion, 'const message = "hi "')),
+);
+expect(
   "大文字化した実行不能コードを誤って受理する",
   !grade(codeQuestion, 'CONST MESSAGE = "hi ";'),
 );
@@ -92,6 +100,14 @@ expect(
 expect(
   "見本の値だけを直接表示する誤答を受理する",
   !(await gradeCodeByBehavior(behaviorQuestion, "console.log(5);", "js")),
+);
+expect(
+  "セミコロンのない振る舞い正答を誤って受理する",
+  !(await gradeCodeByBehavior(
+    behaviorQuestion,
+    "function add(a, b) {\n  return a + b\n}\nconsole.log(add(2, 3))",
+    "js",
+  )),
 );
 expect(
   "別入力で壊れる関数を受理する",

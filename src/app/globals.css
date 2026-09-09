@@ -9,6 +9,8 @@
   --js: #35b7e4;
   --ts: #43a6cc;
   --node: #5dca88;
+  --sql: #e7a843;
+  --github: #8b78d1;
   --chalk: #1d2023;
   --ok: #0fa88a;
   --ng: #d60d53;
@@ -70,6 +72,8 @@
   --color-js: var(--js);
   --color-ts: var(--ts);
   --color-node: var(--node);
+  --color-sql: var(--sql);
+  --color-github: var(--github);
   --color-chalk: var(--chalk);
   --color-ok: var(--ok);
   --color-ng: var(--ng);
@@ -1411,32 +1415,14 @@ a[aria-disabled="true"] {
 }
 
 .question-goal {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   overflow: hidden;
-}
-
-.question-goal > div {
-  min-width: 0;
-  padding: 12px 14px;
-}
-
-.question-goal pre {
-  overflow-x: auto;
-  margin: 0;
-  color: #253f4b;
-  font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.78rem;
-  line-height: 1.65;
-  white-space: pre-wrap;
 }
 
 .question-material {
   display: flex;
-  min-width: 7.5rem;
+  min-width: 0;
   flex-direction: column;
   justify-content: center;
-  border-left: 1px solid #cedee1;
   background: #e7f4f4;
   padding: 10px 12px;
 }
@@ -1486,17 +1472,6 @@ a[aria-disabled="true"] {
   color: #365867;
   font-size: 0.8rem;
   line-height: 1.65;
-}
-
-@media (max-width: 420px) {
-  .question-goal {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .question-material {
-    border-top: 1px solid #cedee1;
-    border-left: 0;
-  }
 }
 
 @media (min-width: 1024px) {
@@ -2936,7 +2911,7 @@ button.console-window-play:hover {
 .project-roadmap {
   display: grid;
   max-width: 80rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
   margin: 34px 0 0;
   padding: 0;
@@ -3187,16 +3162,21 @@ button.console-window-play:hover {
 
 .course-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 20px;
 }
 
 .course-track-card {
+  grid-column: span 2;
   overflow: hidden;
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
     transform 180ms ease;
+}
+
+.course-track-card:nth-child(4) {
+  grid-column: 2 / span 2;
 }
 
 .course-track-card:has(.course-track-card-link:hover) {
@@ -3667,8 +3647,18 @@ button.console-window-play:hover {
 }
 
 @media (max-width: 900px) {
+  .project-roadmap {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 18px;
+  }
+
   .course-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .course-track-card,
+  .course-track-card:nth-child(4) {
+    grid-column: auto;
   }
 
   .course-track-card:last-child {
@@ -3729,6 +3719,10 @@ button.console-window-play:hover {
 }
 
 @media (max-width: 620px) {
+  .project-roadmap {
+    grid-template-columns: 1fr;
+  }
+
   .course-catalog-hero {
     padding: 40px 18px 28px;
   }

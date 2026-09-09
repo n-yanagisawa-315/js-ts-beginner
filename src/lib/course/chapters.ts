@@ -169,6 +169,57 @@ export const CHAPTERS: Chapter[] = [
     title: "本番運用編",
     summary: "エラーの扱いと、止め方",
   },
+  {
+    id: "js-challenge",
+    track: "js",
+    order: 14,
+    title: "JavaScriptチャレンジ編",
+    summary: "境界値・非破壊更新・クロージャ・非同期を実戦形式で解く",
+  },
+  {
+    id: "ts-challenge",
+    track: "ts",
+    order: 6,
+    title: "TypeScriptチャレンジ編",
+    summary: "型の変換・絞り込み・ジェネリクス・条件型を型テストで解く",
+  },
+  {
+    id: "node-challenge",
+    track: "node",
+    order: 7,
+    title: "Node.jsチャレンジ編",
+    summary: "CLI・ファイル・非同期I/O・HTTPを実戦形式で解く",
+  },
+  ...[
+    ["sql-select", 1, "SELECT入門編", "テーブル・行・列を知り、必要な列を読む"],
+    ["sql-filter", 2, "絞り込み編", "WHERE・比較・NULLで必要な注文を選ぶ"],
+    ["sql-sort", 3, "並べ替え編", "ORDER BYとLIMITで表示順と件数を決める"],
+    ["sql-group", 4, "集計編", "COUNT・SUM・GROUP BYで注文を集計する"],
+    ["sql-join", 5, "JOIN編", "複数テーブルをキーで結び付ける"],
+    ["sql-write", 6, "データ更新編", "INSERT・UPDATE・DELETEで注文を変更する"],
+    ["sql-transaction", 7, "制約と取引編", "主キー・制約・トランザクションで整合性を守る"],
+  ].map(([id, order, title, summary]) => ({
+    id: id as ChapterId,
+    track: "sql" as const,
+    order: order as number,
+    title: title as string,
+    summary: summary as string,
+  })),
+  ...[
+    ["github-repository", 1, "リポジトリ入門編", "GitとGitHubの役割を分け、履歴管理を始める"],
+    ["github-commit", 2, "記録編", "status・add・commitで変更を安全に記録する"],
+    ["github-branch", 3, "ブランチ編", "branch・switch・mergeで作業を分ける"],
+    ["github-remote", 4, "共有編", "remote・push・pullで履歴を共有する"],
+    ["github-pr", 5, "Pull Request編", "ghコマンドで提案・確認・統合を進める"],
+    ["github-conflict", 6, "競合解消編", "衝突の原因を読み、安全に解決する"],
+    ["github-automation", 7, "共同開発運用編", "Issue・Actions・保護ルールで運用を整える"],
+  ].map(([id, order, title, summary]) => ({
+    id: id as ChapterId,
+    track: "github" as const,
+    order: order as number,
+    title: title as string,
+    summary: summary as string,
+  })),
 ];
 
 export function getChapter(id: ChapterId): Chapter | undefined {
