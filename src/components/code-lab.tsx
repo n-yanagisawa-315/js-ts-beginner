@@ -838,7 +838,13 @@ function QuestionGuide({
         <p className={`question-guide-copy${steps.length > 0 ? " mb-3" : ""}`}>
           <span>入力に使う名前・値: </span>
           <CopyableText
-            text={[question.prompt, question.lead, ...allSteps]
+            text={[
+              question.prompt,
+              question.lead,
+              question.starter,
+              question.code,
+              ...allSteps,
+            ]
               .filter(Boolean)
               .join("\n")}
             code={question.answer}
