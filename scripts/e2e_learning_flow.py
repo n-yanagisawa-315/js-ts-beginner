@@ -98,7 +98,11 @@ with sync_playwright() as playwright:
     page.keyboard.insert_text("// わざと誤答する")
     page.get_by_role("button", name="ヒントを1段だけ見る").click()
     expect(page.get_by_role("button", name="次のヒントを見る")).to_be_visible()
-    expect(page.get_by_role("button", name="できた！")).to_be_disabled()
+    expect(page.get_by_role("button", name="できた！")).to_be_enabled()
+    page.get_by_role("button", name="できた！").click()
+    expect(
+        page.get_by_text("「できた！」の前に、今の自信度を1つ選んでください。")
+    ).to_be_visible()
     page.get_by_role("button", name="半分くらい 50%").click()
     page.get_by_role("button", name="できた！").click()
     expect(page.get_by_role("button", name="半分くらい 50%")).to_be_disabled()

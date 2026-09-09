@@ -96,8 +96,10 @@ function CodeLabInner({
   const editorId = useId();
   const explainId = useId();
   const explainRef = useRef<HTMLParagraphElement>(null);
+  const confidenceRef = useRef<HTMLDivElement>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [answerOpen, setAnswerOpen] = useState(false);
+  const [confidenceMissing, setConfidenceMissing] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [runError, setRunError] = useState<string | null>(null);
   const [termTab, setTermTab] = useState<1 | 2>(1);
@@ -109,7 +111,7 @@ function CodeLabInner({
   const isShell = question.kind === "shell";
   const cwd = question.cwd ?? "app";
   const canRun = track !== "ts";
-  const canSubmit = !checked && typed.trim() !== "" && confidence !== null;
+  const canSubmit = !checked && typed.trim() !== "";
   const requiresExplanation = question.exerciseKind === "transfer";
   const hints = question.hints?.length
     ? question.hints
@@ -169,6 +171,13 @@ function CodeLabInner({
 
   async function submit() {
     if (!typed.trim()) return;
+    if (confidence === null) {
+      setConfidenceMissing(true);
+      requestAnimationFrame(() => {
+        confidenceRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+      });
+      return;
+    }
     if (track === "ts" && typeErrors.length > 0) {
       setRunError(`TypeScript: ${typeErrors[0]}`);
       return;
@@ -232,14 +241,22 @@ function CodeLabInner({
             fileName={fileName}
             isShell={isShell}
           />
-          <div className="px-4 pb-4">
+          <div ref={confidenceRef} className="px-4 pb-4">
             <ConfidenceScale
               value={confidence}
-              onChange={onConfidence}
+              onChange={(value) => {
+                setConfidenceMissing(false);
+                onConfidence(value);
+              }}
               tone="light"
               disabled={attempted}
               result={attempted ? checked : null}
             />
+            {confidenceMissing ? (
+              <p role="alert" className="mt-2 text-sm font-medium text-red-700">
+                「できた！」の前に、今の自信度を1つ選んでください。
+              </p>
+            ) : null}
           </div>
           {failReason || (checked && requiresExplanation) ? (
             <div className="px-4 pb-4">
