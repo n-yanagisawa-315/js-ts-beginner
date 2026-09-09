@@ -221,20 +221,41 @@ function size(s: string): number {
       },
       {
         title: "推論でも型は付く",
-        lead: "let n = 1 と書くと、右が数字なので n は number と察してくれます（推論）。注釈が無くても、あとから言葉を入れるとエラーです。右辺が自明なら、: number は書かなくてよいです。関数の入り口など、外から値が来る場所には書いた方が、読み手と検査に親切です。",
+        lead: "let n = 1 と書くと、右が数字なので n は number と察してくれます。このように、明示していない型をコードから決めることを型推論と呼びます。注釈が無くても、あとから言葉を入れるとエラーです。",
         points: [
-          'const のプリミティブはリテラル型に狭まることがある（const s = "ok" は "ok"）',
-          "let は一般に広い型（string）になりやすい",
+          "型推論: 初期値などからTypeScriptが型を決める",
+          "初期値が数字なら、注釈なしでもnumberとして検査される",
+          "右辺から明らかな型を毎回書き直す必要はない",
         ],
         talk: [
           { speaker: "beginner", text: "型を書かなかった変数は、何でも入るanyになりますか？" },
           { speaker: "engineer", text: "初期値があれば、そこから型を推論できることが多いです。数字で始めたletへ文字列を入れると検査で止まります。" },
-          { speaker: "beginner", text: "constとletでも、推論の細かさが違うんですか？" },
-          { speaker: "engineer", text: "再代入できないconstは特定の値まで狭く保てる場合があり、letは再代入を見越して広い型になりやすいです。これは実行時の変換ではなく検査係の見方です。" },
+          { speaker: "beginner", text: "では、let n: number = 1と毎回書かなくても検査は働くのですね？" },
+          { speaker: "engineer", text: "はい。右辺から明らかな場所は推論へ任せられます。letとconstで推論の細かさが変わる話は、次の一枚で分けて扱います。" },
         ],
         diagram: "annotate",
         code: `let n = 1;
 n = "one"; // エラー。推論で number になっている`,
+      },
+      {
+        title: "let は種類まで、const は一つの値まで覚えることがある",
+        lead: 'let status = "ok" はあとで別の文字列へ再代入できるため、型は広いstringになります。const status = "ok" は再代入できないため、TypeScriptは文字列全体ではなく、値"ok"だけを表す型として覚えられます。この一つの値だけを表す型をリテラル型と呼びます。',
+        points: [
+          "letは再代入を見込み、stringやnumberのような広い型になりやすい",
+          "constの数値・文字列は、特定の値だけを表す型になりやすい",
+          "これは検査上の違いで、実行時の値を変える機能ではない",
+        ],
+        talk: [
+          { speaker: "beginner", text: "constの型も、文字列なら全部stringではないのですか？" },
+          { speaker: "engineer", text: "再代入できない単純な値では、特定の\"ok\"だけを表すリテラル型として覚えられます。" },
+          { speaker: "beginner", text: "constなら、オブジェクトの中の文字列も必ずリテラル型ですか？" },
+          { speaker: "engineer", text: "通常のオブジェクトはプロパティを更新できるため、中の値はstringへ広がります。オブジェクト全体を細かく保つas constは後で扱います。" },
+        ],
+        diagram: "annotate",
+        code: `let mutableStatus = "ok"; // string
+const fixedStatus = "ok"; // "ok"
+const item = { status: "ok" }; // item.status は string`,
+        watch: "変数自体がconstでも、オブジェクトのプロパティは通常変更できるため、プロパティ値まで必ずリテラル型になるわけではありません。",
       },
       {
         title: "any は検査を外す非常口",
@@ -329,6 +350,26 @@ const pair: [string, number] = ["age", 20];`,
       {
         id: "q3",
         slide: 2,
+        prompt: "次のうち、特定の文字列\"ready\"だけを表す型として推論される変数を選んでください。",
+        lead: "再代入できるletと、再代入できない単純なconstでは、TypeScriptが覚える型の細かさが異なることがあります。",
+        kind: "choice",
+        options: [
+          "constで宣言したstatus",
+          "letで宣言したstatus",
+          "constオブジェクトのstatus欄",
+          "letオブジェクトのstatus欄",
+        ],
+        steps: [
+          "変数そのものを再代入できるか確認する",
+          "オブジェクトのプロパティではなく単純な値を選ぶ",
+        ],
+        hint: "再代入できない単純な文字列では、その一つの値まで型として覚えられます。",
+        answer: "constで宣言したstatus",
+        explain: "単純なconstの文字列は\"ready\"というリテラル型になります。通常のオブジェクトのプロパティはstringへ広がります。",
+      },
+      {
+        id: "q4",
+        slide: 3,
         prompt: "APIレスポンスを any で受け取ったとき、失われるものを選んでください。",
         lead:
           "存在しない項目名や使えないメソッドを書いても、any では問題を事前に見つけにくくなります。値そのものではなく、TypeScript のどの助けが外れるか判断してください。",
@@ -349,8 +390,8 @@ const pair: [string, number] = ["age", 20];`,
         explain: "any は検査を外す非常口です。普段は具体的な型を書きます。",
       },
       {
-        id: "q4",
-        slide: 3,
+        id: "q5",
+        slide: 4,
         prompt: "点数80と90を持つ数値配列 scores を定義してください。",
         lead:
           "各要素が数値であることを配列の契約として明示します。配列の表示は不要で、指定された2つの点数を持つ状態で型検査を通してください。",

@@ -6,7 +6,7 @@ export const jsCallback: Lesson[] = [
     track: "js",
     level: "basic",
     chapter: "js-callback",
-    order: 12,
+    order: 11,
     title: "関数を渡して、あとで呼んでもらう",
     summary: "コールバックは、呼び出し側がタイミングを決める関数",
     minutes: 16,

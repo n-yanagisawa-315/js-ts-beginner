@@ -389,6 +389,8 @@ export function recordQuestionAttempt({
       : previous.transferredAt;
   const masteryStage: MasteryStage = (!correct && firstAttempt) || needsUnassistedCorrection
     ? "needs-review"
+    : previous.masteryStage === "needs-review" && !advancesSchedule
+      ? "needs-review"
     : retainedAt && transferredAt
       ? "mastered"
       : retainedAt
@@ -454,7 +456,11 @@ export function recordQuestionAttempt({
       transferredAt: conceptTransferredAt,
       lastAttemptAt: attemptedAt.toISOString(),
       masteryStage:
-        conceptRetainedAt && conceptTransferredAt
+        !correct && firstAttempt
+          ? "needs-review"
+          : previousConcept.masteryStage === "needs-review" && !advancesSchedule
+          ? "needs-review"
+          : conceptRetainedAt && conceptTransferredAt
           ? "mastered"
           : conceptRetainedAt
             ? "retained"
@@ -594,14 +600,20 @@ export function learningStats(state: LearningState, now = new Date()) {
         (event.context === "review" || event.context === "transfer") &&
         event.firstAttempt &&
         !event.supported &&
-        event.dueAt !== null,
+        event.dueAt !== null &&
+        event.advancedSchedule,
     ),
   );
   const independentReviewCorrect = independentReviewAttempts.filter(
     (event) => event.correct,
   ).length;
   const confidenceAttempts = practiced.flatMap((item) =>
-    item.attemptHistory.filter((event) => event.confidence !== null),
+    item.attemptHistory.filter(
+      (event) =>
+        event.firstAttempt &&
+        !event.supported &&
+        event.confidence !== null,
+    ),
   );
   const calibrationError =
     confidenceAttempts.length === 0

@@ -6,18 +6,18 @@ export const jsBasic: Lesson[] = [
     track: "js",
     level: "basic",
     chapter: "js-fn",
-    order: 10,
+    order: 9,
     title: "関数は手順をまとめた値",
     summary: "引数を受け取り、戻り値を返す流れ",
     minutes: 18,
     slides: [
       {
-        title: "関数は自動販売機",
-        lead: "関数は「入力を受けて、何かして、値を返す」手順です。自動販売機と同じで、機械を置いただけでは缶は出ません。お金（引数）を入れてボタン () を押したとき、中の行が上から動き、缶（戻り値）が出ます。関数そのものも値なので、変数に入れたり、別の関数に渡せます。",
+        title: "関数の定義は、手順に名前を付ける",
+        lead: "関数は、あとで使う手順をひとまとまりにしたものです。自動販売機を設置する場面を想像してください。function add(a, b) { ... } の行へ来ても、中の計算はまだ始まりません。まずaddという名前で手順を呼べるようにします。",
         points: [
-          "定義: 販売機を設置する。中の手順を名前に結びつける",
-          "呼び出し: () でボタンを押す。今その場で動く",
-          "同じ機械を、違う入力で何度でも使える",
+          "function は関数を定義する合図",
+          "add は関数名。あとでこの名前を使う",
+          "{ } の中が、呼ばれたときに実行する手順",
         ],
         talk: [
           {
@@ -30,24 +30,57 @@ export const jsBasic: Lesson[] = [
           },
           {
             "speaker": "beginner",
-            "text": "addとだけ書くのは、ボタンを押したことにはならないんですね？"
+            "text": "function、add、丸括弧、波括弧にはそれぞれ役割があるのですね？"
           },
           {
             "speaker": "engineer",
-            "text": "そうです。定義は機械を用意し、呼び出しは入力を渡して動かす操作です。同じ関数を別の入力で何度も使え、関数そのものも値として扱えます。"
+            "text": "そうです。functionは定義、addは名前、丸括弧は入力用の名前を書く場所、波括弧は手順です。まずは定義しただけでは中が動かないと覚えましょう。"
           }
         ],
         diagram: "fn-box",
         code: `function add(a, b) {
   return a + b;
 }
-add(2, 3); // ここで初めて中が動く`,
-        codeCaption: "2 と 3 を入れて、5 という缶が出る",
+// ここでは定義しただけ。中はまだ動かない`,
+        codeCaption: "販売機を設置した段階",
         codeExample: `function add(a, b) {
   return a + b;
 }
-// add と書いただけ。まだ動かない
-console.log(add(2, 3)); // ボタンを押した`,
+// add という手順を用意した`,
+      },
+      {
+        title: "関数名の後ろの () で呼び出す",
+        lead: "定義した関数を実際に動かす操作を、呼び出しといいます。add(2, 3) のように関数名の後ろへ丸括弧を付けると、波括弧の中が上から実行されます。add と名前だけを書く場合は、関数そのものを指すだけで実行しません。",
+        points: [
+          "add は関数そのものを指す",
+          "add() は関数を今ここで実行する",
+          "丸括弧の中には、関数へ渡す値を書く",
+        ],
+        talk: [
+          {
+            speaker: "beginner",
+            text: "関数名を書くだけで、中の手順が始まるのではないのですか？",
+          },
+          {
+            speaker: "engineer",
+            text: "名前だけなら関数そのものを指します。後ろへ丸括弧を付けたときが呼び出しです。",
+          },
+          {
+            speaker: "beginner",
+            text: "addとadd()は、同じ意味ではないのですね？",
+          },
+          {
+            speaker: "engineer",
+            text: "addは機械そのもの、add()はボタンを押して動かす操作です。値を渡す場合は丸括弧の中へ書きます。",
+          },
+        ],
+        diagram: "fn-box",
+        code: `function hello() {
+  console.log("hello");
+}
+hello;   // 実行しない
+hello(); // ここで "hello" を表示`,
+        codeCaption: "() が実行ボタン",
       },
       {
         title: "同じ機械は、何度でも呼べる",
@@ -90,12 +123,12 @@ console.log(double(3));
 // どちらも 6。機械は消耗しない`,
       },
       {
-        title: "引数は呼び出し側が渡す一時的な名前",
-        lead: "仮引数 a, b は、ボタンを押した瞬間だけ、投入したコインに貼る付箋です。呼び出しが終わると、その付箋は役目を終えます。外側の変数とは別物です（同名でも、基本は別の付箋）。",
+        title: "仮引数は受け取り口、実引数は渡す値",
+        lead: "function greet(name) の name は、関数側が用意する受け取り口で、仮引数と呼びます。greet(\"Aya\") の \"Aya\" は、呼び出し側が実際に渡す値で、実引数と呼びます。呼び出すと、実引数が対応する仮引数へ結び付きます。",
         points: [
-          "足りない引数は undefined になる。コインを入れ忘れた穴",
-          "多すぎる引数は、普通は無視される",
-          'デフォルト値 (name = "客") で「省略時の値」を置ける',
+          "仮引数: 定義側の受け取り口 name",
+          '実引数: 呼び出し側が渡す値 "Aya"',
+          "仮引数は呼び出している間だけ使う一時的な名前",
         ],
         talk: [
           {
@@ -108,11 +141,48 @@ console.log(double(3));
           },
           {
             "speaker": "beginner",
-            "text": "引数を入れ忘れたり、多く渡したりしたら必ずエラーですか？"
+            "text": "仮引数と実引数は、どちらも同じ引数という意味ですか？"
           },
           {
             "speaker": "engineer",
-            "text": "不足分はundefinedになり、余分な分は通常無視されます。省略を許したいならデフォルト値を置けます。呼び出しが終われば仮引数の役目も終わります。"
+            "text": "関数を定義する側の名前が仮引数、呼び出す側が渡す値が実引数です。Ayaを渡した呼び出し中だけ、nameがその値を指します。"
+          }
+        ],
+        diagram: "fn-box",
+        code: `function greet(name) { // name が仮引数
+  return "hi " + name;
+}
+greet("Aya"); // "Aya" が実引数`,
+        codeCaption: "渡した値が受け取り口へ入る",
+        codeExample: `function greet(name) {
+  return "hi " + name;
+}
+console.log(greet("Aya")); // "hi Aya"`,
+      },
+      {
+        title: "省略した実引数は undefined になる",
+        lead: "greet() のように値を渡さないと、対応する仮引数nameはundefinedになります。省略を許したい場合は function greet(name = \"客\") のように既定値を書きます。実引数がundefinedのときだけ、既定値が使われます。",
+        points: [
+          "足りない実引数に対応する仮引数は undefined",
+          "仮引数 = 値 で、省略時の既定値を用意できる",
+          "多すぎる実引数は、通常は対応する受け取り口がなく無視される",
+        ],
+        talk: [
+          {
+            "speaker": "beginner",
+            "text": "必要な実引数を入れ忘れたら、すぐ文法エラーになりますか？"
+          },
+          {
+            "speaker": "engineer",
+            "text": "JavaScriptでは呼び出せますが、不足した受け取り口はundefinedになります。"
+          },
+          {
+            "speaker": "beginner",
+            "text": "名前を省略しても自然な挨拶にしたい場合はどうしますか？"
+          },
+          {
+            "speaker": "engineer",
+            "text": "仮引数へ既定値を書きます。greet()なら客、greet(\"Aya\")なら渡したAyaが使われます。"
           }
         ],
         diagram: "fn-box",
@@ -121,54 +191,78 @@ console.log(double(3));
 }
 greet(); // "hi 客"
 greet("Aya"); // "hi Aya"`,
-        codeCaption: "入れたコインが、中の名前になる",
-        codeExample: `function greet(name) {
-  return "hi " + name;
-}
-console.log(greet()); // "hi undefined"。穴が空
-console.log(greet("Aya")); // "hi Aya"`,
+        codeCaption: "空の受け取り口へ既定値を入れる",
       },
       {
-        title: "return が戻り値。無いと undefined",
-        lead: "return は取出口です。缶を渡して、機械をその場で止めます。return の後ろの行は動きません。取出口が無い機械は、音（console.log）はしても缶は出ません。戻り値は undefined です。",
+        title: "return は値を呼び出し元へ渡す",
+        lead: "returnの後ろへ書いた値が、その関数の戻り値です。呼び出し式は、返された値に置き換わったように考えられます。関数内のconsole.logは表示するだけで、値を呼び出し元へ渡す操作ではありません。",
         points: [
-          "返すもの（缶）と、画面に出すもの（音）は別",
-          "早期 return で条件を先に終わらせられる",
-          "値を後で使いたいなら return が必要",
+          "return: 後の計算で使える値を返す",
+          "console.log: 画面へ表示する",
+          "return が無い関数の戻り値は undefined",
         ],
         talk: [
           {
-            "speaker": "beginner",
-            "text": "関数の中でconsole.logできたなら、その表示が呼び出し結果ですよね？"
+            speaker: "beginner",
+            text: "関数の中で6を表示できたら、呼び出し結果も6ですよね？",
           },
           {
-            "speaker": "engineer",
-            "text": "表示と戻り値は別です。後の計算に渡す値はreturnで返します。"
+            speaker: "engineer",
+            text: "表示と戻り値は別です。後の計算へ渡す値はreturnで返します。",
           },
           {
-            "speaker": "beginner",
-            "text": "画面に6が出た関数を変数へ入れたら、その変数も6では？"
+            speaker: "beginner",
+            text: "returnがない関数を変数へ代入すると、何が入りますか？",
           },
           {
-            "speaker": "engineer",
-            "text": "returnがなければ変数へ入るのはundefinedです。returnは値を渡すと同時にその関数を終了するので、後ろの行は動きません。条件で早めに抜ける使い方もできます。"
-          }
+            speaker: "engineer",
+            text: "undefinedが入ります。画面に表示された値が自動で戻り値になることはありません。",
+          },
         ],
         diagram: "fn-box",
         code: `function double(n) {
   return n * 2;
 }
 function shout(n) {
-  console.log(n * 2); // 表示だけ。戻り値は undefined
-}`,
-        codeCaption: "log は音。return が缶",
-        codeExample: `function shout(n) {
   console.log(n * 2);
-}
-const x = shout(3);
-console.log(x); // undefined。6 は x に入らない`,
-        watch:
-          "const x = shout(3) の x は undefined です。表示された 6 は x に入りません。",
+}`,
+        codeCaption: "log は音、return は取出口",
+        codeExample: `const result = double(3); // 6
+const noResult = shout(3); // undefined`,
+      },
+      {
+        title: "return へ到達すると関数はその場で終わる",
+        lead: "returnは値を返すだけでなく、その関数の実行をそこで終了します。returnより後ろにある同じ呼び出し内の行は動きません。条件に合わないとき先にreturnする書き方を、早期returnと呼びます。",
+        points: [
+          "return より後ろの行は、その呼び出しでは実行されない",
+          "return; と値なしで書くと undefined を返して終了する",
+          "条件に合わない場合を先に終えると、残りの処理を読みやすくできる",
+        ],
+        talk: [
+          {
+            speaker: "beginner",
+            text: "returnのあとも、波括弧の最後までは実行されますか？",
+          },
+          {
+            speaker: "engineer",
+            text: "いいえ。returnへ到達した時点で、その関数呼び出しは終了します。",
+          },
+          {
+            speaker: "beginner",
+            text: "条件に合わない場合だけ先に終わらせることもできますか？",
+          },
+          {
+            speaker: "engineer",
+            text: "できます。早期returnを使うと、正常な処理を深いifの中へ入れずに済みます。",
+          },
+        ],
+        diagram: "fn-box",
+        code: `function label(score) {
+  if (score < 0) return "invalid";
+  return "ok";
+  console.log("ここは動かない");
+}`,
+        codeCaption: "return が関数の出口",
       },
       {
         title: "アロー関数は短い手順の書き方",
@@ -240,29 +334,46 @@ const double2 = (n) => {
       {
         id: "q1",
         slide: 0,
-        prompt: "2種類の商品の個数を受け取り、合計個数を返すadd関数を完成させてください。",
-        lead: "starterには関数の外形と、個数2と3を渡す呼び出しが用意されています。2つの入力から合計を求めて呼び出し元へ返し、外側の表示が5になれば完成です。関数内で直接表示はしません。",
-        kind: "code",
-        starter:
-          "function add(a, b) {\n // ここに書いてください\n}\nconsole.log(add(2, 3));\n",
-        fileName: "script.js",
-        steps: [
-          "2つの仮引数から合計を求める",
-          "合計を戻り値として呼び出し元へ渡す",
-          "用意済みの呼び出しで5が表示されるか確認する",
+        prompt: "関数を定義した直後の状態として正しい説明を1つ選んでください。",
+        lead: "function hello() { console.log(\"hello\"); } の行へ到達しましたが、hello()はまだ書かれていません。定義と実行を分けて考えてください。",
+        kind: "choice",
+        options: [
+          "手順だけ用意され、まだ動かない",
+          "手順が自動で1回だけ動く",
+          "表示だけが先に1回動く",
+          "関数名をまだ利用できない",
         ],
-        hint: "表示と戻り値は別です。関数の中では、計算した値を取出口から返すことに集中してください。",
-        sample: "5",
-        answer: `function add(a, b) {
-  return a + b;
-}
-console.log(add(2, 3));`,
-        explain:
-          "add(2, 3)を呼ぶと、その呼び出し専用の実行領域が作られ、aに2、bに3が入ります。return a + bで5を呼び出し元へ返すと、元の式が5に置き換わり、外側のconsole.logが5を表示します。",
+        steps: [
+          "定義と呼び出しを区別する",
+          "丸括弧付きの呼び出しがあるか確認する",
+        ],
+        hint: "関数名の後ろに実行ボタンの丸括弧はまだありません。",
+        answer: "手順だけ用意され、まだ動かない",
+        explain: "function文は手順を定義します。中身はhello()と呼び出したときに実行されます。",
       },
       {
         id: "q2",
         slide: 1,
+        prompt: "定義済みのhello関数を1回実行してください。",
+        lead: "starterにはhelloの定義があります。関数本体を書き直さず、関数名の後ろへ実行を表す記号を付けて1回呼び出します。",
+        kind: "code",
+        starter: 'function hello() {\n  console.log("hello");\n}\n// ここで1回呼び出す\n',
+        fileName: "script.js",
+        steps: [
+          "定義済みの関数名を確認する",
+          "関数名の後ろへ丸括弧を付けて呼び出す",
+        ],
+        hint: "名前だけを書くのではなく、実行ボタンに当たる丸括弧を続けます。",
+        sample: "hello",
+        answer: `function hello() {
+  console.log("hello");
+}
+hello();`,
+        explain: "helloは関数そのもの、hello()は関数を実行する呼び出しです。",
+      },
+      {
+        id: "q3",
+        slide: 2,
         prompt: "用意済みのadd関数で、2商品と3商品、10商品と1商品の合計をそれぞれ表示してください。",
         lead: "addは2つの個数を受け取って合計を返します。関数本体は変更せず、2組の入力で順に呼び出し、5と11が別々の行へ表示されれば完成です。",
         kind: "code",
@@ -283,8 +394,28 @@ console.log(add(10, 1));`,
         explain: "呼び出すたびに別の実行領域が作られます。1回目はa=2・b=3から5を返して終了します。2回目は新しくa=10・b=1から始まるため、前回の途中状態は混ざりません。",
       },
       {
-        id: "q3",
-        slide: 2,
+        id: "q4",
+        slide: 3,
+        prompt: "function greet(name)とgreet(\"Aya\")について、仮引数と実引数の組み合わせを選んでください。",
+        lead: "定義側の受け取り口と、呼び出し側が実際に渡す値を区別します。",
+        kind: "choice",
+        options: [
+          'nameが仮引数、"Aya"が実引数',
+          '"Aya"が仮引数、nameが実引数',
+          'nameも"Aya"も仮引数',
+          'nameも"Aya"も実引数',
+        ],
+        steps: [
+          "関数定義の丸括弧内を確認する",
+          "関数呼び出しの丸括弧内を確認する",
+        ],
+        hint: "仮引数は受け取り口の名前、実引数は呼び出すときに渡す値です。",
+        answer: 'nameが仮引数、"Aya"が実引数',
+        explain: "定義側のnameが仮引数、呼び出し側の\"Aya\"が実引数です。",
+      },
+      {
+        id: "q5",
+        slide: 4,
         prompt: "省略時は客、名前を渡したときはその名前を使って挨拶文を返すgreet関数を完成させてください。",
         lead: "starterには既定値付きの仮引数と、引数なし・引数ありの2回の呼び出しがあります。関数内ではhi、半角スペース、nameの値を1つの文字列にして返してください。表示は外側ですでに行われます。",
         kind: "code",
@@ -307,8 +438,8 @@ console.log(greet("Aya"));`,
           "greet()では引数がundefinedなので既定値「客」がnameへ入ります。greet(\"Aya\")では渡した値が優先されます。どちらも呼び出し中だけnameが存在し、returnした文字列が外側のconsole.logへ渡ります。",
       },
       {
-        id: "q4",
-        slide: 3,
+        id: "q6",
+        slide: 5,
         prompt: "価格を2倍にして後の計算へ渡すdoubleと、確認用に2倍の値を表示するだけのshoutを完成させてください。",
         lead: "starterには2つの関数と、入力3で戻り値を確認する処理があります。doubleは計算結果を返し、shoutは関数内で表示するだけにしてください。実行結果が6、6、undefinedの3行になれば完成です。",
         kind: "code",
@@ -335,8 +466,33 @@ console.log(shout(3));`,
           "doubleはreturnで6を呼び出し元へ渡します。shoutは内部のconsole.logで6を表示しますが、returnがないため呼び出し式の値はundefinedです。内部表示の6と外側表示のundefinedは別の結果です。",
       },
       {
-        id: "q5",
-        slide: 4,
+        id: "q7",
+        slide: 6,
+        prompt: "負の数ならinvalidを返して終了し、それ以外ならokを返すcheck関数を完成させてください。",
+        lead: "負の数の場合は最初のreturnで関数を終了します。その条件に当てはまらない場合だけ、次のreturnへ進みます。",
+        kind: "code",
+        starter: 'function check(n) {\n  if (n < 0) {\n    // invalidを返して終了\n  }\n  return "ok";\n}\nconsole.log(check(-1));\nconsole.log(check(1));\n',
+        fileName: "script.js",
+        steps: [
+          "負の数を判定するifの中でinvalidを返す",
+          "それ以外では既存のreturnまで進む",
+          "2行の出力を確認する",
+        ],
+        hint: "表示ではなく、ifの中から値を返して関数を終了します。",
+        sample: "invalid\nok",
+        answer: `function check(n) {
+  if (n < 0) {
+    return "invalid";
+  }
+  return "ok";
+}
+console.log(check(-1));
+console.log(check(1));`,
+        explain: "nが負なら最初のreturnで終了するため、後ろのreturn \"ok\"へは進みません。",
+      },
+      {
+        id: "q8",
+        slide: 7,
         prompt: "2種類の商品の個数をaとbとして受け取るaddを、式だけの短いアロー関数として用意し、2と3の合計を表示してください。",
         lead: "addは2つの個数を受け取り、合計値を返す役目です。今回は波括弧を持つ本文や明示的なreturnを使わずに定義し、呼び出し結果として5が表示されれば完成です。",
         kind: "code",
@@ -1461,8 +1617,8 @@ while (i < 3) {
     id: "js-foreach",
     track: "js",
     level: "basic",
-    chapter: "js-loop",
-    order: 9,
+    chapter: "js-callback",
+    order: 12,
     title: "配列を1個ずつ処理する",
     summary: "for、forEach、for...of で中身を順に見る",
     minutes: 16,
@@ -1634,7 +1790,7 @@ xs.forEach((x) => {
       },
       {
         title: "この講義の要点",
-        lead: "番号が要るなら for。全部同じ処理なら forEach。途中で抜けるなら for...of。次は関数です。",
+        lead: "番号が要るなら for。全部同じ処理なら forEach。途中で抜けるなら for...of。次はクロージャです。",
         points: ["i < xs.length を守る", "forEach の第一引数が今の要素"],
         talk: [
           {
@@ -1651,7 +1807,7 @@ xs.forEach((x) => {
           },
           {
             "speaker": "engineer",
-            "text": "最初に来るのは現在の要素で、途中終了にはforやfor...ofを使います。次は、ここで渡していた関数自体の入力と戻り値を詳しく見ましょう。",
+            "text": "最初に来るのは現在の要素で、途中終了にはforやfor...ofを使います。関数とコールバックの基礎を使って、次は外側の変数を覚えるクロージャへ進みます。",
           },
         ],
         diagram: "foreach-loop",
@@ -1758,7 +1914,7 @@ for (const x of xs) {
     track: "js",
     level: "basic",
     chapter: "js-fn",
-    order: 11,
+    order: 10,
     title: "スコープは名前の見える範囲",
     summary: "ブロックの内側と外側で付箋が違う",
     minutes: 16,

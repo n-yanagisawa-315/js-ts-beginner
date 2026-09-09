@@ -207,48 +207,55 @@ let ok: boolean = true;`,
     chapter: "ts-shape",
     order: 5,
     title: "satisfies は形だけ検査する",
-    summary: "値の狭い型を残したまま、契約を満たすか見る",
+    summary: "推論した型を使いながら、契約を満たすか見る",
     minutes: 13,
     slides: [
       {
-        title: ": Type は値の型まで広げる",
-        lead: 'const palette: Record<string, string> = { red: "#f00" } と書くと、palette.red の型は string になり、キー "red" という知識が消えます。注釈は「この値は Type だ」と上書きに近いです。足りないキーは防げますが、リテラルの狭さも失います。',
+        title: "型注釈は、変数を契約の型として扱う",
+        lead: 'const config: { url: string; retry: number } = { url: "/api", retry: 3 } と書くと、configは左側に書いた契約の型として扱われます。urlは任意の文字列を許すstringです。まずは、注釈が変数の読み書きに使う型を決めると理解してください。',
         points: [
-          "注釈は検査にもなり、値の型の名前にもなる",
-          "Record<string, string> は任意の文字列キーを許すので、typo したキーも通りやすい",
+          "注釈の形に足りないキーや、値の型違いはエラー",
+          "注釈後は、変数をその契約の型として読み書きする",
         ],
         talk: [
-          { speaker: "beginner", text: "辞書の型を付けると、redというキーや色コードまで覚えてくれますか？" },
-          { speaker: "engineer", text: "この広い注釈では、値は単なるstringとして扱われます。具体的な色コードだという細かさは薄れます。" },
+          { speaker: "beginner", text: "urlに\"/api\"を入れたなら、型もその文字だけを覚えますか？" },
+          { speaker: "engineer", text: "url: stringと注釈したので、config.urlは任意の文字列を許すstringとして扱われます。" },
           { speaker: "beginner", text: "型を書けば書くほど詳しくなる、とは限らないんですね。" },
-          { speaker: "engineer", text: "ええ。検査時に任意の文字列キーを許す契約へ合わせるため、キーの打ち間違いも拾えない場合があります。実行時のオブジェクト自体は注釈で変化しません。" },
+          { speaker: "engineer", text: "はい。注釈は契約違反を検査し、その変数を契約の型として扱います。実行時のオブジェクト自体は注釈で変化しません。" },
         ],
         diagram: "shape",
-        code: `const palette: Record<string, string> = { red: "#f00" };
-palette.red; // string。 "#f00" ではなくなる`,
+        code: `const config: { url: string; retry: number } = {
+  url: "/api",
+  retry: 3,
+};
+config.url; // string`,
       },
       {
-        title: "satisfies は検査だけ、値の型は残す",
-        lead: "const palette = { red: \"#f00\" } satisfies Record<string, string> は、「Record を満たすか」だけ見ます。palette.red の型は \"#f00\" のままです。as const と組むと、キーも値もリテラルのまま、形の契約だけ別途満たせます。",
+        title: "satisfies は適合を検査し、式から推論した型を使う",
+        lead: "satisfiesは、左側の値が右側の契約を満たすか検査します。通常の型注釈と違い、変数の型を契約そのものへ置き換えず、左側の式から推論した型を使い続けます。ただし通常のオブジェクトの文字列プロパティは、もともとstringへ広がります。",
         points: [
           "足りないキーや型の不一致はエラー",
-          "値の型は右辺のまま。広げない",
-          "as は上書き。satisfies は検査",
+          "検査後も、左側の式から推論された型を使う",
+          "satisfiesだけで、すべての値がリテラル型になるわけではない",
         ],
         talk: [
-          { speaker: "beginner", text: "形を確認したいけれど、redの値が具体的な色だという情報は残したいです。" },
-          { speaker: "engineer", text: "その用途がsatisfiesです。契約に合うかを調べつつ、右辺から得た型を保てます。" },
-          { speaker: "beginner", text: "asで辞書だと言い切るのと同じではないんですか？" },
-          { speaker: "engineer", text: "違います。satisfiesは不足や型違いを検査し、asは見方を上書きします。どちらも実行時の値を加工しませんが、安全性が異なります。" },
+          { speaker: "beginner", text: "satisfiesを付けると、すべての値が\"/api\"のようなリテラル型になりますか？" },
+          { speaker: "engineer", text: "いいえ。satisfiesは推論結果を保ちますが、通常のオブジェクトのurlは最初からstringと推論されます。" },
+          { speaker: "beginner", text: "では、何が型注釈と違うのですか？" },
+          { speaker: "engineer", text: "契約への適合を検査しつつ、左側の式が持つキーや、文字列と配列のようなプロパティごとの差を保てます。" },
         ],
         diagram: "shape",
-        code: `const palette = { red: "#f00" } satisfies Record<string, string>;
-palette.red; // "#f00"`,
-        codeCaption: "契約は満たす。色コードは狭いまま",
+        code: `type Config = { url: string; retry: number };
+const config = {
+  url: "/api",
+  retry: 3,
+} satisfies Config;
+config.url; // string。"/api"ではない`,
+        codeCaption: "契約を検査し、式から推論した型を使う",
       },
       {
         title: "as const と satisfies を重ねる",
-        lead: "as const はリテラルに凍らせます。そのあと satisfies で「この形であること」を追加します。設定オブジェクトや、キーが決まった辞書に使います。先に : Type を付けると、as const の狭さが打ち消されがちです。",
+        lead: "オブジェクトのキーと値を特定のリテラル型として保ちたい場合は、値の後ろへas constを付けます。その結果へsatisfiesを続けると、細かな型を保ちながら契約も検査できます。as constは実行時にオブジェクトを凍らせる処理ではありません。",
         points: [
           "書く順は 値 as const satisfies 形",
           "satisfies の右は、満たしてほしい契約",
@@ -264,7 +271,7 @@ palette.red; // "#f00"`,
         code: `const status = {
   ok: "ok",
   ng: "ng",
-} as const satisfies Record<string, string>;`,
+} as const satisfies { ok: string; ng: string };`,
       },
       {
         title: "as は検査を飛ばす",
@@ -285,7 +292,7 @@ palette.red; // "#f00"`,
       },
       {
         title: "この講義の要点",
-        lead: "注釈は型を広げることがある。satisfies は形だけ見て狭さを残す。as は上書き。次はユニオンです。",
+        lead: "注釈は変数を契約の型として扱う。satisfiesは契約を検査し、式から推論した型を使う。細かなリテラル型も保つならas constと組み合わせる。asによる強制は最後の手段です。",
         points: ["設定オブジェクトは satisfies", "as は最後の手段"],
         talk: [
           { speaker: "beginner", text: "値の詳しい型を残して形だけ確かめたいならsatisfies、型の見方を強制するasは最後の手段ですね。" },
@@ -300,49 +307,49 @@ palette.red; // "#f00"`,
       {
         id: "q1",
         slide: 0,
-        prompt: "広い辞書型を注釈したあとの theme.primary の型を選んでください。",
+        prompt: "型注釈したあとの config.url の型を選んでください。",
         lead:
-          "theme を `Record<string, string>` として注釈し、primary に `#09f` を入れた場面を考えます。注釈によって値の詳しさがどう扱われるかを確認します。",
+          "configを`{ url: string; retry: number }`として注釈し、urlに`/api`を入れた場面です。変数が契約の型としてどう扱われるか確認します。",
         kind: "choice",
         options: [
-          "色コードだけの文字列型",
-          "任意の文字列を取る型",
-          "色番号を表す数値の型",
-          "値が不明な unknown 型",
+          "任意の文字列を許す型",
+          '"/api"',
+          "number",
+          "unknown",
         ],
         steps: [
-          "辞書型が各値に許す型を確認する",
-          "具体的な値と、注釈後に扱われる型を区別する",
-          "theme.primary の型を1つ選ぶ",
+          "urlへ書いた型注釈を確認する",
+          "実際の値と、変数を扱うときの型を区別する",
+          "config.urlの型を1つ選ぶ",
         ],
         hint:
           "広い型注釈は、個別の文字列リテラルより広い型として値を扱うことがあります。",
-        answer: "任意の文字列を取る型",
+        answer: "任意の文字列を許す型",
         explain:
-          "Record<string, string> の注釈により、プロパティ値は string として扱われます。",
+          "url: stringという注釈により、config.urlは任意の文字列を許すstringとして扱われます。",
       },
       {
         id: "q2",
         slide: 1,
         prompt:
-          "urlが「/api」のAPI接続設定 apiConfig を作り、文字列辞書の契約を満たすか検査してください。",
+          "urlが「/api」、retryが3のapiConfigを作り、指定された形を満たすかsatisfiesで検査してください。",
         lead:
-          "url の具体的な文字列型を残しながら、設定値がすべて文字列であることも確かめます。通常の型注釈で型を広げず、型検査に合格させてください。表示は不要です。",
+          "通常の型注釈ではなく、完成したオブジェクトがurlはstring、retryはnumberという契約を満たすか検査します。表示は不要です。",
         kind: "code",
         starter: "// apiConfig の値を定義し、契約を検査する\n",
         fileName: "script.ts",
         steps: [
-          "再代入しない apiConfig に url を設定する",
-          "値を広い辞書型で注釈せず、完成した値への適合検査を加える",
-          "文字列のキーと文字列の値を持つ契約で型検査を通す",
+          "apiConfigにurlとretryを設定する",
+          "完成した値の直後へ適合検査を加える",
+          "urlとretryの型を指定した契約で検査を通す",
         ],
         hint:
-          "オブジェクトを先に作り、その直後に「契約を満たすか」を表すキーワードと辞書型を続けます。",
+          "オブジェクトを先に作り、その直後にsatisfiesと必要な2項目の型を続けます。",
         sample: "",
         answer:
-          'const apiConfig = { url: "/api" } satisfies Record<string, string>',
+          'const apiConfig = { url: "/api", retry: 3 } satisfies { url: string; retry: number }',
         explain:
-          "satisfies は契約への適合を検査し、右辺から得た詳しい型を保ちます。",
+          "satisfiesは契約への適合を検査し、変数には左側の式から推論した型を使います。",
       },
       {
         id: "q3",
@@ -350,14 +357,14 @@ palette.red; // "#f00"`,
         prompt:
           "2つの画面パスをリテラルのまま保つ routes を作ってください。",
         lead:
-          "home と settings のパスを固定しつつ、すべての値が文字列である辞書の契約も確認します。画面への表示は不要で、型検査が通れば完成です。",
+          "home と settings のパスを固定しつつ、必要な2項目が文字列である契約も確認します。画面への表示は不要で、型検査が通れば完成です。",
         kind: "code",
         starter: "// routes をここで定義する\n",
         fileName: "script.ts",
         steps: [
           "home に `/`、settings に `/settings` を設定する",
           "キーと値をリテラルとして保つ指定を値に加える",
-          "その結果が文字列辞書の契約を満たすか検査する",
+          "その結果がhomeとsettingsを持つ契約を満たすか検査する",
         ],
         hint:
           "値を固定する指定を先に置き、契約への適合検査を後ろへ続けます。",
@@ -365,7 +372,7 @@ palette.red; // "#f00"`,
         answer: `const routes = {
   home: "/",
   settings: "/settings",
-} as const satisfies Record<string, string>;`,
+} as const satisfies { home: string; settings: string };`,
         explain:
           "as const がパスのリテラル型を保ち、satisfies が辞書の契約を検査します。",
       },

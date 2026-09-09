@@ -247,18 +247,7 @@ function mechanismLines(slide: Slide): TalkLine[] | undefined {
   }
   switch (slide.diagram) {
     case "fn-box":
-      return [
-        { speaker: "beginner", text: "関数を呼び出した瞬間、コンピューターの中では何が起きますか？" },
-        {
-          speaker: "engineer",
-          text: "まず、その1回の呼び出し専用の作業場所が作られます。これを実行領域と呼びます。渡した値は、関数内で受け取る一時的な名前である仮引数へ結び付けられ、本体を上から実行します。",
-        },
-        { speaker: "beginner", text: "戻った値は、呼び出し元のどこに入るのでしょうか？" },
-        {
-          speaker: "engineer",
-          text: "関数呼び出しの式そのものが戻り値に置き換わります。戻り値は呼び出し元へ返す値です。returnが無ければundefinedになり、その呼び出しだけで使う変数も通常そこで役目を終えます。",
-        },
-      ];
+      return undefined;
     case "callback-flow":
       return [
         { speaker: "beginner", text: "関数を実行せず、別の処理へ渡すこともできるのですか？" },
@@ -385,33 +374,37 @@ function pagesFromExplicitTalk(slide: Slide, lines: TalkLine[]): ConversationPag
   }
   const points = slide.points ?? [];
 
-  if (slide.lead || points.length > 0) {
-    const detailLines: TalkLine[] = [
-      {
-        speaker: "beginner",
-        text: "右のコードと図では、どこを見ればこの仕組みを確かめられますか？",
-      },
-      {
-        speaker: "engineer",
-        text: excerpt(slide.lead || points[0]),
-      },
-    ];
-    if (points[0]) {
-      detailLines.push(
+  if (slide.lead) {
+    pages.push({
+      lines: [
         {
           speaker: "beginner",
-          text: `ここまでを確認します。「${points[0]}」という理解で合っていますか？`,
+          text: "右のコードと図では、どこを見ればこの仕組みを確かめられますか？",
         },
         {
           speaker: "engineer",
-          text: points[1]
-            ? `合っています。さらに、${points.slice(1).join("。")}`
-            : "合っています。右のコードを1行ずつ追い、図の矢印と対応させて確認しましょう。",
+          text: excerpt(slide.lead),
         },
-      );
-    }
-    pages.push({ lines: detailLines, focus: "point", pointIndex: 0 });
+      ],
+      focus: "intro",
+    });
   }
+  points.forEach((point, index) => {
+    pages.push({
+      lines: [
+        {
+          speaker: "beginner",
+          text: POINT_QUESTIONS[index] ?? "ほかにも大事な点はありますか？",
+        },
+        {
+          speaker: "engineer",
+          text: point,
+        },
+      ],
+      focus: "point",
+      pointIndex: index,
+    });
+  });
 
   const mechanics = mechanismLines(slide);
   if (mechanics) {
@@ -439,20 +432,6 @@ function pagesFromExplicitTalk(slide: Slide, lines: TalkLine[]): ConversationPag
   }
 
   return synchronizeConversationPages(slide, pages);
-}
-
-function mergeConversationPages(pages: ConversationPage[]): ConversationPage[] {
-  const merged: ConversationPage[] = [];
-  for (let index = 0; index < pages.length; index += 2) {
-    const group = pages.slice(index, index + 2);
-    const focusPage = group.at(-1);
-    merged.push({
-      lines: group.flatMap((page) => page.lines),
-      focus: focusPage?.focus ?? "intro",
-      pointIndex: focusPage?.pointIndex,
-    });
-  }
-  return merged;
 }
 
 export function talkPages(slide: Slide): ConversationPage[] {
@@ -527,11 +506,10 @@ export function talkPages(slide: Slide): ConversationPage[] {
     });
   }
 
-  const merged = mergeConversationPages(pages);
   return synchronizeConversationPages(slide, [
     ...(vocabulary ? [{ lines: vocabulary, focus: "vocabulary" as const }] : []),
     ...(story ? [{ lines: story, focus: "story" as const }] : []),
-    ...merged,
+    ...pages,
   ]);
 }
 

@@ -102,6 +102,35 @@ assert.equal(
   "ヒント付き正答では間隔を伸ばさない",
 );
 
+progress.recordQuestionAttempt({
+  lessonId: "lesson-a",
+  questionId: "q1",
+  correct: false,
+  attemptedAt: new Date(supportedAt.getTime() + 1_000),
+  context: "review",
+  firstAttempt: true,
+  conceptIds: ["js:values"],
+});
+const immediateRetry = progress.recordQuestionAttempt({
+  lessonId: "lesson-a",
+  questionId: "q1",
+  correct: true,
+  attemptedAt: new Date(supportedAt.getTime() + 2_000),
+  context: "review",
+  firstAttempt: false,
+  conceptIds: ["js:values"],
+});
+assert.equal(
+  immediateRetry.masteryStage,
+  "needs-review",
+  "誤答直後の再試行では習熟へ戻さない",
+);
+assert.equal(
+  progress.readLearningState().concepts["js:values"].masteryStage,
+  "needs-review",
+  "概念も期限後の無支援再確認まで要復習を維持する",
+);
+
 storage.clear();
 const assistedInitial = progress.recordQuestionAttempt({
   lessonId: "lesson-b",
@@ -119,6 +148,48 @@ assert.equal(
   "答え閲覧後は短い無支援再確認を予定する",
 );
 
+storage.clear();
+const metricFirst = progress.recordQuestionAttempt({
+  lessonId: "lesson-metric",
+  questionId: "q1",
+  correct: true,
+  attemptedAt: start,
+  context: "lesson",
+  firstAttempt: true,
+  confidence: 75,
+});
+progress.recordQuestionAttempt({
+  lessonId: "lesson-metric",
+  questionId: "q1",
+  correct: true,
+  attemptedAt: new Date(new Date(metricFirst.nextReviewAt).getTime() - 1_000),
+  context: "review",
+  firstAttempt: true,
+  confidence: 75,
+});
+assert.equal(
+  progress.learningStats(progress.readLearningState()).independentRetentionRate,
+  null,
+  "期限前の先取り回答を保持率へ含めない",
+);
+
+storage.clear();
+progress.recordQuestionAttempt({
+  lessonId: "lesson-supported-confidence",
+  questionId: "q1",
+  correct: true,
+  attemptedAt: start,
+  context: "lesson",
+  firstAttempt: true,
+  supported: true,
+  confidence: 100,
+});
+assert.equal(
+  progress.learningStats(progress.readLearningState()).calibrationError,
+  null,
+  "支援付き回答を自信差へ含めない",
+);
+
 const baseQuestion = {
   id: "q1",
   prompt: "Ayaを表示してください",
@@ -133,6 +204,12 @@ const variant = reviewVariant(baseQuestion, 1);
 assert.match(variant.prompt, /Ren/);
 assert.equal(variant.answer, "Ren");
 assert.equal(variant.scaffoldLevel, "independent");
+assert.equal(new Set(variant.options).size, variant.options.length);
+assert.equal(
+  variant.options.filter((option) => option === variant.answer).length,
+  1,
+  "復習変種には一意な正答選択肢が1つだけある",
+);
 
 const identifierVariant = reviewVariant(
   {
@@ -195,11 +272,11 @@ const fixtureLesson = (id, order) => ({
     {
       id: "q3",
       slide: 2,
-      prompt: "結果を選ぶ",
-      kind: "choice",
-      options: ["1", "2", "3"],
-      answer: "1",
-      explain: "1です",
+      prompt: "結果を表示する",
+      kind: "code",
+      starter: "console.log(1);",
+      answer: "console.log(1);",
+      explain: "1を表示します",
     },
   ],
 });
@@ -209,10 +286,18 @@ const designed = applyCourseLearningDesign([
 ]);
 assert.match(designed[1].story.incident, /前の講義で「結果1」まで確認/);
 assert.match(designed[0].slides[1].storyContext, /値を調べる.*値を保存する/);
+assert.equal(designed[0].questions[0].exerciseKind, "worked");
+assert.equal(designed[0].questions[0].scaffoldLevel, "worked");
 assert.match(designed[0].questions[1].starter, /ここを1行だけ補う/);
+assert.equal(
+  designed[0].questions[2].starter,
+  undefined,
+  "独力問題からstarterを外す",
+);
 assert.equal(designed[1].questions[1].kind, "order");
 assert.ok(designed[1].questions[1].fragments.length >= 2);
 assert.equal(designed[1].questions[2].exerciseKind, "transfer");
+assert.ok(designed[1].questions[2].conceptIds.length <= 4);
 assert.match(designed[1].questions[2].answer, /paidOrders.*npm ci/);
 const diagnoses = Object.values(designed[0].questions[0].misconceptionByAnswer);
 assert.ok(diagnoses.every((item) => item.id && item.nextCheck));

@@ -146,3 +146,32 @@ export function mismatchLines(given: string, expected: string): number[] {
   }
   return [...errors];
 }
+
+export function feedbackForIncorrectAnswer(
+  question: Question,
+  raw: string,
+): string {
+  if (question.kind === "shell") {
+    const givenCommand = normalizeShell(raw).split(" ")[0] || "未入力";
+    const expectedCommand = normalizeShell(question.answer).split(" ")[0];
+    return `コマンドの先頭は「${givenCommand}」になっています。実行する道具が「${expectedCommand}」でよいか、続く引数と分けて確認してください。 ${question.explain}`;
+  }
+  if (question.kind === "order") {
+    const given = raw.split("\n").map((line) => normalizeAnswer(line));
+    const expected = question.answer
+      .split("\n")
+      .map((line) => normalizeAnswer(line));
+    const mismatch = expected.findIndex((line, index) => given[index] !== line);
+    return `先頭から${Math.max(0, mismatch) + 1}番目の処理で順序が分かれています。その行が必要とする値を、直前の行が作っているか確認してください。 ${question.explain}`;
+  }
+  if (question.kind === "code") {
+    const lines = mismatchLines(raw, question.answer);
+    const location =
+      lines.length > 0
+        ? `${lines.slice(0, 3).map((line) => line + 1).join("・")}行目`
+        : "入力と出力";
+    return `${location}を確認してください。名前・値・実行順のどこが完成例と異なるかを1つずつ切り分けます。 ${question.explain}`;
+  }
+  const normalized = normalizeAnswer(raw);
+  return `入力した「${normalized || "未入力"}」は条件と一致しません。大文字・小文字、値の型、記号を設問の条件と照合してください。 ${question.explain}`;
+}

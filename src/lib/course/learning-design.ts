@@ -207,9 +207,15 @@ const CONTRAST_GROUP: Partial<Record<Slide["diagram"], string>> = {
   "while-loop": "iteration-choice",
   "for-of-loop": "iteration-choice",
   "foreach-loop": "iteration-choice",
-  map: "array-method-choice",
+  map: "iteration-choice",
+  promise: "async-model-choice",
+  "async-await": "async-model-choice",
+  "event-loop": "async-model-choice",
   shape: "type-shape-choice",
   union: "type-shape-choice",
+  annotate: "type-shape-choice",
+  "node-fs": "node-path-and-fs",
+  "node-path": "node-path-and-fs",
   "node-cjs-esm": "module-system-choice",
   modules: "module-system-choice",
 };
@@ -250,14 +256,13 @@ function storyContextForSlide(
 }
 
 function exerciseKind(index: number, count: number): ExerciseKind {
-  if (index === count - 1) return "transfer";
-  if (index === 0) return "trace";
+  if (index === 0) return "worked";
   if (index <= Math.floor(count / 3)) return "faded";
   return "independent";
 }
 
 function scaffoldLevel(index: number, count: number): ScaffoldLevel {
-  if (index === 0) return "guided";
+  if (index === 0) return "worked";
   if (index < Math.max(2, Math.floor(count / 2))) return "faded";
   return "independent";
 }
@@ -366,6 +371,13 @@ function enrichQuestion(
   const misconceptionMap =
     question.misconceptionByAnswer ??
     misconceptionByAnswer(question, misconceptionId);
+  const worked = kind === "worked";
+  const generatedHints = [
+    question.hint,
+    question.steps?.[0]
+      ? `最初の一歩だけ確認します。${question.steps[0]}`
+      : undefined,
+  ].filter((hint): hint is string => Boolean(hint));
   return {
     ...question,
     objectiveId:
@@ -377,7 +389,23 @@ function enrichQuestion(
       `${PROJECT_BY_TRACK[lesson.track]}で「${slide?.title ?? lesson.title}」を使う場面`,
     exerciseKind: kind,
     scaffoldLevel: scaffold,
-    starter: fadedStarter(question, scaffold),
+    lead: worked
+      ? `完成例を上から追い、各行が必要な理由を確認します。${question.lead ?? ""}`.trim()
+      : question.lead,
+    starter:
+      worked && (question.kind === "code" || question.kind === "shell")
+        ? question.answer
+        : scaffold === "independent"
+          ? undefined
+          : fadedStarter(question, scaffold),
+    steps:
+      worked && (!question.steps || question.steps.length === 0)
+        ? [
+            "入力と最初の値を確認する",
+            "コードを上から1行ずつ追う",
+            "出力と理由を自分の言葉で確かめる",
+          ]
+        : question.steps,
     contrastGroup:
       question.contrastGroup ??
       (slide ? CONTRAST_GROUP[slide.diagram] : undefined),
@@ -394,14 +422,11 @@ function enrichQuestion(
             ]),
           )
         : undefined),
-    hints:
-      question.hints ??
-      [
-        question.hint,
-        question.steps?.[0]
-          ? `最初の一歩だけ確認します。${question.steps[0]}`
-          : undefined,
-      ].filter((hint): hint is string => Boolean(hint)),
+    hints: question.hints ?? (
+      scaffold === "independent"
+        ? generatedHints.slice(0, 1)
+        : generatedHints
+    ),
   };
 }
 
@@ -468,14 +493,20 @@ export function applyLearningDesign(lesson: Lesson): Lesson {
 }
 
 export function prequestionForLesson(lesson: Lesson): string {
-  return `${lesson.story?.project ?? PROJECT_BY_TRACK[lesson.track]}で「${lesson.title}」が必要になりました。説明を見る前に、どんな値や実行順が関係しそうか予想してください。`;
+  const first = lesson.objectives?.[0]?.label ?? lesson.title;
+  return `${lesson.story?.project ?? PROJECT_BY_TRACK[lesson.track]}で「${lesson.title}」が必要になりました。説明を見る前に、最初の目標「${first}」がどの値や実行順を変えるか、一つだけ予想してください。`;
 }
 
 function orderingQuestionIndex(questions: Question[]): number {
   for (let index = questions.length - 2; index >= 0; index -= 1) {
     const question = questions[index];
     const lineCount = question?.answer.trim().split("\n").length ?? 0;
-    if (question?.kind === "code" && lineCount >= 2 && lineCount <= 8) {
+    if (
+      question?.kind === "code" &&
+      question.scaffoldLevel === "faded" &&
+      lineCount >= 2 &&
+      lineCount <= 8
+    ) {
       return index;
     }
   }
@@ -501,10 +532,13 @@ function transferQuestion(
   lesson: Lesson,
   question: Question,
   relatedLessons: Lesson[],
-  conceptIds: string[],
+  availableConceptIds: string[],
   far: boolean,
 ): Question {
   const misconceptionId = `${lesson.id}:cumulative-transfer`;
+  const relatedObjectives = relatedLessons.flatMap(
+    (item) => item.objectives ?? [],
+  );
   let prompt: string;
   let options: string[];
   let answer: string;
@@ -556,9 +590,7 @@ function transferQuestion(
     explain =
       "待ち時間は非同期処理へ渡し、診断可能な標準ストリームへ記録し、通常終了要求では新規受付を止めて処理中の要求を待ちます。";
   } else {
-    const objectives = relatedLessons
-      .flatMap((item) => item.objectives ?? [])
-      .map((objective) => objective.label);
+    const objectives = relatedObjectives.map((objective) => objective.label);
     const first = objectives[0] ?? "入力の状態";
     const last = objectives.at(-1) ?? "出力の状態";
     prompt = `章末の注文処理を調査します。「${first}」と「${last}」を両方使って原因を切り分ける手順を選んでください。`;
@@ -571,6 +603,35 @@ function transferQuestion(
     answer = options[0];
     explain = `章末課題では片方の用語を思い出すだけでなく、「${first}」の結果が「${last}」へどう影響するかを順に追います。`;
   }
+
+  const optionOffset = lesson.order % options.length;
+  options = [...options.slice(optionOffset), ...options.slice(0, optionOffset)];
+
+  const farConceptSuffixes: Record<Track, string[]> = {
+    js: ["map", "fn-box", "modules"],
+    ts: ["unknown", "shape", "narrow"],
+    node: ["node-fs", "node-http", "node-prod"],
+  };
+  const farConceptIds = availableConceptIds.filter((conceptId) =>
+    farConceptSuffixes[lesson.track].some((suffix) =>
+      conceptId.endsWith(`:${suffix}`),
+    ),
+  );
+  const nearConceptIds = [
+    ...(relatedObjectives[0]?.conceptIds ?? []),
+    ...(relatedObjectives.at(-1)?.conceptIds ?? []),
+  ];
+  const measuredConceptIds = [
+    ...new Set(
+      far
+        ? farConceptIds.length >= 2
+          ? farConceptIds
+          : availableConceptIds.slice(0, 3)
+        : nearConceptIds.length > 0
+          ? nearConceptIds
+          : availableConceptIds.slice(0, 2),
+    ),
+  ].slice(0, 4);
 
   const base: Question = {
     ...question,
@@ -588,7 +649,7 @@ function transferQuestion(
     exerciseKind: "transfer",
     scaffoldLevel: "independent",
     transferLevel: far ? "far" : "near",
-    conceptIds,
+    conceptIds: measuredConceptIds,
     misconceptionId,
   };
   const diagnosis = misconceptionByAnswer(base, misconceptionId);

@@ -39,6 +39,7 @@ export function CodeLab(props: {
   onAnswerViewed?: () => void;
   confidence: number | null;
   onConfidence: (value: number) => void;
+  attempted: boolean;
   reflection: string;
   onReflection: (value: string) => void;
 }) {
@@ -65,6 +66,7 @@ function CodeLabInner({
   onAnswerViewed,
   confidence,
   onConfidence,
+  attempted,
   reflection,
   onReflection,
 }: {
@@ -87,6 +89,7 @@ function CodeLabInner({
   onAnswerViewed?: () => void;
   confidence: number | null;
   onConfidence: (value: number) => void;
+  attempted: boolean;
   reflection: string;
   onReflection: (value: string) => void;
 }) {
@@ -106,7 +109,8 @@ function CodeLabInner({
   const isShell = question.kind === "shell";
   const cwd = question.cwd ?? "app";
   const canRun = track !== "ts";
-  const canSubmit = !checked && typed.trim() !== "";
+  const canSubmit = !checked && typed.trim() !== "" && confidence !== null;
+  const requiresExplanation = question.exerciseKind === "transfer";
   const hints = question.hints?.length
     ? question.hints
     : question.hint
@@ -178,6 +182,7 @@ function CodeLabInner({
       checked={checked}
       canSubmit={canSubmit}
       canAdvance={Boolean(failReason) && reflection.trim().length >= 10}
+      canFinish={!requiresExplanation || reflection.trim().length >= 10}
       correctCount={correctCount}
       total={total}
       nextLabel={nextLabel}
@@ -232,14 +237,17 @@ function CodeLabInner({
               value={confidence}
               onChange={onConfidence}
               tone="light"
+              disabled={attempted}
+              result={attempted ? checked : null}
             />
           </div>
-          {failReason ? (
+          {failReason || (checked && requiresExplanation) ? (
             <div className="px-4 pb-4">
               <SelfExplanation
                 question={question}
                 value={reflection}
                 onChange={onReflection}
+                mode={checked ? "reasoning" : "correction"}
               />
             </div>
           ) : null}
@@ -516,6 +524,8 @@ function QuestionGuide({
       <p className="question-guide-label">
         {question.exerciseKind === "transfer"
           ? "別の場面へ応用"
+          : question.scaffoldLevel === "worked"
+            ? "完成例を追って理解する"
           : question.scaffoldLevel === "independent"
             ? "手順なしで思い出す"
             : question.scaffoldLevel === "faded"
@@ -566,6 +576,7 @@ function LabToolbar({
   checked,
   canSubmit,
   canAdvance,
+  canFinish,
   correctCount,
   total,
   nextLabel,
@@ -577,6 +588,7 @@ function LabToolbar({
   checked: boolean;
   canSubmit: boolean;
   canAdvance: boolean;
+  canFinish: boolean;
   correctCount: number;
   total: number;
   nextLabel: string;
@@ -599,7 +611,12 @@ function LabToolbar({
         正解 {correctCount} / {total}
       </span>
       {checked ? (
-        <button type="button" className="btn btn-go" onClick={onNext}>
+        <button
+          type="button"
+          className="btn btn-go"
+          disabled={!canFinish}
+          onClick={onNext}
+        >
           {nextLabel}
         </button>
       ) : (

@@ -92,9 +92,16 @@ with sync_playwright() as playwright:
         continue_button.last.click()
     assert saw_semantic_highlight, "会話中のコード語と一致する行が強調されませんでした"
     expect(page.get_by_text("演習", exact=True)).to_be_visible()
+    expect(page.get_by_text("完成例を追って理解する", exact=True)).to_be_visible()
+    page.locator(".monaco-editor:visible").last.click()
+    page.keyboard.press("Meta+A")
+    page.keyboard.insert_text("// わざと誤答する")
     page.get_by_role("button", name="ヒントを1段だけ見る").click()
     expect(page.get_by_role("button", name="次のヒントを見る")).to_be_visible()
+    expect(page.get_by_role("button", name="できた！")).to_be_disabled()
+    page.get_by_role("button", name="半分くらい 50%").click()
     page.get_by_role("button", name="できた！").click()
+    expect(page.get_by_role("button", name="半分くらい 50%")).to_be_disabled()
     page.get_by_label("次へ進む前に、考え方の違いを1文で説明する").fill(
         "最初はコメントだけで表示されると思った。実際は表示命令が必要。"
     )
@@ -106,6 +113,7 @@ with sync_playwright() as playwright:
     mobile.goto(f"{BASE_URL}/lesson/js-run")
     mobile.wait_for_load_state("networkidle")
     mobile.get_by_role("button", name="まだ分からない").click()
+    mobile.get_by_role("button", name="まだ迷う 25%").click()
     mobile.get_by_role("button", name="予想を残して説明を見る").click()
     expect(mobile.locator(".story-ribbon")).to_be_visible()
     overflow = mobile.evaluate(
@@ -129,7 +137,7 @@ with sync_playwright() as playwright:
     review.goto(BASE_URL)
     review.wait_for_load_state("networkidle")
     expect(review.get_by_text("保持確認", exact=True)).to_be_visible()
-    expect(review.get_by_text("自信差（小ほど良）", exact=True)).to_be_visible()
+    expect(review.get_by_text("初回答の自信差（小ほど良）", exact=True)).to_be_visible()
     expect(review.get_by_text("1 保持", exact=False).first).to_be_visible()
 
     browser.close()

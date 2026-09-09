@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { CodeLab } from "@/components/code-lab";
 import { ConfidenceScale } from "@/components/confidence-scale";
 import { QuizChallenge } from "@/components/quiz-challenge";
@@ -20,13 +20,17 @@ import {
   talkPages,
   teachingSlideEntries,
 } from "@/lib/course/slide-layout";
-import { grade } from "@/lib/grade";
+import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
 import { gradeCodeByBehavior } from "@/lib/grade-behavior";
 import {
   recordQuestionAssistance,
   recordQuestionAttempt,
   recordSelfExplanation,
   recordLessonLearningEvent,
+  emptyLearningStateSnapshot,
+  learningStateSnapshot,
+  subscribeLearningState,
+  type LearningState,
   writeProgress,
 } from "@/lib/progress";
 
@@ -48,11 +52,28 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   const [confidence, setConfidence] = useState<number | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [answerViewed, setAnswerViewed] = useState(false);
+  const [materialReviewed, setMaterialReviewed] = useState(false);
   const [attemptNumber, setAttemptNumber] = useState(0);
   const [attemptStartedAt, setAttemptStartedAt] = useState(() => Date.now());
   const [prediction, setPrediction] = useState("");
   const [exitRecall, setExitRecall] = useState("");
   const [reflection, setReflection] = useState("");
+  const learningJson = useSyncExternalStore(
+    subscribeLearningState,
+    learningStateSnapshot,
+    emptyLearningStateSnapshot,
+  );
+  const previousExitRecall = useMemo(() => {
+    const state = JSON.parse(learningJson) as LearningState;
+    return (
+      state.lessonEvents
+        .filter(
+          (event) =>
+            event.lessonId === lesson.id && event.context === "exit-recall",
+        )
+        .at(-1)?.response ?? ""
+    );
+  }, [learningJson, lesson.id]);
 
   const question = questionForSlide(lesson, slide);
   const nextId = nextLessonId(lesson.id);
@@ -102,6 +123,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
     setConfidence(null);
     setHintLevel(0);
     setAnswerViewed(false);
+    setMaterialReviewed(false);
     setAttemptNumber(0);
     setAttemptStartedAt(Date.now());
     setReflection("");
@@ -123,6 +145,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
 
   async function submit() {
     if (!question || checked) return;
+    if (confidence === null) return;
     if (question.kind === "choice" ? !choice : currentAnswer.trim() === "") {
       return;
     }
@@ -136,7 +159,11 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
       correct,
       context: question.exerciseKind === "transfer" ? "transfer" : "lesson",
       firstAttempt: attemptNumber === 0,
-      supported: hintLevel > 0 || answerViewed,
+      supported:
+        hintLevel > 0 ||
+        answerViewed ||
+        materialReviewed ||
+        question.scaffoldLevel === "worked",
       hintLevel,
       answerViewed,
       responseTimeMs: Date.now() - attemptStartedAt,
@@ -156,7 +183,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
       setFailReason(
         question.kind === "choice" && choice
           ? (question.feedbackByAnswer?.[choice] ?? question.explain)
-          : question.explain,
+          : feedbackForIncorrectAnswer(question, currentAnswer),
       );
       setFailTick((n) => n + 1);
       return;
@@ -278,6 +305,8 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
         lesson={lesson}
         value={prediction}
         confidence={confidence}
+        comparisonLabel={previousExitRecall ? "前回の出口想起" : undefined}
+        comparisonResponse={previousExitRecall || undefined}
         onChange={setPrediction}
         onConfidence={setConfidence}
         onContinue={() => {
@@ -301,6 +330,8 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
         lesson={lesson}
         value={exitRecall}
         confidence={confidence}
+        comparisonLabel="学習前の予想"
+        comparisonResponse={prediction}
         onChange={setExitRecall}
         onConfidence={setConfidence}
         onContinue={() => {
@@ -336,6 +367,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           nextLabel={nextQuizLabel}
           confidence={confidence}
           onConfidence={setConfidence}
+          attempted={attemptNumber > 0}
           reflection={reflection}
           onReflection={setReflection}
           onHintUsed={(level) => {
@@ -355,6 +387,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
             })
           }}
           onOpenSlide={() => {
+            setMaterialReviewed(true);
             setConversationPage(lastConversationPage);
             setPhase("slides");
           }}
@@ -397,6 +430,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           nextLabel={nextQuizLabel}
           confidence={confidence}
           onConfidence={setConfidence}
+          attempted={attemptNumber > 0}
           reflection={reflection}
           onReflection={setReflection}
           onHintUsed={(level) => {
@@ -412,7 +446,10 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           <button
             type="button"
             className="btn btn-ghost"
-            onClick={() => setPhase("slides")}
+            onClick={() => {
+              setMaterialReviewed(true);
+              setPhase("slides");
+            }}
           >
             スライドへ戻る
           </button>
@@ -504,6 +541,8 @@ function LearningCheckpoint({
   lesson,
   value,
   confidence,
+  comparisonLabel,
+  comparisonResponse,
   onChange,
   onConfidence,
   onContinue,
@@ -512,6 +551,8 @@ function LearningCheckpoint({
   lesson: Lesson;
   value: string;
   confidence: number | null;
+  comparisonLabel?: string;
+  comparisonResponse?: string;
   onChange: (value: string) => void;
   onConfidence: (value: number) => void;
   onContinue: () => void;
@@ -549,6 +590,18 @@ function LearningCheckpoint({
           }
         />
         <ConfidenceScale value={confidence} onChange={onConfidence} />
+        {value.trim() && comparisonResponse?.trim() ? (
+          <details className="learning-checkpoint-comparison">
+            <summary>書いた内容を比較する</summary>
+            <p>
+              <strong>{comparisonLabel}</strong>
+              {comparisonResponse}
+            </p>
+            <small>
+              文章が変わったこと自体を習得とは判定しません。増えた説明と、まだ曖昧な点を確認します。
+            </small>
+          </details>
+        ) : null}
         <div className="learning-checkpoint-actions">
           {prediction && value.trim() === "" ? (
             <button
@@ -562,7 +615,7 @@ function LearningCheckpoint({
           <button
             type="button"
             className="btn btn-primary"
-            disabled={value.trim() === ""}
+            disabled={value.trim() === "" || confidence === null}
             onClick={onContinue}
           >
             {prediction ? "予想を残して説明を見る" : "思い出した内容を残して完了"}

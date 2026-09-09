@@ -12,26 +12,40 @@ export const nodeStart: Lesson[] = [
     minutes: 12,
     slides: [
       {
-        title: "エンジンは V8、仕事場が違う",
-        lead: "ブラウザの JS も Node の JS も、多くは同じ言語仕様（変数、関数、Promise）です。違うのはホストです。ブラウザは DOM と window を渡し、Node はファイル・ネットワーク・プロセスを渡します。document.getElementById は Node にはありません。",
+        title: "変数や関数の書き方は同じ",
+        lead: "ブラウザで動くJavaScriptも、Node.jsで動くJavaScriptも、変数・条件分岐・関数などの言語の決まりは同じです。Node.jsは別のプログラミング言語ではありません。まず、これまでのJavaScript文法をそのまま使えると整理します。",
         talk: [
-          { speaker: "beginner", text: "JavaScriptなら、Nodeでも画面の要素をそのまま触れますか？" },
-          { speaker: "engineer", text: "文法は同じでも、使えるAPIは実行場所ごとに違います。" },
-          { speaker: "beginner", text: "ではdocumentで落ちたら、JavaScriptの書き方が間違いなのでしょうか？" },
-          { speaker: "engineer", text: "NodeにはDOMがなく、代わりにファイルやプロセスのAPIがあります。言語の問題かホストAPIの問題かを分けて見ましょう。" },
+          { speaker: "beginner", text: "Node.jsを始めるには、新しい言語の文法を最初から覚え直しますか？" },
+          { speaker: "engineer", text: "いいえ。let、const、if、functionなどは同じJavaScriptの文法です。" },
+          { speaker: "beginner", text: "ブラウザで書いた計算用の関数も、そのまま使えますか？" },
+          { speaker: "engineer", text: "言語だけで完結する関数なら使えます。実行場所が提供する機能の違いは、次の一枚で分けて見ます。" },
         ],
         points: [
-          "ECMAScript の言語部分は共有",
-          "ホスト API は別物。覚える対象が「言語」と「その場の API」の二層",
-          "フロントのコードをそのまま node で実行すると、無い名前で落ちることが多い",
+          "Node.jsでもJavaScriptの変数・関数・配列を使う",
+          "新しく学ぶ中心は、Node.jsが追加で提供する機能",
         ],
         diagram: "node-vs-browser",
-        code: `// ブラウザ向き。Node では ReferenceError
-document.body;
-
-// Node 向き。ブラウザのページには無い
-import fs from "node:fs";`,
-        watch: "「JS が動く」と「ブラウザ用の API がある」は別です。",
+        code: `const double = (n) => n * 2;
+console.log(double(3)); // ブラウザでもNode.jsでも6`,
+      },
+      {
+        title: "実行場所によって、使える機能が違う",
+        lead: "JavaScriptを動かす場所は、言語に追加の機能を渡します。ブラウザはWebページを表すdocumentを、Node.jsはファイル操作などを提供します。この実行場所が提供する機能をホストAPIと呼びます。",
+        talk: [
+          { speaker: "beginner", text: "JavaScriptなら、Node.jsでもdocumentで画面を触れますか？" },
+          { speaker: "engineer", text: "Node.jsにはWebページがないため、documentは提供されません。" },
+          { speaker: "beginner", text: "documentでエラーになったら、JavaScriptの文法が間違っているのですか？" },
+          { speaker: "engineer", text: "文法ではなく、実行場所にそのAPIがない可能性があります。言語の機能と、場所が提供する機能を分けて調べます。" },
+        ],
+        points: [
+          "ブラウザ: documentなど、Webページを扱うAPI",
+          "Node.js: ファイル・ネットワーク・プロセスを扱うAPI",
+          "API: 目的の操作を呼び出すために用意された機能",
+        ],
+        diagram: "node-vs-browser",
+        code: `document.body; // ブラウザにはある。Node.jsにはない
+console.log("hello"); // どちらでも使える`,
+        watch: "最初からNode.jsのモジュール名を暗記せず、まず「その機能を誰が提供するか」を区別します。",
       },
       {
         title: "何のために使うか",
@@ -100,24 +114,46 @@ which node`,
         id: "q1",
         slide: 0,
         prompt:
-          "サーバー起動時にディスク上のconfig.jsonを読み込むため、Node.js標準のファイル操作用モジュールを1つ選んでください。",
+          "ブラウザとNode.jsの両方で同じように使えるJavaScriptの言語機能を1つ選んでください。",
         lead:
-          "現在必要なのはWebページの操作ではなく、サーバーと同じマシンにある設定ファイルの読み取りです。追加パッケージを導入せずに使えるNode.jsの組み込み機能を選び、ファイルへアクセスできる状態にします。",
+          "実行場所が追加するAPIではなく、JavaScriptそのものの基本的な書き方を選びます。",
         kind: "choice",
-        options: ["node:fs", "document", "window", "location"],
-        answer: "node:fs",
+        options: ["functionによる関数定義", "document.body", "window.alert", "location.href"],
+        answer: "functionによる関数定義",
         steps: [
-          "各候補がブラウザ用か、Node.js の標準機能かを見分ける",
-          "ファイルの読み書きを担当するモジュールを1つ選ぶ",
+          "JavaScriptの文法と、ブラウザが提供するAPIを分ける",
+          "実行場所によらない言語機能を選ぶ",
         ],
         hint:
-          "組み込みモジュールには、Node.js 提供であることを明示する接頭辞を付けた名前があります。",
+          "Webページやブラウザ画面を表す名前ではないものを探します。",
         explain:
-          "言語は JS でも、Node のホストはファイル API を渡し、DOM はありません。",
+          "変数・条件分岐・関数などのJavaScript文法は、ブラウザとNode.jsで共通です。",
       },
       {
         id: "q2",
         slide: 1,
+        prompt:
+          "Node.jsで実行すると、提供されていないため問題になる行を1つ選んでください。",
+        lead:
+          "JavaScriptの文法エラーではなく、ブラウザだけが提供するWebページ操作のAPIを見分けます。",
+        kind: "choice",
+        options: [
+          "documentによるページ操作",
+          "constによる変数宣言",
+          "functionによる関数定義",
+          "consoleによる文字表示",
+        ],
+        answer: "documentによるページ操作",
+        steps: [
+          "各行がJavaScriptの言語だけで動くか確認する",
+          "Webページを必要とするAPIを選ぶ",
+        ],
+        hint: "Node.jsにはWebページを表すDOMがありません。",
+        explain: "documentはブラウザが提供するDOM APIです。Node.jsには標準では存在しません。",
+      },
+      {
+        id: "q3",
+        slide: 2,
         prompt:
           "社内用コマンドと、ブラウザからの要求に応答するAPIをJavaScriptで作ります。Node.jsの利用場面として適切な組み合わせを1つ選んでください。",
         lead:
@@ -140,8 +176,8 @@ which node`,
           "CLI や API サーバーなど、ページの外でマシンの上の仕事をします。",
       },
       {
-        id: "q3",
-        slide: 2,
+        id: "q4",
+        slide: 3,
         prompt:
           "ターミナルで、現在使われているNode.jsランタイムのバージョンを確認してください。",
         lead:
@@ -162,8 +198,8 @@ which node`,
           "node -v が今の実行ファイルの版です。学習では LTS に揃えます。",
       },
       {
-        id: "q4",
-        slide: 3,
+        id: "q5",
+        slide: 4,
         prompt:
           "ブラウザとNode.jsの両方で使える、グローバルオブジェクトへの標準の入口を1つ選んでください。",
         lead:
@@ -826,39 +862,50 @@ await writeFile("./out.txt", "hello\n", "utf8");`,
         id: "q1",
         slide: 0,
         prompt:
-          "設定ローダーでconfig.txtを読み、その内容を文字列として比較します。fs.readFileへ指定するencodingを1つ選んでください。",
+          "config.txtをUTF-8の文字列として読む処理になるよう、3つのコード断片を並べてください。",
         lead:
-          "現在のファイルは一般的なUTF-8のテキストですが、encodingを省略すると結果はBufferになります。読み取り直後からJavaScriptの文字列として扱える指定を選びます。",
-        kind: "choice",
-        options: ["utf8", "utf16", "ascii", "base64"],
-        answer: "utf8",
+          "Promise版のreadFileを読み込み、完了を待ってtextへ保存します。encodingを省略するとBufferになるため、文字列として受け取る指定も必要です。",
+        kind: "order",
+        fragments: [
+          'console.log(text);',
+          'const text = await readFile("./config.txt", "utf8");',
+          'import { readFile } from "node:fs/promises";',
+        ],
+        answer: `import { readFile } from "node:fs/promises";
+const text = await readFile("./config.txt", "utf8");
+console.log(text);`,
         steps: [
-          "ファイル内容の型がencoding指定の有無で変わることを確認する",
-          "文字列として受け取るための指定を選ぶ",
+          "最初にreadFileを読み込む",
+          "awaitで読み取り完了を待ち、結果をtextへ入れる",
+          "最後に読み取った文字列を表示する",
         ],
         hint:
-          "HTTPのContent-Typeではなく、readFileへ渡す文字エンコーディング名です。",
+          "機能の読み込み、ファイルの読み取り、結果の利用という順です。",
         explain:
-          "readFileにutf8を指定すると文字列、省略するとBufferを受け取ります。",
+          "readFileへutf8を渡すと、Bufferではなく文字列を受け取れます。",
       },
       {
         id: "q2",
         slide: 1,
         prompt:
-          "既存のapp.logを消さず、末尾へ新しいログを追加するために使うAPIを1つ選んでください。",
+          "out.txtをhelloという内容へ置き換える処理になるよう、2つのコード断片を並べてください。",
         lead:
-          "ファイル全体を新しい内容へ置き換える操作と、既存内容の後ろへ足す操作を区別します。監査ログのように過去の行を残す場面を考えてください。",
-        kind: "choice",
-        options: ["appendFile", "writeFile", "readFile", "statSync"],
-        answer: "appendFile",
+          "Promise版のwriteFileを読み込んだあと、書き込み完了を待ちます。今回は追記ではなく、ファイル全体を指定内容にします。",
+        kind: "order",
+        fragments: [
+          'await writeFile("./out.txt", "hello\\n", "utf8");',
+          'import { writeFile } from "node:fs/promises";',
+        ],
+        answer: `import { writeFile } from "node:fs/promises";
+await writeFile("./out.txt", "hello\n", "utf8");`,
         steps: [
-          "全体の置き換えと末尾への追加を区別する",
-          "既存ログを保持するAPIを選ぶ",
+          "最初にwriteFileを読み込む",
+          "次にawaitで書き込み完了を待つ",
         ],
         hint:
-          "API名が表す書き込み方に注目します。新規作成だけが目的ではありません。",
+          "機能は利用する前に読み込みます。",
         explain:
-          "appendFileは末尾へ追記します。writeFileは通常、ファイル全体を置き換えます。",
+          "writeFileは通常、ファイル全体を指定内容へ置き換えます。追記にはappendFileを使います。",
       },
       {
         id: "q3",
@@ -996,18 +1043,22 @@ const conf = path.join(here, "config.json");`,
         id: "q1",
         slide: 0,
         prompt:
-          "ログ保存先のディレクトリとapp.logという名前から、MacとWindowsの両方で使えるパスを組み立てます。適切なAPIを1つ選んでください。",
+          "logsフォルダとapp.logからOSに合うパスを作る処理になるよう、2つのコード断片を並べてください。",
         lead:
-          "現在はディレクトリ名とファイル名が別々の文字列で渡されています。区切り文字を手書きせず、実行中のOSの規則に合わせて1本のファイルパスを得られる機能を選びます。",
-        kind: "choice",
-        options: ["path.join", "String.concat", "Array.join", "path.extname"],
-        answer: "path.join",
+          "区切り文字を文字列で足さず、Node.jsのpathモジュールを読み込んでjoinを使います。",
+        kind: "order",
+        fragments: [
+          'const logPath = path.join("logs", "app.log");',
+          'import path from "node:path";',
+        ],
+        answer: `import path from "node:path";
+const logPath = path.join("logs", "app.log");`,
         steps: [
-          "一般的な文字列結合とパス専用APIを区別する",
-          "ホストOSの規則で複数要素を結合する機能を選ぶ",
+          "最初にpathモジュールを読み込む",
+          "joinへフォルダ名とファイル名を順に渡す",
         ],
         hint:
-          "拡張子を調べる機能ではなく、複数のパス断片を1本にする機能です。",
+          "機能を読み込んでから、その機能のjoinメソッドを呼びます。",
         explain: "文字列 + ではなく path.join がホストの区切りで結合します。",
       },
       {

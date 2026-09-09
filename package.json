@@ -10,6 +10,7 @@
     "audit:questions": "node scripts/audit-question-leaks.mjs",
     "audit:clarity": "node scripts/audit-question-clarity.mjs",
     "audit:dialogues": "node scripts/audit-dialogues.mjs",
+    "audit:granularity": "node scripts/audit-granularity.mjs",
     "audit:grading": "node --experimental-strip-types scripts/audit-grading.mjs",
     "audit:learning": "node scripts/audit-learning-quality.mjs",
     "audit:learning-engine": "node --experimental-strip-types scripts/audit-learning-engine.mjs"

@@ -20,7 +20,7 @@ export const CHAPTERS: Chapter[] = [
     track: "js",
     order: 3,
     title: "繰り返し処理編",
-    summary: "if で分かれ、for / while / forEach で同じ作業を回す",
+    summary: "if で分かれ、for / while で同じ作業を繰り返す",
   },
   {
     id: "js-fn",
@@ -34,7 +34,7 @@ export const CHAPTERS: Chapter[] = [
     track: "js",
     order: 5,
     title: "コールバック関数編",
-    summary: "関数を渡して、あとで呼んでもらう。クロージャへ続く",
+    summary: "関数を渡して呼んでもらい、forEachで配列の各要素を処理する",
   },
   {
     id: "js-array-fn",

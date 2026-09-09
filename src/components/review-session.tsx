@@ -8,7 +8,7 @@ import {
   getChapter,
   type Lesson,
 } from "@/lib/course";
-import { grade } from "@/lib/grade";
+import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
 import { gradeCodeByBehavior } from "@/lib/grade-behavior";
 import {
   readLearningState,
@@ -60,6 +60,7 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
 
   async function submit() {
     if (!item || checked) return;
+    if (confidence === null) return;
     if (
       item.question.kind === "choice"
         ? !choice
@@ -96,7 +97,7 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
       setFailReason(
         item.question.kind === "choice" && choice
           ? (item.question.feedbackByAnswer?.[choice] ?? item.question.explain)
-          : item.question.explain,
+          : feedbackForIncorrectAnswer(item.question, answer),
       );
       setFailTick((current) => current + 1);
       return;
@@ -167,7 +168,8 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
           まず講義の演習に挑戦しましょう
         </h1>
         <p className="mt-4 max-w-xl leading-7 text-mute">
-          一度解いた問題がここに集まり、適切な時期にもう一度出題されます。
+          一度解いた問題がここに集まり、教材で設定した期限にもう一度出題されます。
+          間隔は学習履歴に応じて変わり、全員に共通の最適値とはみなしません。
         </p>
         <Link href="/" className="btn btn-primary mt-8">
           講座一覧へ
@@ -186,7 +188,9 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
           {correctCount} / {queue.items.length}
         </h1>
         <p className="mt-4 text-mute">
-          解答結果をもとに、次の復習時期を更新しました。
+          {queue.isPreview
+            ? "期限前の先取り結果を記録しました。次の復習期限は進めていません。"
+            : "期限後の解答結果を記録し、条件を満たした問題の復習時期を更新しました。"}
         </p>
         <Link href="/" className="btn btn-primary mt-8">
           講座一覧へ
@@ -227,6 +231,7 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
           onAnswerViewed={recordAnswer}
           confidence={confidence}
           onConfidence={setConfidence}
+          attempted={attemptNumber > 0}
           reflection={reflection}
           onReflection={setReflection}
         />
@@ -262,6 +267,7 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
         onHintUsed={recordHint}
         confidence={confidence}
         onConfidence={setConfidence}
+        attempted={attemptNumber > 0}
         reflection={reflection}
         onReflection={setReflection}
       />

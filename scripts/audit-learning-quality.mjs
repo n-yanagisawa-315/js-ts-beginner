@@ -178,6 +178,15 @@ for (const field of [
 ]) {
   if (!progress.includes(field)) issues.push(`学習状態に ${field} がありません`);
 }
+for (const marker of [
+  'previous.masteryStage === "needs-review" && !advancesSchedule',
+  "event.advancedSchedule",
+  "!event.supported",
+]) {
+  if (!progress.includes(marker)) {
+    issues.push(`習熟・保持指標の回帰防止条件 ${marker} がありません`);
+  }
+}
 
 const lessonStudio = fs.readFileSync(
   path.join(ROOT, "src/components/lesson-studio.tsx"),
@@ -193,7 +202,13 @@ if (!lessonStudio.includes("gradeCodeByBehavior")) {
 if (!reviewSession.includes("gradeCodeByBehavior")) {
   issues.push("復習演習が振る舞い採点へ接続されていません");
 }
-for (const marker of ["predict", 'mode="exit"', "ConfidenceScale"]) {
+for (const marker of [
+  "predict",
+  'mode="exit"',
+  "ConfidenceScale",
+  "materialReviewed",
+  "comparisonResponse",
+]) {
   if (!lessonStudio.includes(marker)) {
     issues.push(`学習フローに ${marker} がありません`);
   }
@@ -225,6 +240,7 @@ for (const marker of [
   "conceptIds",
   "scaffoldLevel",
   '"faded"',
+  '"worked"',
   '"independent"',
   "lastByChapter",
   "lastByTrack",
@@ -233,6 +249,8 @@ for (const marker of [
   "fadedStarter",
   "diagnoseOption",
   "transferQuestion",
+  "measuredConceptIds",
+  'scaffold === "independent"',
 ]) {
   if (!learningDesign.includes(marker)) {
     issues.push(`教材再構成に ${marker} がありません`);
@@ -320,6 +338,8 @@ for (const marker of [
   'kind: "identifier"',
   "context-review",
   "misconceptionByAnswer",
+  "__COURSE_REVIEW_SWAP__",
+  "new Set(variant.options)",
 ]) {
   if (!reviewQueue.includes(marker) && !learningDesign.includes(marker)) {
     issues.push(`復習変種または誤概念診断に ${marker} がありません`);
@@ -349,12 +369,12 @@ for (const file of [
   }
 }
 
-if (choiceCount !== 66) {
-  issues.push(`選択問題数が想定外です: ${choiceCount}/66`);
+if (choiceCount !== 69) {
+  issues.push(`選択問題数が想定外です: ${choiceCount}/69`);
 }
 if (lessonCount !== 49) issues.push(`講義数が想定外です: ${lessonCount}/49`);
-if (slideCount !== 262) issues.push(`スライド数が想定外です: ${slideCount}/262`);
-if (questionCount !== 213) issues.push(`問題数が想定外です: ${questionCount}/213`);
+if (slideCount !== 269) issues.push(`スライド数が想定外です: ${slideCount}/269`);
+if (questionCount !== 220) issues.push(`問題数が想定外です: ${questionCount}/220`);
 
 if (issues.length > 0) {
   console.error("学習品質監査で問題が見つかりました:");

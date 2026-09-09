@@ -27,6 +27,7 @@ export function QuizChallenge({
   onHintUsed,
   confidence,
   onConfidence,
+  attempted,
   reflection,
   onReflection,
 }: {
@@ -49,6 +50,7 @@ export function QuizChallenge({
   onHintUsed?: (level: number) => void;
   confidence: number | null;
   onConfidence: (value: number) => void;
+  attempted: boolean;
   reflection: string;
   onReflection: (value: string) => void;
 }) {
@@ -58,9 +60,11 @@ export function QuizChallenge({
   const explainRef = useRef<HTMLParagraphElement>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [selectedFragmentIndexes, setSelectedFragmentIndexes] = useState<number[]>([]);
+  const requiresExplanation = question.exerciseKind === "transfer";
   const hints = question.hints?.length ? question.hints : question.hint ? [question.hint] : [];
   const canSubmit =
     !checked &&
+    confidence !== null &&
     (question.kind === "choice"
       ? Boolean(choice)
       : question.kind === "order"
@@ -90,7 +94,11 @@ export function QuizChallenge({
         </p>
         {question.scenario ? (
           <p className="mt-3 max-w-2xl border-l-2 border-studio pl-3 text-sm leading-6 text-mute">
-            {question.exerciseKind === "transfer" ? "応用課題: " : "今回の場面: "}
+            {question.exerciseKind === "transfer"
+              ? "応用課題: "
+              : question.exerciseKind === "worked"
+                ? "完成例の確認: "
+                : "今回の場面: "}
             {question.scenario}
           </p>
         ) : null}
@@ -212,7 +220,12 @@ export function QuizChallenge({
         ) : null}
 
         <div className="mt-6 max-w-xl">
-          <ConfidenceScale value={confidence} onChange={onConfidence} />
+          <ConfidenceScale
+            value={confidence}
+            onChange={onConfidence}
+            disabled={attempted}
+            result={attempted ? checked : null}
+          />
         </div>
 
         {hints.length > 0 ? (
@@ -263,12 +276,13 @@ export function QuizChallenge({
             {question.feedbackByAnswer[choice]}
           </p>
         ) : null}
-        {failReason ? (
+        {failReason || (checked && requiresExplanation) ? (
           <div className="mt-5 max-w-xl">
             <SelfExplanation
               question={question}
               value={reflection}
               onChange={onReflection}
+              mode={checked ? "reasoning" : "correction"}
             />
           </div>
         ) : null}
@@ -279,7 +293,12 @@ export function QuizChallenge({
           ここまでの正解 {correctCount} / {total}
         </p>
         {checked ? (
-          <button type="button" onClick={onNext} className="btn btn-primary">
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={requiresExplanation && reflection.trim().length < 10}
+            className="btn btn-primary disabled:bg-line disabled:text-mute"
+          >
             {nextLabel}
           </button>
         ) : (

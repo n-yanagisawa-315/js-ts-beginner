@@ -104,31 +104,32 @@ res.end("not found");`,
         id: "q1",
         slide: 0,
         prompt:
-          "starterのHTTP応答オブジェクトを使い、ステータスコードを200に設定してから本文okで応答を終了してください。",
+          "最小のHTTPサーバーを起動する処理になるよう、5つのコード断片を並べてください。",
         lead:
-          "createServerのハンドラで受け取るresは、応答の状態と本文を管理します。成功を表す状態を設定し、クライアントを待たせないよう終了処理まで呼び出します。",
-        kind: "code",
-        starter:
-          "const res = {\n  statusCode: 0,\n  end(body) {\n    console.log(`${this.statusCode} ${body}`);\n  },\n};\n// 応答を完成させる\n",
-        fileName: "app.js",
+          "httpモジュールを読み込み、createServerへ関数を渡し、res.endでokを返してから3000番ポートで待ち受けます。",
+        kind: "order",
+        fragments: [
+          "});",
+          '  res.end("ok");',
+          'import http from "node:http";',
+          "server.listen(3000);",
+          "const server = http.createServer((req, res) => {",
+        ],
         steps: [
-          "resのstatusCodeへ成功を表すHTTPステータスを設定する",
-          "指定された本文を渡して応答終了メソッドを呼ぶ",
-          "sampleと同じ状態と本文が1行表示されるか確認する",
+          "最初にhttpモジュールを読み込む",
+          "createServerへリクエストごとに呼ばれる関数を渡す",
+          "関数内でres.endを呼ぶ",
+          "サーバー作成後にlistenで待ち受ける",
         ],
         hint:
-          "本文の表示だけではなく、応答オブジェクトの状態設定と終了操作の両方が必要です。",
-        sample: "200 ok",
-        answer: `const res = {
-  statusCode: 0,
-  end(body) {
-    console.log(\`\${this.statusCode} \${body}\`);
-  },
-};
-res.statusCode = 200;
-res.end("ok");`,
+          "読み込み → サーバー作成 → 応答終了 → 関数を閉じる → 待ち受け、の順です。",
+        answer: `import http from "node:http";
+const server = http.createServer((req, res) => {
+  res.end("ok");
+});
+server.listen(3000);`,
         explain:
-          "生の http では res.end で本文を終え、忘れるとクライアントが待ち続けます。",
+          "createServerへ関数を渡し、各リクエストでres.endを呼びます。listenはサーバーを作ったあとに実行します。",
       },
       {
         id: "q2",

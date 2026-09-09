@@ -34,7 +34,13 @@ const RESERVED_LITERAL_VALUES = new Set([
 ]);
 
 function replacementFor(question: Question):
-  | { from: string; to: string; kind: "value" | "identifier"; identifier: boolean }
+  | {
+      from: string;
+      to: string;
+      kind: "value" | "identifier";
+      identifier: boolean;
+      swap: boolean;
+    }
   | undefined {
   const known = REVIEW_REPLACEMENTS.find(([from]) =>
     [
@@ -47,7 +53,22 @@ function replacementFor(question: Question):
     ].some((value) => value?.includes(from)),
   );
   if (known) {
-    return { from: known[0], to: known[1], kind: "value", identifier: false };
+    const values = [
+      question.prompt,
+      question.lead,
+      question.code,
+      question.starter,
+      question.answer,
+      question.sample,
+      ...(question.options ?? []),
+    ];
+    return {
+      from: known[0],
+      to: known[1],
+      kind: "value",
+      identifier: false,
+      swap: values.some((value) => value?.includes(known[1])),
+    };
   }
   const identifier = question.answer.match(
     /\b(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/,
@@ -61,6 +82,7 @@ function replacementFor(question: Question):
       to: `${identifier}Review`,
       kind: "identifier",
       identifier: true,
+      swap: false,
     };
   }
   const literal = [...question.answer.matchAll(/(["'])([^"'\\\n]+)\1/g)]
@@ -79,30 +101,39 @@ function replacementFor(question: Question):
         to: `${literal}-復習`,
         kind: "value",
         identifier: false,
+        swap: false,
       }
     : undefined;
 }
 
+function contextVariant(question: Question, attemptCount: number): Question {
+  const rotatedOptions = question.options?.length
+    ? [...question.options.slice(1), question.options[0]!]
+    : question.options;
+  return {
+    ...question,
+    options: rotatedOptions,
+    variantId: `${question.variantId ?? question.id}:context-review-${attemptCount + 1}`,
+    scenario: `前回の位置ではなく、各選択肢が成立する条件を比べて判断します。${question.scenario ?? ""}`,
+    scaffoldLevel: "independent",
+  };
+}
+
 export function reviewVariant(question: Question, attemptCount: number): Question {
   const replacement = replacementFor(question);
-  if (!replacement) {
-    const rotatedOptions = question.options?.length
-      ? [...question.options.slice(1), question.options[0]!]
-      : question.options;
-    return {
-      ...question,
-      options: rotatedOptions,
-      variantId: `${question.variantId ?? question.id}:context-review-${attemptCount + 1}`,
-      scenario: `前回とは異なる注文の調査担当として、資料を見ずに根拠を説明します。${question.scenario ?? ""}`,
-      scaffoldLevel: "independent",
-    };
-  }
-  const { from, to, kind, identifier } = replacement;
+  if (!replacement) return contextVariant(question, attemptCount);
+
+  const { from, to, kind, identifier, swap } = replacement;
   const replace = (value: string | undefined) =>
     identifier
       ? value?.replace(new RegExp(`\\b${from}\\b`, "g"), to)
+      : swap
+        ? value
+            ?.replaceAll(from, "__COURSE_REVIEW_SWAP__")
+            .replaceAll(to, from)
+            .replaceAll("__COURSE_REVIEW_SWAP__", to)
       : value?.replaceAll(from, to);
-  return {
+  const variant: Question = {
     ...question,
     prompt: replace(question.prompt) ?? question.prompt,
     lead: replace(question.lead),
@@ -142,6 +173,14 @@ export function reviewVariant(question: Question, attemptCount: number): Questio
     scenario: `値や場面を変えた復習問題です。${replace(question.scenario) ?? ""}`,
     scaffoldLevel: "independent",
   };
+  if (
+    variant.options &&
+    (new Set(variant.options).size !== variant.options.length ||
+      variant.options.filter((option) => option === variant.answer).length !== 1)
+  ) {
+    return contextVariant(question, attemptCount);
+  }
+  return variant;
 }
 
 function interleave(items: ReviewItem[]): ReviewItem[] {

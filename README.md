@@ -45,6 +45,7 @@ npm run build
 npm run audit:questions
 npm run audit:clarity
 npm run audit:dialogues
+npm run audit:granularity
 npm run audit:grading
 npm run audit:learning
 npm run audit:learning-engine

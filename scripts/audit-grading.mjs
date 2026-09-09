@@ -1,4 +1,8 @@
-import { grade, gradeShell } from "../src/lib/grade.ts";
+import {
+  feedbackForIncorrectAnswer,
+  grade,
+  gradeShell,
+} from "../src/lib/grade.ts";
 import { gradeCodeByBehavior } from "../src/lib/grade-behavior.ts";
 import { runStudentJs } from "../src/lib/run-js.ts";
 
@@ -51,6 +55,14 @@ expect(
 expect(
   "明示したシェル別解を受理できない",
   gradeShell(shellQuestion, "node ./app.js"),
+);
+expect(
+  "コード誤答で確認行を示せない",
+  /1行目/.test(feedbackForIncorrectAnswer(codeQuestion, 'let message = "hi ";')),
+);
+expect(
+  "シェル誤答でコマンド名を比較できない",
+  /npm.*node/.test(feedbackForIncorrectAnswer(shellQuestion, "npm app.js")),
 );
 
 const asyncResult = await runStudentJs(

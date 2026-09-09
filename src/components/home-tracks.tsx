@@ -100,7 +100,7 @@ export function HomeTracks({
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-mute">自信差（小ほど良）</dt>
+              <dt className="text-xs text-mute">初回答の自信差（小ほど良）</dt>
               <dd className="mt-1 font-mono text-xl">
                 {stats.calibrationError === null
                   ? "—"

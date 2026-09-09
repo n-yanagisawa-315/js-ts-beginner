@@ -2159,20 +2159,21 @@ button.console-window-play:hover {
   gap: 12px;
   align-items: start;
   margin-bottom: 20px;
-  border-left: 3px solid #d4b45a;
+  border-left: 3px solid #8a6500;
   padding: 10px 12px;
-  background: color-mix(in srgb, var(--figure-panel) 78%, transparent);
+  background: rgb(255 255 255 / 72%);
 }
 
 .story-ribbon span {
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 11px;
-  color: #d4b45a;
+  font-size: 12px;
+  font-weight: 750;
+  color: #725400;
 }
 
 .story-ribbon p {
   margin: 0;
-  color: var(--cream-mute);
+  color: #294955;
   font-size: 14px;
   line-height: 1.65;
 }
@@ -2243,6 +2244,14 @@ button.console-window-play:hover {
   color: var(--paper);
 }
 
+.confidence-scale button:disabled {
+  cursor: default;
+}
+
+.confidence-scale button:disabled:not([aria-pressed="true"]) {
+  opacity: 0.55;
+}
+
 .confidence-scale button span,
 .confidence-scale button small {
   display: block;
@@ -2252,6 +2261,16 @@ button.console-window-play:hover {
   margin-top: 2px;
   font-family: var(--font-code), ui-monospace, monospace;
   opacity: 0.68;
+}
+
+.confidence-scale > .confidence-feedback {
+  margin-top: 12px;
+  border-left: 3px solid var(--studio);
+  background: var(--studio-soft);
+  padding: 9px 11px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .learning-checkpoint {
@@ -2328,6 +2347,35 @@ button.console-window-play:hover {
 
 .learning-checkpoint .confidence-scale {
   margin-top: 20px;
+}
+
+.learning-checkpoint-comparison {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 12px 14px;
+}
+
+.learning-checkpoint-comparison summary {
+  color: var(--studio);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.learning-checkpoint-comparison p {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  color: var(--ink);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.learning-checkpoint-comparison small {
+  display: block;
+  margin-top: 10px;
+  color: var(--mute);
+  line-height: 1.6;
 }
 
 .learning-checkpoint-actions {

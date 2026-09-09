@@ -19,7 +19,7 @@ const COURSE_FILES = [
   "node-core.ts",
 ];
 const VISIBLE_FIELDS = ["prompt", "lead", "starter", "steps", "hint", "sample"];
-const EXPECTED_QUESTION_COUNT = 213;
+const EXPECTED_QUESTION_COUNT = 220;
 
 function propertyName(node) {
   if (ts.isIdentifier(node) || ts.isStringLiteral(node)) return node.text;
