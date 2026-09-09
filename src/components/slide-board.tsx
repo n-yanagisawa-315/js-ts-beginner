@@ -1,10 +1,8 @@
 import { CodeHighlight } from "@/components/code-highlight";
 import { Diagram } from "@/components/diagram";
 import { TalkAvatar } from "@/components/talk-avatar";
-import { listingsFor } from "@/lib/course/diagram-listings";
 import { isSummarySlide, talkPages } from "@/lib/course/slide-layout";
-import { sourcesForDiagram } from "@/lib/course/sources";
-import type { Slide } from "@/lib/course/types";
+import type { ResolvedSlideDTO } from "@/lib/course/client-dtos";
 
 const INLINE_TOKEN =
   /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
@@ -68,16 +66,16 @@ export function SlideBoard({
   titleId,
   pageIndex,
 }: {
-  slide: Slide;
+  slide: ResolvedSlideDTO;
   titleId: string;
   pageIndex: number;
 }) {
-  const listings = listingsFor(slide);
+  const listings = slide.listings;
   const summary = isSummarySlide(slide);
-  const pages = talkPages(slide);
+  const pages = talkPages(slide, listings[0]);
   const page = pages[Math.min(pageIndex, pages.length - 1)] ?? pages[0];
   const finalPage = pageIndex >= pages.length - 1;
-  const sources = sourcesForDiagram(slide.diagram);
+  const sources = slide.sources;
 
   return (
     <article className="grid gap-8 py-2 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start">

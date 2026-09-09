@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { LessonStudio } from "@/components/lesson-studio";
 import { getLessonPageDTO, lessons } from "@/lib/course/server";
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return lessons.map((lesson) => ({ id: lesson.id }));
 }

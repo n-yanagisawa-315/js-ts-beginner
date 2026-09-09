@@ -8,6 +8,10 @@ export type DomRunResult = {
   error?: string;
 };
 
+export type DomRunOptions = {
+  iframe?: HTMLIFrameElement;
+};
+
 const MESSAGE_TYPE = "js-ts-beginner-dom-result";
 
 function scriptValue(value: unknown) {
@@ -119,6 +123,7 @@ ${fixtureHtml}
 export async function runDomQuestion(
   question: Question,
   source: string,
+  options: DomRunOptions = {},
 ): Promise<DomRunResult> {
   if (!question.fixtureHtml || !question.domProbe) {
     return {
@@ -130,10 +135,13 @@ export async function runDomQuestion(
   }
 
   const requestId = crypto.randomUUID();
-  const iframe = document.createElement("iframe");
-  iframe.hidden = true;
-  iframe.setAttribute("sandbox", "allow-scripts");
-  iframe.title = "DOMコードの採点";
+  const ownsIframe = !options.iframe;
+  const iframe = options.iframe ?? document.createElement("iframe");
+  if (ownsIframe) {
+    iframe.hidden = true;
+    iframe.setAttribute("sandbox", "allow-scripts");
+    iframe.title = "DOMコードの採点";
+  }
 
   return new Promise((resolve) => {
     const timeout = window.setTimeout(() => {
@@ -149,7 +157,7 @@ export async function runDomQuestion(
     function cleanup() {
       window.clearTimeout(timeout);
       window.removeEventListener("message", receive);
-      iframe.remove();
+      if (ownsIframe) iframe.remove();
     }
 
     function receive(event: MessageEvent) {
@@ -169,7 +177,7 @@ export async function runDomQuestion(
     }
 
     window.addEventListener("message", receive);
-    document.body.append(iframe);
+    if (ownsIframe) document.body.append(iframe);
     iframe.srcdoc = createDomDocument({
       source,
       fixtureHtml: question.fixtureHtml ?? "",

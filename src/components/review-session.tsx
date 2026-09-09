@@ -28,14 +28,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, RotateCcw } from "lucide-react";
 import type { ReviewPageDTO } from "@/lib/course/client-dtos";
 import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
-import { gradeQuestion } from "@/lib/grade-question";
 import {
-  getLearningStateSnapshot,
+  gradeQuestion,
+  type RuntimeEvidence,
+} from "@/lib/grade-question";
+import {
+  initializeLearningState,
   recordQuestionAssistance,
   recordQuestionAttempt,
   recordSelfExplanation,
 } from "@/lib/progress";
-import { buildReviewQueue } from "@/lib/review-queue";
+import {
+  isReviewBatchResponseFor,
+  REVIEW_API_VERSION,
+  type ReviewBatchRequest,
+  type ReviewBatchResponse,
+} from "@/lib/review-contract";
+import { buildReviewQueue, type ReviewQueue } from "@/lib/review-queue";
 
 const CodeLab = dynamic<CodeLabProps>(
   () => import("@/components/code-lab").then((module) => module.CodeLab),
@@ -55,7 +64,39 @@ const QuizChallenge = dynamic<QuizChallengeProps>(
 );
 
 const subscribeToNothing = () => () => {};
-type ReviewQueue = ReturnType<typeof buildReviewQueue>;
+const REVIEW_REQUEST_TIMEOUT_MS = 15_000;
+
+function reviewBatchRequest(queue: ReviewQueue): ReviewBatchRequest {
+  return {
+    version: REVIEW_API_VERSION,
+    items: queue.items.map((item) => ({
+      lessonId: item.lesson.id,
+      questionId: item.question.id,
+      attemptCount: item.attemptCount,
+    })),
+  };
+}
+
+async function fetchReviewBatch(
+  request: ReviewBatchRequest,
+  signal?: AbortSignal,
+): Promise<ReviewBatchResponse> {
+  const response = await fetch("/api/review/questions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+    cache: "no-store",
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error("復習問題を取得できませんでした。");
+  }
+  const body: unknown = await response.json();
+  if (!isReviewBatchResponseFor(body, request)) {
+    throw new Error("復習問題の順序が一致しません。");
+  }
+  return body;
+}
 
 export function ReviewSession({ course }: { course: ReviewPageDTO }) {
   const { lessons } = course;
@@ -65,7 +106,12 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     () => false,
   );
   const initialized = useRef(false);
+  const requestGeneration = useRef(0);
+  const activeRequest = useRef<AbortController | null>(null);
   const [queue, setQueue] = useState<ReviewQueue | null>(null);
+  const [batch, setBatch] = useState<ReviewBatchResponse | null>(null);
+  const [loadingBatch, setLoadingBatch] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [position, setPosition] = useState(0);
   const [choice, setChoice] = useState<string | null>(null);
   const [typed, setTyped] = useState("");
@@ -83,15 +129,81 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
   useEffect(() => {
     if (!hydrated || initialized.current) return;
     initialized.current = true;
-    const initialQueue = buildReviewQueue(
-      lessons,
-      getLearningStateSnapshot(),
-    );
+    const initialQueue = buildReviewQueue(lessons, initializeLearningState());
     setQueue(initialQueue);
-    setTyped(initialQueue.items[0]?.question.starter ?? "");
+    if (initialQueue.items.length === 0) return;
+
+    const request = reviewBatchRequest(initialQueue);
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    const generation = ++requestGeneration.current;
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      REVIEW_REQUEST_TIMEOUT_MS,
+    );
+    void fetchReviewBatch(request, controller.signal)
+      .then((response) => {
+        if (generation !== requestGeneration.current) return;
+        setBatch(response);
+        setTyped(response.items[0]?.question.starter ?? "");
+      })
+      .catch((error: unknown) => {
+        if (generation !== requestGeneration.current) return;
+        setLoadError(
+          error instanceof DOMException && error.name === "AbortError"
+            ? "復習問題の取得がタイムアウトしました。"
+            : error instanceof Error
+              ? error.message
+              : "復習問題を取得できませんでした。",
+        );
+      })
+      .finally(() => {
+        window.clearTimeout(timeout);
+        if (generation === requestGeneration.current) setLoadingBatch(false);
+      });
+    return () => {
+      requestGeneration.current += 1;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [hydrated, lessons]);
 
-  const item = queue?.items[position];
+  async function retryLoad() {
+    if (!queue || queue.items.length === 0 || loadingBatch) return;
+    setLoadError(null);
+    setLoadingBatch(true);
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    const generation = ++requestGeneration.current;
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      REVIEW_REQUEST_TIMEOUT_MS,
+    );
+    try {
+      const response = await fetchReviewBatch(
+        reviewBatchRequest(queue),
+        controller.signal,
+      );
+      if (generation !== requestGeneration.current) return;
+      setBatch(response);
+      setTyped(response.items[0]?.question.starter ?? "");
+    } catch (error) {
+      if (generation !== requestGeneration.current) return;
+      setLoadError(
+        error instanceof DOMException && error.name === "AbortError"
+          ? "復習問題の取得がタイムアウトしました。"
+          : error instanceof Error
+            ? error.message
+            : "復習問題を取得できませんでした。",
+      );
+    } finally {
+      window.clearTimeout(timeout);
+      if (generation === requestGeneration.current) setLoadingBatch(false);
+    }
+  }
+
+  const item = batch?.items[position];
   const answer =
     item?.question.kind === "choice" ? (choice ?? "") : typed;
   const isCorrect = useMemo(
@@ -99,7 +211,10 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     [answer, item],
   );
 
-  async function submit(correctOverride?: boolean) {
+  async function submit(
+    correctOverride?: boolean,
+    evidence?: RuntimeEvidence,
+  ) {
     if (!item || checked) return;
     if (confidence === null) return;
     if (
@@ -111,7 +226,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     }
     const gradeResult =
       correctOverride === undefined
-        ? await gradeQuestion(item.question, answer, item.lesson.track)
+        ? await gradeQuestion(item.question, answer, item.lesson.track, evidence)
         : {
             passed: correctOverride,
             feedback: item.question.explain,
@@ -167,7 +282,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     const nextPosition = position + 1;
     setPosition(nextPosition);
     setChoice(null);
-    setTyped(queue.items[nextPosition]?.question.starter ?? "");
+    setTyped(batch?.items[nextPosition]?.question.starter ?? "");
     setChecked(false);
     setFailReason(null);
     setConfidence(null);
@@ -198,7 +313,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     });
   }
 
-  if (!queue) {
+  if (!queue || (queue.items.length > 0 && !batch && !loadError)) {
     return (
       <main id="main-content" className="review-state-page">
         <Card className="review-state-card" role="status" aria-label="復習問題を準備中">
@@ -210,6 +325,26 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
           </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main id="main-content" className="review-state-page">
+        <Card className="review-state-card" role="alert">
+          <CardHeader>
+            <CardTitle asChild>
+              <h1>復習問題を読み込めませんでした</h1>
+            </CardTitle>
+            <CardDescription>{loadError}</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={retryLoad} disabled={loadingBatch}>
+              {loadingBatch ? "再読み込み中…" : "もう一度試す"}
+            </Button>
+          </CardFooter>
         </Card>
       </main>
     );
@@ -276,7 +411,12 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     position + 1 === queue.items.length ? "結果を見る" : "次の問題";
   const question = item.question;
 
-  if (question.kind === "code" || question.kind === "shell") {
+  if (
+    question.kind === "code" ||
+    question.kind === "shell" ||
+    question.kind === "sql" ||
+    question.kind === "git"
+  ) {
     return (
       <div className="flex min-h-full flex-1 flex-col">
         <ReviewHeader

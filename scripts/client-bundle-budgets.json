@@ -1,0 +1,26 @@
+{
+  "routes": {
+    "home": { "raw": 750000, "gzip": 240000 },
+    "review": { "raw": 730000, "gzip": 230000 },
+    "track": { "raw": 730000, "gzip": 230000 },
+    "lesson": { "raw": 830000, "gzip": 260000 }
+  },
+  "lazy": {
+    "review-code-lab": { "raw": 123000, "gzip": 42000 },
+    "review-quiz": { "raw": 98000, "gzip": 35000 },
+    "lesson-code-lab": { "raw": 53000, "gzip": 18000 },
+    "sql-console": { "raw": 7800, "gzip": 3300 },
+    "git-terminal": { "raw": 25500, "gzip": 9500 },
+    "monaco": { "raw": 15800, "gzip": 5400 }
+  },
+  "documents": {
+    "home.html": { "raw": 55000, "gzip": 10000 },
+    "home.rsc": { "raw": 11300, "gzip": 4100 },
+    "review.html": { "raw": 60000, "gzip": 10500 },
+    "review.rsc": { "raw": 49000, "gzip": 9200 },
+    "track.html": { "raw": 112000, "gzip": 13000 },
+    "track.rsc": { "raw": 15500, "gzip": 5700 },
+    "lesson.html": { "raw": 71000, "gzip": 16700 },
+    "lesson.rsc": { "raw": 52500, "gzip": 13400 }
+  }
+}

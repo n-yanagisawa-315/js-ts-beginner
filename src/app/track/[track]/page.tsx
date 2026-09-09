@@ -5,6 +5,8 @@ import { getTrackPageDTO, TRACK_ORDER } from "@/lib/course/server";
 import type { Track } from "@/lib/course/types";
 import { TRACK_META } from "@/lib/track-meta";
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return TRACK_ORDER.map((track) => ({ track }));
 }

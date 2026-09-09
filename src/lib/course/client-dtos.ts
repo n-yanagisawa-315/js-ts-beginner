@@ -1,7 +1,7 @@
 import type {
   ChapterId,
   Lesson,
-  Question,
+  Slide,
   Track,
 } from "./types";
 
@@ -56,11 +56,37 @@ export type LessonNavigationDTO = {
   nextLessonId: string | null;
 };
 
+export type ResolvedSlideListingDTO = {
+  code: string;
+  label: string;
+};
+
+export type ResolvedSlideSourceDTO = {
+  title: string;
+  url: string;
+  publisher: string;
+};
+
+export type ResolvedSlideDTO = Slide & {
+  listings: ResolvedSlideListingDTO[];
+  sources: ResolvedSlideSourceDTO[];
+};
+
+export type ResolvedLessonDTO = Omit<Lesson, "slides"> & {
+  slides: ResolvedSlideDTO[];
+};
+
 export type LessonPageDTO = {
-  lesson: Lesson;
+  lesson: ResolvedLessonDTO;
   prequestion: string;
   predictionOptions: string[];
   navigation: LessonNavigationDTO;
+};
+
+export type ReviewQuestionIndexDTO = {
+  id: string;
+  contrastGroup: string | null;
+  catalogOrder: number;
 };
 
 export type ReviewLessonDTO = {
@@ -69,9 +95,10 @@ export type ReviewLessonDTO = {
   chapter: ChapterId;
   chapterTitle: string;
   title: string;
-  questions: Question[];
+  questions: ReviewQuestionIndexDTO[];
 };
 
 export type ReviewPageDTO = {
+  version: 1;
   lessons: ReviewLessonDTO[];
 };

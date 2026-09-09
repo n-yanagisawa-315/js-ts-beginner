@@ -164,6 +164,15 @@ export function runSql(
   });
 }
 
+export function sqlQuestionSource(
+  question: Pick<Question, "sqlExpectedTable">,
+  source: string,
+) {
+  if (!question.sqlExpectedTable) return source;
+  const table = question.sqlExpectedTable.replaceAll('"', '""');
+  return `${source.trim().replace(/;*$/, ";")}\nSELECT * FROM "${table}" ORDER BY rowid;`;
+}
+
 export function runSqlQuestion(
   question: Pick<Question, "sqlSchema" | "sqlSeed">,
   source: string,

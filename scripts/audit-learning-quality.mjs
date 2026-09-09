@@ -113,7 +113,20 @@ for (const file of COURSE_FILES) {
           issues.push(`${file}: choice問題にoptionsがありません`);
           continue;
         }
-        const lengths = options.elements.map((option) => textOf(option).length);
+        const values = options.elements.map((option) => textOf(option));
+        const answer = textOf(fields.get("answer"));
+        if (
+          values.length === 0 ||
+          values.some((value) => !value) ||
+          new Set(values).size !== values.length
+        ) {
+          issues.push(`${file}: choice問題のoptionsが空・非文字列・重複です`);
+          continue;
+        }
+        if (values.filter((value) => value === answer).length !== 1) {
+          issues.push(`${file}: choice問題の正答がoptionsに一意に存在しません`);
+        }
+        const lengths = values.map((value) => value.length);
         const range = Math.max(...lengths) - Math.min(...lengths);
         maxChoiceRange = Math.max(maxChoiceRange, range);
         if (range > 5) {
@@ -333,6 +346,10 @@ const reviewQueue = fs.readFileSync(
   path.join(ROOT, "src/lib/review-queue.ts"),
   "utf8",
 );
+const reviewVariant = fs.readFileSync(
+  path.join(ROOT, "src/lib/review-variant.ts"),
+  "utf8",
+);
 for (const marker of [
   "replacementFor",
   'kind: "identifier"',
@@ -341,7 +358,11 @@ for (const marker of [
   "__COURSE_REVIEW_SWAP__",
   "new Set(variant.options)",
 ]) {
-  if (!reviewQueue.includes(marker) && !learningDesign.includes(marker)) {
+  if (
+    !reviewQueue.includes(marker) &&
+    !reviewVariant.includes(marker) &&
+    !learningDesign.includes(marker)
+  ) {
     issues.push(`復習変種または誤概念診断に ${marker} がありません`);
   }
 }

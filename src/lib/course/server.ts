@@ -41,6 +41,13 @@ import type {
   ReviewPageDTO,
   TrackPageDTO,
 } from "./client-dtos";
+import {
+  REVIEW_API_VERSION,
+  type ReviewBatchRequest,
+} from "../review-contract";
+import { resolveReviewBatchFromLessons } from "../review-resolver";
+import { listingsFor } from "./diagram-listings";
+import { sourcesForDiagram } from "./sources";
 
 const rawLessons: Lesson[] = [
   ...jsStart,
@@ -152,7 +159,14 @@ export function getLessonPageDTO(id: string): LessonPageDTO | undefined {
   if (!lesson) return undefined;
   const chapter = getChapter(lesson.chapter);
   return {
-    lesson,
+    lesson: {
+      ...lesson,
+      slides: lesson.slides.map((slide) => ({
+        ...slide,
+        listings: listingsFor(slide),
+        sources: sourcesForDiagram(slide.diagram),
+      })),
+    },
     prequestion: prequestionForLesson(lesson),
     predictionOptions: predictionOptionsForLesson(lesson),
     navigation: {
@@ -175,16 +189,30 @@ export function getLessonPageDTO(id: string): LessonPageDTO | undefined {
 }
 
 export function getReviewPageDTO(): ReviewPageDTO {
+  let catalogOrder = 0;
   return {
+    version: REVIEW_API_VERSION,
     lessons: lessons.map((lesson) => ({
       id: lesson.id,
       track: lesson.track,
       chapter: lesson.chapter,
       chapterTitle: getChapter(lesson.chapter)?.title ?? lesson.title,
       title: lesson.title,
-      questions: lesson.questions,
+      questions: lesson.questions.map((question) => ({
+        id: question.id,
+        contrastGroup: question.contrastGroup ?? null,
+        catalogOrder: catalogOrder++,
+      })),
     })),
   };
+}
+
+export function resolveReviewBatch(request: ReviewBatchRequest) {
+  return resolveReviewBatchFromLessons(
+    lessons,
+    request,
+    (lesson) => getChapter(lesson.chapter)?.title ?? lesson.title,
+  );
 }
 
 function predictionOptionsForLesson(lesson: Lesson): string[] {

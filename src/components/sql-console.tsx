@@ -18,11 +18,15 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import type { Question } from "@/lib/course/types";
 import {
+  SQL_MAX_ROWS,
   runSqlQuestion,
+  sqlQuestionSource,
   type SqlCell,
   type SqlRunResult,
 } from "@/lib/sql/sql-runner";
 import { cn } from "@/lib/utils";
+
+const SQL_RESULT_PAGE_SIZE = 50;
 
 export type SqlConsoleProps = {
   source: string;
@@ -57,7 +61,15 @@ function formatCell(value: SqlCell | undefined) {
   return String(value);
 }
 
-function SqlResults({ result }: { result: SqlRunResult | null }) {
+function SqlResults({
+  result,
+  displayLimit,
+  onShowMore,
+}: {
+  result: SqlRunResult | null;
+  displayLimit: number;
+  onShowMore: () => void;
+}) {
   if (!result) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -74,10 +86,18 @@ function SqlResults({ result }: { result: SqlRunResult | null }) {
     );
   }
 
+  const availableTotal = Math.min(result.rows.length, SQL_MAX_ROWS);
+  const displayedRows = result.rows.slice(
+    0,
+    Math.min(displayLimit, availableTotal),
+  );
+  const displayedTotal = displayedRows.length;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
       <div className="overflow-auto rounded-md border">
         <table className="w-full border-collapse text-left font-mono text-sm">
+          <caption className="sr-only">SQLクエリの実行結果</caption>
           <thead className="sticky top-0 bg-muted">
             <tr>
               {result.columns.map((column, index) => (
@@ -92,8 +112,8 @@ function SqlResults({ result }: { result: SqlRunResult | null }) {
             </tr>
           </thead>
           <tbody>
-            {result.rows.length > 0 ? (
-              result.rows.map((row, rowIndex) => (
+            {displayedTotal > 0 ? (
+              displayedRows.map((row, rowIndex) => (
                 <tr key={rowIndex} className="border-b last:border-b-0">
                   {result.columns.map((column, columnIndex) => (
                     <td
@@ -118,10 +138,30 @@ function SqlResults({ result }: { result: SqlRunResult | null }) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        {result.rows.length}行
-        {result.truncated ? "（最大500行まで表示）" : ""}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">
+          {displayedTotal > 0
+            ? `1〜${displayedTotal}行 / 全${availableTotal}行`
+            : "0行 / 全0行"}
+          {result.truncated
+            ? `（結果は最大${SQL_MAX_ROWS}行に制限されています）`
+            : ""}
+        </p>
+        {displayedTotal < availableTotal ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={onShowMore}
+            aria-label={`SQL実行結果を次の${Math.min(
+              SQL_RESULT_PAGE_SIZE,
+              availableTotal - displayedTotal,
+            )}行表示`}
+          >
+            さらに50行表示
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -147,11 +187,19 @@ export function SqlConsole({
     questionId: string;
     message: string;
   } | null>(null);
+  const [displayState, setDisplayState] = useState({
+    questionId: question.id,
+    limit: SQL_RESULT_PAGE_SIZE,
+  });
   const pending = pendingQuestionId === question.id;
   const result =
     resultState?.questionId === question.id ? resultState.value : null;
   const error =
     errorState?.questionId === question.id ? errorState.message : null;
+  const displayLimit =
+    displayState.questionId === question.id
+      ? displayState.limit
+      : SQL_RESULT_PAGE_SIZE;
 
   useEffect(() => {
     abortRef.current?.abort();
@@ -168,6 +216,10 @@ export function SqlConsole({
   function handleChange(nextSource: string) {
     setResultState(null);
     setErrorState(null);
+    setDisplayState({
+      questionId: question.id,
+      limit: SQL_RESULT_PAGE_SIZE,
+    });
     onChange(nextSource);
   }
 
@@ -180,12 +232,24 @@ export function SqlConsole({
     abortRef.current = controller;
     setPendingQuestionId(question.id);
     setErrorState(null);
+    setDisplayState({
+      questionId: question.id,
+      limit: SQL_RESULT_PAGE_SIZE,
+    });
 
     try {
-      const nextResult = await runSqlQuestion(question, source, {
+      const nextResult = await runSqlQuestion(
+        question,
+        sqlQuestionSource(question, source),
+        {
         signal: controller.signal,
-      });
+        },
+      );
       if (controller.signal.aborted) return;
+      setDisplayState({
+        questionId: question.id,
+        limit: SQL_RESULT_PAGE_SIZE,
+      });
       setResultState({ questionId: question.id, value: nextResult });
       await onSubmit?.(nextResult);
     } catch (caught) {
@@ -274,7 +338,21 @@ export function SqlConsole({
             SQLiteを準備して実行しています…
           </div>
         ) : (
-          <SqlResults result={result} />
+          <SqlResults
+            result={result}
+            displayLimit={displayLimit}
+            onShowMore={() =>
+              setDisplayState((current) => ({
+                questionId: question.id,
+                limit: Math.min(
+                  (current.questionId === question.id
+                    ? current.limit
+                    : SQL_RESULT_PAGE_SIZE) + SQL_RESULT_PAGE_SIZE,
+                  SQL_MAX_ROWS,
+                ),
+              }))
+            }
+          />
         )}
       </section>
     </form>

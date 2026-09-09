@@ -157,63 +157,255 @@ function emptyQuestionProgress(): QuestionProgress {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function nonnegativeInteger(value: unknown, fallback = 0): number {
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= 0
+    ? value
+    : fallback;
+}
+
+function nullableFiniteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function nullableConfidence(value: unknown): number | null {
+  const confidence = nullableFiniteNumber(value);
+  return confidence === null ? null : Math.min(100, Math.max(0, confidence));
+}
+
+function nullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function isIsoDate(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T/.test(value) &&
+    Number.isFinite(Date.parse(value))
+  );
+}
+
+function nullableIsoDate(value: unknown): string | null {
+  return isIsoDate(value) ? value : null;
+}
+
+const ATTEMPT_CONTEXTS: readonly AttemptContext[] = [
+  "lesson",
+  "review",
+  "transfer",
+  "prequestion",
+  "exit-recall",
+];
+const MASTERY_STAGES: readonly MasteryStage[] = [
+  "new",
+  "practicing",
+  "retained",
+  "mastered",
+  "needs-review",
+];
+
+function parseAttemptEvent(value: unknown): AttemptEvent | null {
+  if (!isRecord(value) || !isIsoDate(value.attemptedAt)) return null;
+  const context = ATTEMPT_CONTEXTS.includes(value.context as AttemptContext)
+    ? (value.context as AttemptContext)
+    : "lesson";
+  return {
+    id: typeof value.id === "string" ? value.id : "",
+    attemptedAt: value.attemptedAt,
+    context,
+    correct: typeof value.correct === "boolean" ? value.correct : false,
+    firstAttempt:
+      typeof value.firstAttempt === "boolean" ? value.firstAttempt : false,
+    supported: typeof value.supported === "boolean" ? value.supported : true,
+    hintLevel: nonnegativeInteger(value.hintLevel),
+    answerViewed:
+      typeof value.answerViewed === "boolean" ? value.answerViewed : false,
+    responseTimeMs: nullableFiniteNumber(value.responseTimeMs),
+    confidence: nullableConfidence(value.confidence),
+    variantId: nullableString(value.variantId),
+    misconceptionId: nullableString(value.misconceptionId),
+    response: nullableString(value.response),
+    dueAt: nullableIsoDate(value.dueAt),
+    advancedSchedule:
+      typeof value.advancedSchedule === "boolean"
+        ? value.advancedSchedule
+        : false,
+  };
+}
+
+function parseSelfExplanationEvent(
+  value: unknown,
+): SelfExplanationEvent | null {
+  if (
+    !isRecord(value) ||
+    !isIsoDate(value.recordedAt) ||
+    typeof value.response !== "string"
+  ) {
+    return null;
+  }
+  return { recordedAt: value.recordedAt, response: value.response };
+}
+
+function parseLessonLearningEvent(
+  value: unknown,
+): LessonLearningEvent | null {
+  if (
+    !isRecord(value) ||
+    typeof value.lessonId !== "string" ||
+    !isIsoDate(value.recordedAt) ||
+    (value.context !== "prequestion" && value.context !== "exit-recall") ||
+    typeof value.response !== "string"
+  ) {
+    return null;
+  }
+  return {
+    lessonId: value.lessonId,
+    recordedAt: value.recordedAt,
+    context: value.context,
+    response: value.response,
+    confidence: nullableConfidence(value.confidence),
+  };
+}
+
+function parseConceptProgress(value: unknown): ConceptProgress | null {
+  if (!isRecord(value)) return null;
+  const retainedAt = nullableIsoDate(value.retainedAt);
+  const transferredAt = nullableIsoDate(value.transferredAt);
+  const requestedStage = MASTERY_STAGES.includes(
+    value.masteryStage as MasteryStage,
+  )
+    ? (value.masteryStage as MasteryStage)
+    : "new";
+  const masteryStage =
+    requestedStage === "mastered"
+      ? retainedAt && transferredAt
+        ? "mastered"
+        : retainedAt
+          ? "retained"
+          : "new"
+      : requestedStage === "retained" && !retainedAt
+        ? "new"
+        : requestedStage;
+  return {
+    retainedAt,
+    transferredAt,
+    masteryStage,
+    lastAttemptAt: nullableIsoDate(value.lastAttemptAt),
+  };
+}
+
 function parseProgressMap(value: unknown): ProgressMap {
-  if (typeof value !== "object" || value === null) return {};
+  if (!isRecord(value)) return {};
   const progress: ProgressMap = {};
   for (const [id, item] of Object.entries(value)) {
-    if (
-      typeof item === "object" &&
-      item !== null &&
-      typeof (item as { score?: unknown }).score === "number" &&
-      typeof (item as { total?: unknown }).total === "number"
-    ) {
-      const { score, total } = item as { score: number; total: number };
-      progress[id] = { score, total };
-    }
+    if (!isRecord(item)) continue;
+    const total = nonnegativeInteger(item.total);
+    progress[id] = {
+      score: Math.min(nonnegativeInteger(item.score), total),
+      total,
+    };
   }
   return progress;
 }
 
 function parseQuestionProgress(value: unknown): Record<string, QuestionProgress> {
-  if (typeof value !== "object" || value === null) return {};
+  if (!isRecord(value)) return {};
   const questions: Record<string, QuestionProgress> = {};
   for (const [key, item] of Object.entries(value)) {
-    if (typeof item !== "object" || item === null) continue;
-    const candidate = item as Partial<QuestionProgress>;
-    const history = Array.isArray(candidate.attemptHistory)
-      ? candidate.attemptHistory.filter(
-          (event): event is AttemptEvent =>
-            typeof event === "object" &&
-            event !== null &&
-            typeof (event as AttemptEvent).attemptedAt === "string" &&
-            typeof (event as AttemptEvent).correct === "boolean",
-        )
+    if (!isRecord(item)) continue;
+    const attempts = nonnegativeInteger(item.attempts);
+    const incorrectAttempts = Math.min(
+      nonnegativeInteger(item.incorrectAttempts),
+      attempts,
+    );
+    const history = Array.isArray(item.attemptHistory)
+      ? item.attemptHistory
+          .map(parseAttemptEvent)
+          .filter((event): event is AttemptEvent => event !== null)
+          .slice(-MAX_ATTEMPT_HISTORY)
       : [];
-    const masteryStage: MasteryStage = [
-      "new",
-      "practicing",
-      "retained",
-      "mastered",
-      "needs-review",
-    ].includes(candidate.masteryStage ?? "")
-      ? (candidate.masteryStage as MasteryStage)
+    const requestedStage = MASTERY_STAGES.includes(
+      item.masteryStage as MasteryStage,
+    )
+      ? (item.masteryStage as MasteryStage)
       : "new";
+    const retainedAt = nullableIsoDate(item.retainedAt);
+    const transferredAt = nullableIsoDate(item.transferredAt);
+    const fallbackStage: MasteryStage = attempts > 0 ? "practicing" : "new";
+    const masteryStage =
+      requestedStage === "mastered"
+        ? retainedAt && transferredAt
+          ? "mastered"
+          : retainedAt
+            ? "retained"
+            : fallbackStage
+        : requestedStage === "retained" && !retainedAt
+          ? fallbackStage
+          : (requestedStage === "practicing" ||
+                requestedStage === "needs-review") &&
+              attempts === 0
+            ? "new"
+            : requestedStage;
     questions[key] = {
-      ...emptyQuestionProgress(),
-      ...candidate,
+      attempts,
+      incorrectAttempts,
+      firstTryCorrect:
+        typeof item.firstTryCorrect === "boolean"
+          ? item.firstTryCorrect
+          : null,
+      hintUsed: typeof item.hintUsed === "boolean" ? item.hintUsed : false,
+      answerViewed:
+        typeof item.answerViewed === "boolean" ? item.answerViewed : false,
+      lastAttemptAt: nullableIsoDate(item.lastAttemptAt),
+      lastCorrectAt: nullableIsoDate(item.lastCorrectAt),
+      streak: nonnegativeInteger(item.streak),
+      intervalDays: nonnegativeInteger(item.intervalDays),
+      nextReviewAt: nullableIsoDate(item.nextReviewAt),
+      hintUseCount: nonnegativeInteger(item.hintUseCount),
+      answerViewCount: nonnegativeInteger(item.answerViewCount),
+      lastAssistanceAt: nullableIsoDate(item.lastAssistanceAt),
       masteryStage,
+      retainedAt,
+      transferredAt,
       attemptHistory: history.slice(-MAX_ATTEMPT_HISTORY),
-      selfExplanations: Array.isArray(candidate.selfExplanations)
-        ? candidate.selfExplanations.slice(-10)
+      selfExplanations: Array.isArray(item.selfExplanations)
+        ? item.selfExplanations
+            .map(parseSelfExplanationEvent)
+            .filter(
+              (event): event is SelfExplanationEvent => event !== null,
+            )
+            .slice(-10)
         : [],
     };
   }
   return questions;
 }
 
+function parseConcepts(value: unknown): Record<string, ConceptProgress> {
+  if (!isRecord(value)) return {};
+  const concepts: Record<string, ConceptProgress> = {};
+  for (const [id, item] of Object.entries(value)) {
+    const concept = parseConceptProgress(item);
+    if (concept) concepts[id] = concept;
+  }
+  return concepts;
+}
+
+type V3Parse = {
+  state: LearningState;
+  repaired: boolean;
+};
+
 type StorageRead = {
   state: LearningState;
-  raw: string | null;
+  v3Raw: string | null;
+  persistencePending: boolean;
   migrationKeys: string[];
 };
 
@@ -223,32 +415,31 @@ let cachedCanonical = EMPTY_LEARNING_STATE_RAW;
 let cachedRaw: string | null = null;
 let cacheInitialized = false;
 let memoryOnlyState = false;
+let pendingV3Persistence = false;
 let pendingMigrationKeys: string[] = [];
 
-function parseV3(raw: string | null): LearningState | null {
+function parseV3(raw: string | null): V3Parse | null {
   if (!raw) return null;
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      (parsed as { version?: unknown }).version !== 3
-    ) {
+    if (!isRecord(parsed) || parsed.version !== 3) {
       return null;
     }
-    const state = parsed as Partial<LearningState>;
-    return {
+    const state: LearningState = {
       version: 3,
-      lessons: parseProgressMap(state.lessons),
-      questions: parseQuestionProgress(state.questions),
-      lessonEvents: Array.isArray(state.lessonEvents)
-        ? state.lessonEvents.slice(-500)
+      lessons: parseProgressMap(parsed.lessons),
+      questions: parseQuestionProgress(parsed.questions),
+      lessonEvents: Array.isArray(parsed.lessonEvents)
+        ? parsed.lessonEvents
+            .map(parseLessonLearningEvent)
+            .filter(
+              (event): event is LessonLearningEvent => event !== null,
+            )
+            .slice(-500)
         : [],
-      concepts:
-        typeof state.concepts === "object" && state.concepts !== null
-          ? state.concepts
-          : {},
+      concepts: parseConcepts(parsed.concepts),
     };
+    return { state, repaired: JSON.stringify(state) !== raw };
   } catch {
     return null;
   }
@@ -259,17 +450,15 @@ function parseV2(raw: string | null): LearningState | null {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      (parsed as { version?: unknown }).version !== 2
+      !isRecord(parsed) ||
+      parsed.version !== 2
     ) {
       return null;
     }
-    const legacy = parsed as { lessons?: unknown; questions?: unknown };
     return {
       version: 3,
-      lessons: parseProgressMap(legacy.lessons),
-      questions: parseQuestionProgress(legacy.questions),
+      lessons: parseProgressMap(parsed.lessons),
+      questions: parseQuestionProgress(parsed.questions),
       lessonEvents: [],
       concepts: {},
     };
@@ -308,20 +497,32 @@ function readStorageState(v3Override?: string | null): StorageRead | null {
   if (
     v3Raw !== null &&
     v3Raw === cachedRaw &&
-    cacheInitialized &&
-    pendingMigrationKeys.length === 0
+    cacheInitialized
   ) {
-    return { state: cachedLearningState, raw: v3Raw, migrationKeys: [] };
+    return {
+      state: cachedLearningState,
+      v3Raw,
+      persistencePending: pendingV3Persistence,
+      migrationKeys: pendingMigrationKeys,
+    };
   }
   const v3 = parseV3(v3Raw);
-  if (v3) return { state: v3, raw: v3Raw, migrationKeys: [] };
+  if (v3) {
+    return {
+      state: v3.state,
+      v3Raw,
+      persistencePending: v3.repaired,
+      migrationKeys: [],
+    };
+  }
 
   const v2Raw = read(V2_KEY);
   const v2 = parseV2(v2Raw);
   if (v2) {
     return {
       state: v2,
-      raw: v2Raw,
+      v3Raw,
+      persistencePending: true,
       migrationKeys: [V2_KEY, V1_KEY],
     };
   }
@@ -331,13 +532,19 @@ function readStorageState(v3Override?: string | null): StorageRead | null {
   if (v1) {
     return {
       state: v1,
-      raw: v1Raw,
+      v3Raw,
+      persistencePending: true,
       migrationKeys: [V1_KEY],
     };
   }
 
   if (hadStorageError) return null;
-  return { state: EMPTY_LEARNING_STATE, raw: null, migrationKeys: [] };
+  return {
+    state: EMPTY_LEARNING_STATE,
+    v3Raw,
+    persistencePending: v3Raw !== null,
+    migrationKeys: [],
+  };
 }
 
 function updateCache(result: StorageRead): boolean {
@@ -347,9 +554,10 @@ function updateCache(result: StorageRead): boolean {
     cachedLearningState = result.state;
     cachedCanonical = canonical;
   }
-  cachedRaw = result.raw;
+  cachedRaw = result.v3Raw;
   cacheInitialized = true;
   memoryOnlyState = false;
+  pendingV3Persistence = result.persistencePending;
   pendingMigrationKeys = result.migrationKeys;
   return changed;
 }
@@ -370,23 +578,42 @@ export function readLearningState(): LearningState {
   return getLearningStateSnapshot();
 }
 
-function persistPendingMigration(): void {
-  if (pendingMigrationKeys.length === 0) return;
-  const raw = JSON.stringify(cachedLearningState);
-  try {
-    window.localStorage.setItem(V3_KEY, raw);
-  } catch {
-    return;
-  }
-  cachedRaw = raw;
-  pendingMigrationKeys.forEach((key) => {
+function removePendingMigrationKeys(): void {
+  const remaining: string[] = [];
+  for (const key of pendingMigrationKeys) {
     try {
       window.localStorage.removeItem(key);
     } catch {
-      // V3 is already durable; a leftover legacy key is harmless.
+      remaining.push(key);
     }
-  });
-  pendingMigrationKeys = [];
+  }
+  pendingMigrationKeys = remaining;
+}
+
+function persistPendingState(): void {
+  if (pendingV3Persistence) {
+    const raw = cachedCanonical;
+    try {
+      window.localStorage.setItem(V3_KEY, raw);
+    } catch {
+      memoryOnlyState = true;
+      return;
+    }
+    cachedRaw = raw;
+    pendingV3Persistence = false;
+    memoryOnlyState = false;
+  }
+  removePendingMigrationKeys();
+}
+
+export function initializeLearningState(): LearningState {
+  if (typeof window === "undefined") return EMPTY_LEARNING_STATE;
+  if (!cacheInitialized && !memoryOnlyState) {
+    const result = readStorageState();
+    if (result) updateCache(result);
+  }
+  persistPendingState();
+  return cachedLearningState;
 }
 
 function writeLearningState(state: LearningState): void {
@@ -396,13 +623,15 @@ function writeLearningState(state: LearningState): void {
     cachedLearningState = state;
     cachedCanonical = raw;
   }
-  cachedRaw = raw;
   cacheInitialized = true;
-  pendingMigrationKeys = [];
   try {
     window.localStorage.setItem(V3_KEY, raw);
+    cachedRaw = raw;
+    pendingV3Persistence = false;
     memoryOnlyState = false;
+    removePendingMigrationKeys();
   } catch {
+    pendingV3Persistence = true;
     memoryOnlyState = true;
   }
   if (changed) window.dispatchEvent(new Event(LEARNING_STATE_EVENT));
@@ -432,8 +661,7 @@ export function subscribeLearningState(onStoreChange: () => void) {
 
   window.addEventListener("storage", onStorage);
   window.addEventListener(LEARNING_STATE_EVENT, onLocalChange);
-  if (!cacheInitialized) getLearningStateSnapshot();
-  persistPendingMigration();
+  initializeLearningState();
   return () => {
     window.removeEventListener("storage", onStorage);
     window.removeEventListener(LEARNING_STATE_EVENT, onLocalChange);
@@ -445,6 +673,21 @@ export const learningStateSnapshot = getLearningStateSnapshot;
 
 /** @deprecated Use getServerLearningStateSnapshot. */
 export const emptyLearningStateSnapshot = getServerLearningStateSnapshot;
+
+export function getLatestExitRecallSnapshot(lessonId: string): string {
+  const events = getLearningStateSnapshot().lessonEvents;
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event.lessonId === lessonId && event.context === "exit-recall") {
+      return event.response;
+    }
+  }
+  return "";
+}
+
+export function getServerLatestExitRecallSnapshot(): string {
+  return "";
+}
 
 export function readProgress(): ProgressMap {
   return readLearningState().lessons;

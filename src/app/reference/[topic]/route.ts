@@ -10,6 +10,8 @@ const FILES: Record<string, string> = {
   github: "github-core.html",
 };
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return Object.keys(FILES).map((topic) => ({ topic }));
 }

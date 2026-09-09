@@ -5,7 +5,10 @@ import type {
   Slide,
   TalkLine,
 } from "@/lib/course/types";
-import { DIAGRAM_LISTING } from "@/lib/course/diagram-listings";
+
+type SlideListing = {
+  readonly code: string;
+};
 
 export type SlideLayout = "talk" | "explain";
 
@@ -139,8 +142,9 @@ const SYNC_STOP_WORDS = new Set([
 function synchronizeConversationPages(
   slide: Slide,
   pages: ConversationPage[],
+  listing: SlideListing,
 ): ConversationPage[] {
-  const code = slide.code ?? DIAGRAM_LISTING[slide.diagram].code;
+  const code = slide.code ?? listing.code;
   const codeLines = code.split("\n");
   return pages.map((page) => {
     if (page.focus === "story" || page.focus === "vocabulary" || page.focus === "summary") {
@@ -327,7 +331,11 @@ function mechanismLines(slide: Slide): TalkLine[] | undefined {
   }
 }
 
-function pagesFromExplicitTalk(slide: Slide, lines: TalkLine[]): ConversationPage[] {
+function pagesFromExplicitTalk(
+  slide: Slide,
+  lines: TalkLine[],
+  listing: SlideListing,
+): ConversationPage[] {
   const pages: ConversationPage[] = [];
   const vocabulary = vocabularyLines(slide);
   if (vocabulary) {
@@ -368,10 +376,13 @@ function pagesFromExplicitTalk(slide: Slide, lines: TalkLine[]): ConversationPag
     });
   }
 
-  return synchronizeConversationPages(slide, pages);
+  return synchronizeConversationPages(slide, pages, listing);
 }
 
-export function talkPages(slide: Slide): ConversationPage[] {
+export function talkPages(
+  slide: Slide,
+  listing: SlideListing,
+): ConversationPage[] {
   if (isSummarySlide(slide)) {
     const lines: TalkLine[] =
       slide.talk && slide.talk.length > 0
@@ -382,11 +393,15 @@ export function talkPages(slide: Slide): ConversationPage[] {
             { speaker: "beginner", text: "覚えておくことを確認してもいいですか？" },
             { speaker: "engineer", text: slide.points?.join("。") ?? slide.lead },
           ];
-    return synchronizeConversationPages(slide, [{ lines, focus: "summary" }]);
+    return synchronizeConversationPages(
+      slide,
+      [{ lines, focus: "summary" }],
+      listing,
+    );
   }
 
   if (slide.talk && slide.talk.length > 0) {
-    return pagesFromExplicitTalk(slide, slide.talk);
+    return pagesFromExplicitTalk(slide, slide.talk, listing);
   }
 
   const vocabulary = vocabularyLines(slide);
@@ -445,11 +460,11 @@ export function talkPages(slide: Slide): ConversationPage[] {
   return synchronizeConversationPages(slide, [
     ...(vocabulary ? [{ lines: vocabulary, focus: "vocabulary" as const }] : []),
     ...pages,
-  ]);
+  ], listing);
 }
 
-export function talkLines(slide: Slide): TalkLine[] {
-  return talkPages(slide).flatMap((page) => page.lines);
+export function talkLines(slide: Slide, listing: SlideListing): TalkLine[] {
+  return talkPages(slide, listing).flatMap((page) => page.lines);
 }
 
 export function teachingSlideEntries(lesson: Lesson) {

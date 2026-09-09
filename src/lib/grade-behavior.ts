@@ -1,5 +1,6 @@
 import type { Question, Track } from "./course/types.ts";
 import { grade, hasRequiredSemicolons } from "./grade.ts";
+import type { RuntimeEvidence } from "./grade-question.ts";
 
 const FUNCTION_DECLARATION =
   /function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)|(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:\(([^)]*)\)|([A-Za-z_$][\w$]*))\s*=>/g;
@@ -152,12 +153,19 @@ export async function gradeCodeByBehavior(
   question: Question,
   raw: string,
   track: Track,
+  evidence?: RuntimeEvidence,
 ): Promise<boolean> {
   if (question.kind !== "code" || track === "ts") return grade(question, raw);
   const behaviorResult = await gradeBehaviorCases(question, raw);
   if (behaviorResult !== undefined) return behaviorResult;
   if (!hasRequiredSemicolons(question.answer, raw)) return false;
   if (question.runtime === "dom") {
+    if (
+      evidence?.runtime === "dom" &&
+      evidence.source === raw
+    ) {
+      return evidence.result.passed;
+    }
     const { runDomQuestion } = await import("./run-dom.ts");
     const result = await runDomQuestion(question, raw);
     return result.passed;
@@ -167,7 +175,10 @@ export async function gradeCodeByBehavior(
   if (!output) return grade(question, raw);
 
   const { runStudentJs } = await import("./run-js.ts");
-  const studentResult = await runStudentJs(raw);
+  const studentResult =
+    evidence?.runtime === "js" && evidence.source === raw
+      ? evidence.result
+      : await runStudentJs(raw);
   if (studentResult.error || !sameOutput(studentResult.logs, output)) return false;
 
   const probes = numericProbeSource(question.answer);

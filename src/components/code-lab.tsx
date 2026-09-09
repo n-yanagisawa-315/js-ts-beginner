@@ -13,6 +13,7 @@ import type { GitTerminalProps } from "@/components/git-terminal";
 import { IconEye, IconFile, IconPlay, IconReset } from "@/components/icons";
 import type { OrderProjectPreviewProps } from "@/components/order-project-preview";
 import type { SqlConsoleProps } from "@/components/sql-console";
+import type { SqlRunResult } from "@/lib/sql/sql-runner";
 import { SelfExplanation } from "@/components/self-explanation";
 import {
   Alert,
@@ -42,8 +43,17 @@ import {
   NodeTermPrompt,
 } from "@/components/node-terminal";
 import { gradeShell, mismatchLines } from "@/lib/grade";
-import { createDomDocument, runDomQuestion } from "@/lib/run-dom";
-import { runStudentJs, syntaxLine } from "@/lib/run-js";
+import type { RuntimeEvidence } from "@/lib/grade-question";
+import {
+  createDomDocument,
+  runDomQuestion,
+  type DomRunResult,
+} from "@/lib/run-dom";
+import {
+  runStudentJs,
+  syntaxLine,
+  type StudentRunResult,
+} from "@/lib/run-js";
 import type { Question, TermLine, Track } from "@/lib/course/types";
 
 const GitTerminal = dynamic<GitTerminalProps>(
@@ -83,7 +93,10 @@ export type CodeLabProps = {
   failReason: string | null;
   failTick: number;
   onTyped: (value: string) => void;
-  onSubmit: (correctOverride?: boolean) => void | Promise<void>;
+  onSubmit: (
+    correctOverride?: boolean,
+    evidence?: RuntimeEvidence,
+  ) => void | Promise<void>;
   onDismissFail: () => void;
   onNext: () => void;
   nextLabel?: string;
@@ -136,6 +149,13 @@ function CodeLabInner({
   const editorId = useId();
   const explainId = useId();
   const explainRef = useRef<HTMLParagraphElement>(null);
+  const domPreviewRef = useRef<HTMLIFrameElement>(null);
+  const submittingRef = useRef(false);
+  const sqlEvidenceRef = useRef<{
+    questionId: string;
+    source: string;
+    result: SqlRunResult;
+  } | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [answerOpen, setAnswerOpen] = useState(false);
   const [confidenceOpen, setConfidenceOpen] = useState(false);
@@ -150,13 +170,15 @@ function CodeLabInner({
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [terminalRevision, setTerminalRevision] = useState(0);
-  const [domDocument, setDomDocument] = useState(() =>
-    question.runtime === "dom"
-      ? createDomDocument({
-          source: "",
-          fixtureHtml: question.fixtureHtml ?? "",
-        })
-      : "",
+  const initialDomDocument = useMemo(
+    () =>
+      question.runtime === "dom"
+        ? createDomDocument({
+            source: "",
+            fixtureHtml: question.fixtureHtml ?? "",
+          })
+        : "",
+    [question.fixtureHtml, question.runtime],
   );
   const isSql = question.kind === "sql";
   const isGit = question.kind === "git";
@@ -197,15 +219,39 @@ function CodeLabInner({
     if (checked) explainRef.current?.focus();
   }, [checked]);
 
-  async function runJs() {
+  async function runJs(): Promise<StudentRunResult> {
     if (!canRun) {
+      const result = {
+        logs: [],
+        error: "TypeScript の問題は提出で採点します。右の見本は期待する表示です。",
+      };
       setLogs([]);
-      setRunError("TypeScript の問題は提出で採点します。右の見本は期待する表示です。");
-      return;
+      setRunError(result.error);
+      return result;
     }
     const result = await runStudentJs(typed);
     setLogs(result.logs);
     setRunError(result.error ?? null);
+    return result;
+  }
+
+  async function runDom(): Promise<DomRunResult> {
+    const iframe = domPreviewRef.current;
+    if (!iframe) {
+      const result = {
+        passed: false,
+        html: "",
+        logs: [],
+        error: "DOMプレビューを準備できませんでした。",
+      };
+      setLogs(result.logs);
+      setRunError(result.error);
+      return result;
+    }
+    const result = await runDomQuestion(question, typed, { iframe });
+    setLogs(result.logs);
+    setRunError(result.error ?? null);
+    return result;
   }
 
   function replayShell(command: string) {
@@ -235,15 +281,7 @@ function CodeLabInner({
         return;
       }
       if (isDom) {
-        setDomDocument(
-          createDomDocument({
-            source: typed,
-            fixtureHtml: question.fixtureHtml ?? "",
-          }),
-        );
-        const result = await runDomQuestion(question, typed);
-        setLogs(result.logs);
-        setRunError(result.error ?? null);
+        await runDom();
         return;
       }
       await runJs();
@@ -254,7 +292,7 @@ function CodeLabInner({
   }
 
   async function submit() {
-    if (!typed.trim() || isRunning || isSubmitting) return;
+    if (!typed.trim() || isRunning || isSubmitting || submittingRef.current) return;
     if (confidence === null) {
       setConfidenceOpen(true);
       return;
@@ -263,31 +301,34 @@ function CodeLabInner({
       setRunError(`TypeScript: ${typeErrors[0]}`);
       return;
     }
+    submittingRef.current = true;
     setIsSubmitting(true);
     try {
+      let evidence: RuntimeEvidence | undefined;
       if (isShell) {
         replayShell(typed);
       } else if (isDom) {
-        setDomDocument(
-          createDomDocument({
-            source: typed,
-            fixtureHtml: question.fixtureHtml ?? "",
-          }),
-        );
-        const result = await runDomQuestion(question, typed);
-        setLogs(result.logs);
-        setRunError(result.error ?? null);
+        const result = await runDom();
+        evidence = { runtime: "dom", source: typed, result };
+      } else if (isSql) {
+        const cached = sqlEvidenceRef.current;
+        if (cached?.questionId === question.id && cached.source === typed) {
+          evidence = { runtime: "sql", source: typed, result: cached.result };
+        }
       } else if (!isSql && !isGit) {
-        await runJs();
+        const result = await runJs();
+        evidence = { runtime: "js", source: typed, result };
         if (isNode) setPane("term");
       }
       await onSubmit(
         track === "ts" && question.typeTests
           ? typeErrors.length === 0
           : undefined,
+        evidence,
       );
       setReviewOpen(true);
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   }
@@ -305,6 +346,7 @@ function CodeLabInner({
       correctCount={correctCount}
       total={total}
       onReset={() => {
+        sqlEvidenceRef.current = null;
         onTyped(question.starter ?? "");
         setConfidenceOpen(false);
         setLogs([]);
@@ -313,13 +355,8 @@ function CodeLabInner({
         setTypeErrors([]);
         setTypeValidationReady(false);
         setTerminalRevision((revision) => revision + 1);
-        if (isDom) {
-          setDomDocument(
-            createDomDocument({
-              source: "",
-              fixtureHtml: question.fixtureHtml ?? "",
-            }),
-          );
+        if (isDom && domPreviewRef.current) {
+          domPreviewRef.current.srcdoc = initialDomDocument;
         }
         setPane("file");
       }}
@@ -490,7 +527,17 @@ function CodeLabInner({
               source={typed}
               question={question}
               disabled={checked || isSubmitting}
-              onChange={onTyped}
+              onChange={(source) => {
+                sqlEvidenceRef.current = null;
+                onTyped(source);
+              }}
+              onSubmit={(result) => {
+                sqlEvidenceRef.current = {
+                  questionId: question.id,
+                  source: typed,
+                  result,
+                };
+              }}
               onError={(error) => setRunError(error.message)}
             />
             {checked ? (
@@ -654,10 +701,11 @@ function CodeLabInner({
               {isDom ? (
                 <OutputPane title="画面プレビュー" onPlay={run} pending={isRunning}>
                   <iframe
+                    ref={domPreviewRef}
                     className="dom-preview-frame"
                     title="注文管理画面の実行結果"
                     sandbox="allow-scripts"
-                    srcDoc={domDocument}
+                    srcDoc={initialDomDocument}
                   />
                   {runError ? (
                     <p className="mt-2 text-[#fca5a5]">{runError}</p>

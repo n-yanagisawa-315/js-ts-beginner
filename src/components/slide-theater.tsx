@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
 import { LearningFlowHeader } from "@/components/learning-flow-header";
 import { SlideBoard } from "@/components/slide-board";
 import { Button } from "@/components/ui/button";
 import { IconChevron } from "@/components/icons";
-import type { LessonNavigationDTO } from "@/lib/course/client-dtos";
-import type { Lesson, Slide } from "@/lib/course/types";
+import type {
+  LessonNavigationDTO,
+  ResolvedLessonDTO,
+  ResolvedSlideDTO,
+} from "@/lib/course/client-dtos";
 
 export function SlideTheater({
   lesson,
@@ -22,9 +25,9 @@ export function SlideTheater({
   onNext,
   assistant,
 }: {
-  lesson: Lesson;
+  lesson: ResolvedLessonDTO;
   navigation: LessonNavigationDTO;
-  slide: Slide;
+  slide: ResolvedSlideDTO;
   index: number;
   total: number;
   conversationIndex: number;
@@ -36,6 +39,8 @@ export function SlideTheater({
   assistant?: ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const handleNext = useEffectEvent(onNext);
+  const handlePrev = useEffectEvent(onPrev);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -51,16 +56,16 @@ export function SlideTheater({
       }
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        onNext();
+        handleNext();
       }
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        onPrev();
+        handlePrev();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onNext, onPrev]);
+  }, []);
 
   return (
     <main

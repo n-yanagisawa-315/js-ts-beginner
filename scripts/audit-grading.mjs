@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import {
   feedbackForIncorrectAnswer,
   grade,
@@ -116,6 +117,124 @@ expect(
     "function add(a, b) {\n  return 5;\n}\nconsole.log(add(2, 3));",
     "js",
   )),
+);
+
+const evidenceQuestion = {
+  id: "runtime-evidence-basic",
+  kind: "code",
+  prompt: "",
+  sample: "ok",
+  answer: 'console.log("ok");',
+};
+const nonExecutableSource = 'throw new Error("visible source ran twice");';
+expect(
+  "一致するJS実行証跡を再利用できない",
+  await gradeCodeByBehavior(evidenceQuestion, nonExecutableSource, "js", {
+    runtime: "js",
+    source: nonExecutableSource,
+    result: { logs: ["ok"] },
+  }),
+);
+expect(
+  "ソースが異なるJS実行証跡を誤って再利用する",
+  !(await gradeCodeByBehavior(evidenceQuestion, 'console.log("no");', "js", {
+    runtime: "js",
+    source: nonExecutableSource,
+    result: { logs: ["ok"] },
+  })),
+);
+expect(
+  "実行証跡があるとセミコロン条件を迂回する",
+  !(await gradeCodeByBehavior(evidenceQuestion, 'console.log("ok")', "js", {
+    runtime: "js",
+    source: 'console.log("ok")',
+    result: { logs: ["ok"] },
+  })),
+);
+
+const gradeQuestionSource = fs.readFileSync(
+  "src/lib/grade-question.ts",
+  "utf8",
+);
+const sqlCodeLabSource = fs.readFileSync(
+  "src/components/code-lab.tsx",
+  "utf8",
+);
+expect(
+  "SQLの既存実行結果を採点に再利用していない",
+  gradeQuestionSource.includes('evidence?.runtime === "sql"') &&
+    sqlCodeLabSource.includes('evidence = { runtime: "sql"'),
+);
+
+const hiddenBehaviorQuestion = {
+  ...behaviorQuestion,
+  id: "runtime-evidence-hidden",
+  behaviorCases: [{ args: [7, 4], expected: 11 }],
+};
+const hardCodedSource =
+  "function add(a, b) {\n  return 5;\n}\nconsole.log(add(2, 3));";
+expect(
+  "実行証跡によってhidden behavior caseを迂回する",
+  !(await gradeCodeByBehavior(hiddenBehaviorQuestion, hardCodedSource, "js", {
+    runtime: "js",
+    source: hardCodedSource,
+    result: { logs: ["5"] },
+  })),
+);
+
+const domQuestion = {
+  id: "runtime-evidence-dom",
+  kind: "code",
+  runtime: "dom",
+  prompt: "",
+  answer: 'document.body.textContent = "ok";',
+  fixtureHtml: "<main></main>",
+  domProbe: 'document.body.textContent === "ok"',
+};
+const domSource = 'throw new Error("DOM grading ran twice");';
+expect(
+  "一致するDOM実行証跡を再利用できない",
+  await gradeCodeByBehavior(domQuestion, domSource, "js", {
+    runtime: "dom",
+    source: domSource,
+    result: { passed: true, html: "<main>ok</main>", logs: [] },
+  }),
+);
+
+const codeLabSource = fs.readFileSync(
+  new URL("../src/components/code-lab.tsx", import.meta.url),
+  "utf8",
+);
+for (const required of [
+  "submittingRef.current",
+  "ref={domPreviewRef}",
+  "runDomQuestion(question, typed, { iframe })",
+  'evidence = { runtime: "js", source: typed, result }',
+  'evidence = { runtime: "dom", source: typed, result }',
+]) {
+  expect(`CodeLabの単一実行・重複提出ガードがありません: ${required}`, codeLabSource.includes(required));
+}
+expect(
+  "DOM実行器がCodeLab内で複数箇所から呼ばれています",
+  codeLabSource.match(/runDomQuestion\(question, typed/g)?.length === 1,
+);
+expect(
+  "DOM提出時に表示用srcDocを別途生成しています",
+  !codeLabSource.includes("setDomDocument"),
+);
+
+const domRunnerSource = fs.readFileSync(
+  new URL("../src/lib/run-dom.ts", import.meta.url),
+  "utf8",
+);
+expect(
+  "DOM実行器がlistener登録前にsrcdocを設定しています",
+  domRunnerSource.indexOf('window.addEventListener("message", receive)') <
+    domRunnerSource.indexOf("iframe.srcdoc = createDomDocument"),
+);
+expect(
+  "DOM実行器が可視iframeを対象にできません",
+  domRunnerSource.includes("const iframe = options.iframe ?? document.createElement"),
 );
 
 if (failures.length > 0) {

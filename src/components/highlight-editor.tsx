@@ -13,6 +13,7 @@ const MonacoEditor = dynamic<EditorProps>(
 );
 
 const THEME_NAME = "course-dark";
+const EMPTY_ERROR_LINES: readonly number[] = [];
 type EditorInstance = Parameters<OnMount>[0];
 
 function EditorLoading() {
@@ -62,7 +63,7 @@ function configureMonaco(monaco: Monaco) {
 function setErrorMarkers(
   editor: EditorInstance,
   monaco: Monaco,
-  errorLines: number[],
+  errorLines: readonly number[],
 ) {
   const model = editor.getModel();
   if (!model) return;
@@ -94,7 +95,7 @@ export function HighlightEditor({
   readOnly = false,
   hideGutter = false,
   describedBy,
-  errorLines = [],
+  errorLines = EMPTY_ERROR_LINES,
   onChange,
   onValidate,
   typeTests,
@@ -106,13 +107,14 @@ export function HighlightEditor({
   readOnly?: boolean;
   hideGutter?: boolean;
   describedBy?: string;
-  errorLines?: number[];
+  errorLines?: readonly number[];
   onChange?: (value: string) => void;
   onValidate?: (errors: string[]) => void;
   typeTests?: string;
 }) {
   const editorRef = useRef<EditorInstance | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
+  const validationGenerationRef = useRef(0);
   const isReadOnly = readOnly || disabled;
 
   useEffect(() => {
@@ -135,6 +137,7 @@ export function HighlightEditor({
           }}
           onChange={(nextValue) => onChange?.(nextValue ?? "")}
           onValidate={async (markers) => {
+            const generation = ++validationGenerationRef.current;
             const errors = markers
               .filter((marker) => marker.severity === 8)
               .map((marker) => marker.message);
@@ -148,6 +151,7 @@ export function HighlightEditor({
                 )),
               );
             }
+            if (generation !== validationGenerationRef.current) return;
             onValidate?.(errors);
           }}
           loading={<EditorLoading />}

@@ -2,7 +2,13 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import type { CodeLabProps } from "@/components/code-lab";
 import { ConfidenceDialog } from "@/components/confidence-scale";
 import {
@@ -45,10 +51,13 @@ import {
   teachingSlideEntries,
 } from "@/lib/course/slide-layout";
 import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
-import { gradeQuestion } from "@/lib/grade-question";
 import {
-  getLearningStateSnapshot,
-  getServerLearningStateSnapshot,
+  gradeQuestion,
+  type RuntimeEvidence,
+} from "@/lib/grade-question";
+import {
+  getLatestExitRecallSnapshot,
+  getServerLatestExitRecallSnapshot,
   recordQuestionAssistance,
   recordQuestionAttempt,
   recordSelfExplanation,
@@ -99,18 +108,15 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
   const [prediction, setPrediction] = useState("");
   const [exitRecall, setExitRecall] = useState("");
   const [reflection, setReflection] = useState("");
-  const learningState = useSyncExternalStore(
-    subscribeLearningState,
-    getLearningStateSnapshot,
-    getServerLearningStateSnapshot,
+  const getPreviousExitRecall = useCallback(
+    () => getLatestExitRecallSnapshot(lesson.id),
+    [lesson.id],
   );
-  const previousExitRecall =
-    learningState.lessonEvents
-      .filter(
-        (event) =>
-          event.lessonId === lesson.id && event.context === "exit-recall",
-      )
-      .at(-1)?.response ?? "";
+  const previousExitRecall = useSyncExternalStore(
+    subscribeLearningState,
+    getPreviousExitRecall,
+    getServerLatestExitRecallSnapshot,
+  );
 
   const question = questionForSlide(lesson, slide);
   const nextId = navigation.nextLessonId;
@@ -120,7 +126,9 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     [question, currentAnswer],
   );
   const currentSlide = lesson.slides[slide];
-  const conversationPages = currentSlide ? talkPages(currentSlide) : [];
+  const conversationPages = currentSlide
+    ? talkPages(currentSlide, currentSlide.listings[0])
+    : [];
   const lastConversationPage = Math.max(conversationPages.length - 1, 0);
   const referenceTopic = {
     js: "javascript",
@@ -234,7 +242,10 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     resetAttempt();
   }
 
-  async function submit(correctOverride?: boolean) {
+  async function submit(
+    correctOverride?: boolean,
+    evidence?: RuntimeEvidence,
+  ) {
     if (!question || checked) return;
     if (confidence === null) return;
     if (question.kind === "choice" ? !choice : currentAnswer.trim() === "") {
@@ -242,7 +253,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     }
     const gradeResult =
       correctOverride === undefined
-        ? await gradeQuestion(question, currentAnswer, lesson.track)
+        ? await gradeQuestion(question, currentAnswer, lesson.track, evidence)
         : {
             passed: correctOverride,
             feedback: question.explain,
@@ -392,7 +403,12 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     const previousSlide = lesson.slides[previous];
     setSlide(previous);
     setConversationPage(
-      previousSlide ? Math.max(talkPages(previousSlide).length - 1, 0) : 0,
+      previousSlide
+        ? Math.max(
+            talkPages(previousSlide, previousSlide.listings[0]).length - 1,
+            0,
+          )
+        : 0,
     );
   }
 

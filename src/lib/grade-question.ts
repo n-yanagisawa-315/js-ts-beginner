@@ -1,12 +1,31 @@
 import type { Question, Track } from "@/lib/course/types";
 import { grade } from "@/lib/grade";
-import type { SqlRow } from "@/lib/sql/sql-runner";
+import type { DomRunResult } from "@/lib/run-dom";
+import type { StudentRunResult } from "@/lib/run-js";
+import type { SqlRow, SqlRunResult } from "@/lib/sql/sql-runner";
 
 export type QuestionGradeResult = {
   passed: boolean;
   feedback: string;
   diagnostics: string[];
 };
+
+export type RuntimeEvidence =
+  | {
+      runtime: "dom";
+      source: string;
+      result: DomRunResult;
+    }
+  | {
+      runtime: "js";
+      source: string;
+      result: StudentRunResult;
+    }
+  | {
+      runtime: "sql";
+      source: string;
+      result: SqlRunResult;
+    };
 
 function comparableRows(rows: SqlRow[]) {
   return rows.map((row) =>
@@ -26,13 +45,15 @@ function sameRows(actual: SqlRow[], expected: NonNullable<Question["sqlExpectedR
 async function gradeSql(
   question: Question,
   source: string,
+  evidence?: RuntimeEvidence,
 ): Promise<QuestionGradeResult> {
   try {
-    const { runSqlQuestion } = await import("@/lib/sql/sql-runner");
-    const statement = question.sqlExpectedTable
-      ? `${source.replace(/;?\s*$/, ";")}\nSELECT * FROM ${question.sqlExpectedTable} ORDER BY rowid;`
-      : source;
-    const result = await runSqlQuestion(question, statement);
+    const { runSqlQuestion, sqlQuestionSource } =
+      await import("@/lib/sql/sql-runner");
+    const result =
+      evidence?.runtime === "sql" && evidence.source === source
+        ? evidence.result
+        : await runSqlQuestion(question, sqlQuestionSource(question, source));
     const passed = question.sqlExpectedRows
       ? sameRows(result.rows, question.sqlExpectedRows)
       : true;
@@ -90,13 +111,14 @@ export async function gradeQuestion(
   question: Question,
   response: string,
   track: Track,
+  evidence?: RuntimeEvidence,
 ): Promise<QuestionGradeResult> {
-  if (question.kind === "sql") return gradeSql(question, response);
+  if (question.kind === "sql") return gradeSql(question, response, evidence);
   if (question.kind === "git") return gradeGit(question, response);
   const passed =
     question.kind === "code"
       ? await import("@/lib/grade-behavior").then((module) =>
-          module.gradeCodeByBehavior(question, response, track),
+          module.gradeCodeByBehavior(question, response, track, evidence),
         )
       : grade(question, response);
   return {

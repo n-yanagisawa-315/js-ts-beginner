@@ -22,22 +22,20 @@ function lineFromCause(cause: unknown): number | undefined {
   return undefined;
 }
 
-export async function runStudentJs(source: string): Promise<{
+export type StudentRunResult = {
   logs: string[];
   error?: string;
   line?: number;
-}> {
+};
+
+export async function runStudentJs(source: string): Promise<StudentRunResult> {
   if (typeof document !== "undefined") {
     return runStudentJsInSandbox(source);
   }
   return runStudentJsInProcess(source);
 }
 
-async function runStudentJsInProcess(source: string): Promise<{
-  logs: string[];
-  error?: string;
-  line?: number;
-}> {
+async function runStudentJsInProcess(source: string): Promise<StudentRunResult> {
   const logs: string[] = [];
   const fakeConsole = {
     log: (...args: unknown[]) => {
@@ -74,11 +72,7 @@ function safeScriptValue(value: unknown) {
   return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 
-function runStudentJsInSandbox(source: string): Promise<{
-  logs: string[];
-  error?: string;
-  line?: number;
-}> {
+function runStudentJsInSandbox(source: string): Promise<StudentRunResult> {
   const requestId = crypto.randomUUID();
   const iframe = document.createElement("iframe");
   iframe.hidden = true;

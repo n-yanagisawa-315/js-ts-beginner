@@ -33,9 +33,10 @@ function resetStorage() {
     storageArea: localStorage,
   });
 }
-const { buildReviewQueue, reviewVariant, DEFAULT_SESSION_SIZE } = await import(
+const { buildReviewQueue, DEFAULT_SESSION_SIZE } = await import(
   "../src/lib/review-queue.ts"
 );
+const { reviewVariant } = await import("../src/lib/review-variant.ts");
 const { applyCourseLearningDesign, applyLearningDesign } = await import(
   "../src/lib/course/learning-design.ts"
 );
@@ -396,7 +397,18 @@ for (const question of lessons[0].questions) {
   });
 }
 const queue = buildReviewQueue(
-  lessons,
+  lessons.map((lesson) => ({
+    id: lesson.id,
+    track: lesson.track,
+    chapter: lesson.chapter,
+    chapterTitle: lesson.title,
+    title: lesson.title,
+    questions: lesson.questions.map((question, index) => ({
+      id: question.id,
+      contrastGroup: question.contrastGroup ?? null,
+      catalogOrder: index,
+    })),
+  })),
   progress.readLearningState(),
   new Date(start.getTime() + 24 * 60 * 60 * 1000 + 1),
 );
