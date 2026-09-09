@@ -436,6 +436,24 @@ function fadedStarter(question: Question, level: ScaffoldLevel): string | undefi
     .join("\n");
 }
 
+function hasExecutableStarter(starter: string | undefined): boolean {
+  return Boolean(
+    starter
+      ?.split("\n")
+      .some((line) => {
+        const trimmed = line.trim();
+        return (
+          trimmed !== "" &&
+          !trimmed.startsWith("//") &&
+          !trimmed.startsWith("#") &&
+          !trimmed.startsWith("/*") &&
+          !trimmed.startsWith("*") &&
+          trimmed !== "*/"
+        );
+      }),
+  );
+}
+
 function enrichQuestion(
   lesson: Lesson,
   question: Question,
@@ -500,7 +518,9 @@ function enrichQuestion(
       worked && (question.kind === "code" || question.kind === "shell")
         ? question.starter
         : scaffold === "independent"
-          ? undefined
+          ? hasExecutableStarter(question.starter)
+            ? question.starter
+            : undefined
           : fadedStarter(question, scaffold),
     steps:
       worked && (!question.steps || question.steps.length === 0)
