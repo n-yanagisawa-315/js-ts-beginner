@@ -1482,6 +1482,10 @@ a[aria-disabled="true"] {
   .lab-grid.is-node {
     grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
   }
+
+  .editor-shell {
+    min-height: 0;
+  }
 }
 
 .editor-shell {
@@ -4031,10 +4035,14 @@ button.console-window-play:hover {
 }
 
 .editor-fail-alert {
+  max-height: min(16rem, 40dvh);
+  flex-shrink: 0;
+  overflow-y: auto;
   margin: 8px 12px 12px;
   border-color: color-mix(in srgb, var(--destructive) 70%, white);
   background: color-mix(in srgb, var(--destructive) 14%, var(--editor));
   color: var(--ng-on-dark);
+  overflow-wrap: anywhere;
 }
 
 .editor-fail-alert [data-slot="button"] {

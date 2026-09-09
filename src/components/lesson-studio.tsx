@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   useCallback,
+  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
@@ -66,18 +67,18 @@ import {
   writeProgress,
 } from "@/lib/progress";
 
+const loadCodeLab = () => import("@/components/code-lab");
+const loadQuizChallenge = () => import("@/components/quiz-challenge");
+
 const CodeLab = dynamic<CodeLabProps>(
-  () => import("@/components/code-lab").then((module) => module.CodeLab),
+  () => loadCodeLab().then((module) => module.CodeLab),
   {
     loading: () => <ExerciseLoading variant="code" />,
   },
 );
 
 const QuizChallenge = dynamic<QuizChallengeProps>(
-  () =>
-    import("@/components/quiz-challenge").then(
-      (module) => module.QuizChallenge,
-    ),
+  () => loadQuizChallenge().then((module) => module.QuizChallenge),
   {
     loading: () => <ExerciseLoading variant="quiz" />,
   },
@@ -118,7 +119,10 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     getServerLatestExitRecallSnapshot,
   );
 
-  const question = questionForSlide(lesson, slide);
+  const question = useMemo(
+    () => questionForSlide(lesson, slide),
+    [lesson, slide],
+  );
   const nextId = navigation.nextLessonId;
   const currentAnswer = question?.kind === "choice" ? (choice ?? "") : typed;
   const isCorrect = useMemo(
@@ -126,9 +130,11 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     [question, currentAnswer],
   );
   const currentSlide = lesson.slides[slide];
-  const conversationPages = currentSlide
-    ? talkPages(currentSlide, currentSlide.listings[0])
-    : [];
+  const conversationPages = useMemo(
+    () =>
+      currentSlide ? talkPages(currentSlide, currentSlide.listings[0]) : [],
+    [currentSlide],
+  );
   const lastConversationPage = Math.max(conversationPages.length - 1, 0);
   const referenceTopic = {
     js: "javascript",
@@ -138,7 +144,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     github: "github",
   }[lesson.track];
   const slideCount = lesson.slides.length;
-  const teaching = teachingSlideEntries(lesson);
+  const teaching = useMemo(() => teachingSlideEntries(lesson), [lesson]);
   const quizTotal = teaching.length;
   const quizIndex = teaching.findIndex((entry) => entry.index === slide);
   const codeQuiz =
@@ -159,6 +165,35 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
         : allQuizzesDone
           ? "結果を見る"
           : "残りの演習へ";
+
+  useEffect(() => {
+    if (
+      phase !== "slides" ||
+      !question ||
+      conversationPage !== lastConversationPage
+    ) {
+      return;
+    }
+    if (
+      question.kind === "code" ||
+      question.kind === "shell" ||
+      question.kind === "sql" ||
+      question.kind === "git"
+    ) {
+      const projectPreview = lesson.id === "js-run" && question.id === "q1";
+      void loadCodeLab().then((module) =>
+        module.preloadCodeLabDependencies(question, projectPreview),
+      );
+      return;
+    }
+    void loadQuizChallenge();
+  }, [
+    conversationPage,
+    lastConversationPage,
+    lesson.id,
+    phase,
+    question,
+  ]);
   const nextQuizLabel =
     nextIndex === undefined && allQuizzesDone ? "結果を見る" : "次のスライド";
   const assistantQuestion = phase === "quiz" ? question : undefined;
@@ -658,6 +693,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
         slide={currentSlide}
         index={slide}
         total={slideCount}
+        conversationPages={conversationPages}
         conversationIndex={conversationPage}
         conversationTotal={conversationPages.length}
         continueLabel={continueLabel}

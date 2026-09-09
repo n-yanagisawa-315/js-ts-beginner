@@ -188,6 +188,15 @@ export function getLessonPageDTO(id: string): LessonPageDTO | undefined {
   };
 }
 
+export function getLessonMetadata(id: string) {
+  const lesson = getLesson(id);
+  if (!lesson) return undefined;
+  return {
+    title: lesson.title,
+    description: lesson.summary,
+  };
+}
+
 export function getReviewPageDTO(): ReviewPageDTO {
   let catalogOrder = 0;
   return {

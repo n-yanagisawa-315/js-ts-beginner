@@ -7,6 +7,7 @@ const MODEL_ID = "Qwen3.5-0.8B-q4f16_1-MLC";
 
 let enginePromise: Promise<MLCEngineInterface> | null = null;
 let worker: Worker | null = null;
+let activeGenerationOwner: symbol | null = null;
 
 export function supportsLocalAssistant() {
   return typeof window !== "undefined" && "gpu" in navigator;
@@ -52,29 +53,40 @@ export function loadLocalAssistant(
 export async function askLocalAssistant(
   systemPrompt: string,
   messages: Array<{ role: "user" | "assistant"; content: string }>,
+  owner: symbol,
 ) {
+  activeGenerationOwner = owner;
   const engine = await loadLocalAssistant(() => undefined);
+  if (activeGenerationOwner !== owner) {
+    throw new DOMException("生成は中断されました。", "AbortError");
+  }
   const latestUserMessage = messages.findLast((message) => message.role === "user");
   const requestMessages = messages.map((message, index) =>
     index === messages.length - 1 && message.role === "user"
       ? { ...message, content: `${message.content}\n/no_think` }
       : message,
   );
-  const completion = await engine.chat.completions.create({
-    messages: [{ role: "system", content: systemPrompt }, ...requestMessages],
-    temperature: 0.2,
-    max_tokens: 260,
-  });
+  try {
+    const completion = await engine.chat.completions.create({
+      messages: [{ role: "system", content: systemPrompt }, ...requestMessages],
+      temperature: 0.2,
+      max_tokens: 260,
+    });
 
-  const content = completion.choices[0]?.message.content;
-  if (typeof content === "string" && content.trim()) {
-    const allowCode = /コード|プログラム|実装|書き方|記述/.test(
-      latestUserMessage?.content ?? "",
+    const content = completion.choices[0]?.message.content;
+    if (typeof content === "string" && content.trim()) {
+      const allowCode = /コード|プログラム|実装|書き方|記述/.test(
+        latestUserMessage?.content ?? "",
+      );
+      const cleaned = sanitizeAssistantOutput(content, allowCode);
+      if (cleaned) return cleaned;
+    }
+    throw new Error(
+      "回答を生成できませんでした。質問を短くして、もう一度試してください。",
     );
-    const cleaned = sanitizeAssistantOutput(content, allowCode);
-    if (cleaned) return cleaned;
+  } finally {
+    if (activeGenerationOwner === owner) activeGenerationOwner = null;
   }
-  throw new Error("回答を生成できませんでした。質問を短くして、もう一度試してください。");
 }
 
 export function sanitizeAssistantOutput(content: string, allowCode = false) {
@@ -120,7 +132,9 @@ export function sanitizeAssistantOutput(content: string, allowCode = false) {
     .trim();
 }
 
-export async function stopLocalAssistantGeneration() {
+export async function stopLocalAssistantGeneration(owner: symbol) {
+  if (activeGenerationOwner !== owner) return;
+  activeGenerationOwner = null;
   const engine = await enginePromise;
-  engine?.interruptGenerate();
+  if (activeGenerationOwner === null) engine?.interruptGenerate();
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useSyncExternalStore } from "react";
+import { useId, useMemo, useState, useSyncExternalStore } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -20,6 +20,7 @@ import {
 
 const ORDER_EVENT = "js-ts-beginner-demo-orders";
 const SERVER_SNAPSHOT = JSON.stringify(SEED_ORDERS);
+const NUMBER_FORMATTER = new Intl.NumberFormat("ja-JP");
 
 export type OrderProjectPreviewProps = {
   compact?: boolean;
@@ -52,19 +53,21 @@ export function OrderProjectPreview({
     ordersSnapshot,
     () => SERVER_SNAPSHOT,
   );
-  const orders = parseStoredOrders(stored);
+  const orders = useMemo(() => parseStoredOrders(stored), [stored]);
   const [filter, setFilter] = useState<"all" | DemoOrderStatus>("all");
   const [customer, setCustomer] = useState("");
   const [item, setItem] = useState("");
   const [total, setTotal] = useState("");
   const [apiState, setApiState] = useState<"idle" | "loading" | "error">("idle");
-  const visibleOrders =
-    filter === "all"
-      ? orders
-      : orders.filter((order) => order.status === filter);
-  const paidTotal = orders
-    .filter((order) => order.status === "paid")
-    .reduce((sum, order) => sum + order.total, 0);
+  const { visibleOrders, paidTotal } = useMemo(() => {
+    const visible: DemoOrder[] = [];
+    let paid = 0;
+    for (const order of orders) {
+      if (filter === "all" || order.status === filter) visible.push(order);
+      if (order.status === "paid") paid += order.total;
+    }
+    return { visibleOrders: visible, paidTotal: paid };
+  }, [filter, orders]);
 
   function toggleStatus(id: string) {
     writeOrders(
@@ -138,7 +141,7 @@ export function OrderProjectPreview({
           </div>
           <div>
             <dt>支払済み合計</dt>
-            <dd>{new Intl.NumberFormat("ja-JP").format(paidTotal)}円</dd>
+            <dd>{NUMBER_FORMATTER.format(paidTotal)}円</dd>
           </div>
         </dl>
       </header>
@@ -193,7 +196,7 @@ export function OrderProjectPreview({
                 <strong>{order.customer}</strong>
                 <small>{order.item}</small>
               </div>
-              <p>{new Intl.NumberFormat("ja-JP").format(order.total)}円</p>
+              <p>{NUMBER_FORMATTER.format(order.total)}円</p>
               <Button
                 variant={order.status === "paid" ? "secondary" : "outline"}
                 size="sm"

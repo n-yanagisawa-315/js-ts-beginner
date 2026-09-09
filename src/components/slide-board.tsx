@@ -3,6 +3,7 @@ import { Diagram } from "@/components/diagram";
 import { TalkAvatar } from "@/components/talk-avatar";
 import { isSummarySlide, talkPages } from "@/lib/course/slide-layout";
 import type { ResolvedSlideDTO } from "@/lib/course/client-dtos";
+import type { ConversationPage } from "@/lib/course/types";
 
 const INLINE_TOKEN =
   /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
@@ -16,6 +17,15 @@ const STORY_BEAT_LABEL = {
   transfer: "別の場面へ",
 } as const;
 
+function inlineParts(text: string) {
+  let offset = 0;
+  return text.split(INLINE_TOKEN).map((part, index) => {
+    const start = offset;
+    offset += part.length;
+    return { index, part, start };
+  });
+}
+
 function EmphasisText({
   text,
   strongFirst = false,
@@ -28,9 +38,8 @@ function EmphasisText({
 
   return (
     <>
-      {text.split(INLINE_TOKEN).map((part, index) => {
+      {inlineParts(text).map(({ index, part, start }) => {
         if (!part) return null;
-        const start = text.split(INLINE_TOKEN).slice(0, index).join("").length;
         const isLead = leadEnd > 0 && start < leadEnd;
         const isCode = part.startsWith("`") && part.endsWith("`");
         const isQuote = part.startsWith("「") && part.endsWith("」");
@@ -64,17 +73,21 @@ function EmphasisText({
 export function SlideBoard({
   slide,
   titleId,
+  pages,
   pageIndex,
 }: {
   slide: ResolvedSlideDTO;
   titleId: string;
+  pages?: ConversationPage[];
   pageIndex: number;
 }) {
   const listings = slide.listings;
   const summary = isSummarySlide(slide);
-  const pages = talkPages(slide, listings[0]);
-  const page = pages[Math.min(pageIndex, pages.length - 1)] ?? pages[0];
-  const finalPage = pageIndex >= pages.length - 1;
+  const resolvedPages = pages ?? talkPages(slide, listings[0]);
+  const page =
+    resolvedPages[Math.min(pageIndex, resolvedPages.length - 1)] ??
+    resolvedPages[0];
+  const finalPage = pageIndex >= resolvedPages.length - 1;
   const sources = slide.sources;
 
   return (
@@ -94,7 +107,8 @@ export function SlideBoard({
           <EmphasisText text={slide.title} />
         </h2>
         <p className="talk-progress">
-          会話 {Math.min(pageIndex + 1, pages.length)} / {pages.length}
+          会話 {Math.min(pageIndex + 1, resolvedPages.length)} /{" "}
+          {resolvedPages.length}
         </p>
         <ol className="talk-thread" aria-label="初心者とエンジニアの会話">
           {page?.lines.map((line, index) => (

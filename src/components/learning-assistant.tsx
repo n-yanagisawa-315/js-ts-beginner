@@ -75,6 +75,8 @@ export function LearningAssistant({
 }) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const generationIdRef = useRef(0);
+  const generationOwnerRef = useRef(Symbol("learning-assistant"));
+  const mountedRef = useRef(true);
   const questionId = useId();
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -86,11 +88,18 @@ export function LearningAssistant({
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    const generationOwner = generationOwnerRef.current;
     const media = window.matchMedia("(max-width: 620px)");
     const update = () => setIsMobile(media.matches);
     update();
     media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
+    return () => {
+      mountedRef.current = false;
+      generationIdRef.current += 1;
+      media.removeEventListener("change", update);
+      void stopLocalAssistantGeneration(generationOwner);
+    };
   }, []);
 
   async function prepare() {
@@ -102,13 +111,16 @@ export function LearningAssistant({
     setStatus("loading");
     try {
       await loadLocalAssistant((report) => {
+        if (!mountedRef.current) return;
         setProgress(Math.round(report.progress * 100));
         setProgressText(report.text);
       });
+      if (!mountedRef.current) return;
       setProgress(100);
       setStatus("ready");
       requestAnimationFrame(() => inputRef.current?.focus());
     } catch (cause) {
+      if (!mountedRef.current) return;
       setError(readableError(cause));
       setStatus("error");
     }
@@ -134,6 +146,7 @@ export function LearningAssistant({
       const answer = await askLocalAssistant(
         createSystemPrompt(context),
         nextMessages,
+        generationOwnerRef.current,
       );
       if (generationId !== generationIdRef.current) return;
       setMessages((current) => [
@@ -150,7 +163,8 @@ export function LearningAssistant({
 
   async function stopGeneration() {
     generationIdRef.current += 1;
-    await stopLocalAssistantGeneration();
+    await stopLocalAssistantGeneration(generationOwnerRef.current);
+    if (!mountedRef.current) return;
     setStatus("ready");
   }
 

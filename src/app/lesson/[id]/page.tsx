@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LessonStudio } from "@/components/lesson-studio";
-import { getLessonPageDTO, lessons } from "@/lib/course/server";
+import {
+  getLessonMetadata,
+  getLessonPageDTO,
+  lessons,
+} from "@/lib/course/server";
 
 export const dynamicParams = false;
 
@@ -15,12 +19,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const course = getLessonPageDTO(id);
-  if (!course) return {};
-  return {
-    title: course.lesson.title,
-    description: course.lesson.summary,
-  };
+  return getLessonMetadata(id) ?? {};
 }
 
 export default async function LessonPage({

@@ -46,18 +46,18 @@ import {
 } from "@/lib/review-contract";
 import { buildReviewQueue, type ReviewQueue } from "@/lib/review-queue";
 
+const loadCodeLab = () => import("@/components/code-lab");
+const loadQuizChallenge = () => import("@/components/quiz-challenge");
+
 const CodeLab = dynamic<CodeLabProps>(
-  () => import("@/components/code-lab").then((module) => module.CodeLab),
+  () => loadCodeLab().then((module) => module.CodeLab),
   {
     loading: () => <ReviewExerciseLoading variant="code" />,
   },
 );
 
 const QuizChallenge = dynamic<QuizChallengeProps>(
-  () =>
-    import("@/components/quiz-challenge").then(
-      (module) => module.QuizChallenge,
-    ),
+  () => loadQuizChallenge().then((module) => module.QuizChallenge),
   {
     loading: () => <ReviewExerciseLoading variant="quiz" />,
   },
@@ -65,6 +65,20 @@ const QuizChallenge = dynamic<QuizChallengeProps>(
 
 const subscribeToNothing = () => () => {};
 const REVIEW_REQUEST_TIMEOUT_MS = 15_000;
+
+function preloadReviewExercises(response: ReviewBatchResponse) {
+  const codeQuestions = response.items.filter(({ question }) =>
+    ["code", "shell", "sql", "git"].includes(question.kind),
+  );
+  if (codeQuestions.length > 0) {
+    void loadCodeLab().then((module) => {
+      for (const { question } of codeQuestions) {
+        module.preloadCodeLabDependencies(question);
+      }
+    });
+  }
+  if (codeQuestions.length < response.items.length) void loadQuizChallenge();
+}
 
 function reviewBatchRequest(queue: ReviewQueue): ReviewBatchRequest {
   return {
@@ -144,6 +158,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
     void fetchReviewBatch(request, controller.signal)
       .then((response) => {
         if (generation !== requestGeneration.current) return;
+        preloadReviewExercises(response);
         setBatch(response);
         setTyped(response.items[0]?.question.starter ?? "");
       })
@@ -186,6 +201,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
         controller.signal,
       );
       if (generation !== requestGeneration.current) return;
+      preloadReviewExercises(response);
       setBatch(response);
       setTyped(response.items[0]?.question.starter ?? "");
     } catch (error) {

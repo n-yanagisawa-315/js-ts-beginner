@@ -403,18 +403,34 @@ const suites = {
     );
     await delayLessonCodeLabChunk();
     await advanceUntil(
-      `document.body.innerText.includes('コード演習を準備中…')`,
-      "CodeLabの読み込み表示まで進めませんでした",
+      `[...document.querySelectorAll('button')].some((button) => button.textContent.includes('この内容を演習する'))`,
+      "CodeLab直前のスライドまで進めませんでした",
     );
-    if (delayedChunkRequests === 0 || delayedChunkPending === 0) {
-      throw new Error("700ms遅延中にCodeLabの読み込み表示を確認できませんでした");
+    const preloadDeadline = Date.now() + 3_000;
+    while (delayedChunkRequests === 0 && Date.now() < preloadDeadline) {
+      await ab(["wait", "50"]);
     }
+    if (delayedChunkRequests === 0 || firstDelayedChunkAt === 0) {
+      throw new Error("CodeLabのchunk先読みが開始されませんでした");
+    }
+    const remainingDelay =
+      CHUNK_DELAY_MS - (Date.now() - firstDelayedChunkAt) + 50;
+    if (remainingDelay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, remainingDelay));
+    }
+    if (delayedChunkPending !== 0) {
+      throw new Error("700ms遅延後もCodeLabのchunk先読みが完了していません");
+    }
+    await clickRole("button", "この内容を演習する");
     await waitFn(
       `[...document.querySelectorAll('.monaco-editor')].some((node) => node.getClientRects().length > 0)`,
       20_000,
     );
     if (Date.now() - firstDelayedChunkAt < CHUNK_DELAY_MS) {
-      throw new Error("CodeLabが700msのchunk遅延完了前に表示されました");
+      throw new Error("CodeLabが700msのchunk先読み完了前に表示されました");
+    }
+    if (await evaluate(`document.body.innerText.includes('コード演習を準備中…')`)) {
+      throw new Error("先読み済みのCodeLabで読み込み表示が残っています");
     }
     clearChunkDelay();
     await replaceEditor("// わざと誤答する");

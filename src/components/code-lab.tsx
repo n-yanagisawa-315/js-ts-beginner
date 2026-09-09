@@ -56,31 +56,40 @@ import {
 } from "@/lib/run-js";
 import type { Question, TermLine, Track } from "@/lib/course/types";
 
+const loadGitTerminal = () => import("@/components/git-terminal");
+const loadOrderProjectPreview = () =>
+  import("@/components/order-project-preview");
+const loadSqlConsole = () => import("@/components/sql-console");
+
 const GitTerminal = dynamic<GitTerminalProps>(
-  () =>
-    import("@/components/git-terminal").then((module) => module.GitTerminal),
+  () => loadGitTerminal().then((module) => module.GitTerminal),
   {
     loading: () => <LabBranchLoading label="Git ターミナルを準備中…" />,
   },
 );
 
 const OrderProjectPreview = dynamic<OrderProjectPreviewProps>(
-  () =>
-    import("@/components/order-project-preview").then(
-      (module) => module.OrderProjectPreview,
-    ),
+  () => loadOrderProjectPreview().then((module) => module.OrderProjectPreview),
   {
     loading: () => <LabBranchLoading label="注文画面を準備中…" />,
   },
 );
 
 const SqlConsole = dynamic<SqlConsoleProps>(
-  () =>
-    import("@/components/sql-console").then((module) => module.SqlConsole),
+  () => loadSqlConsole().then((module) => module.SqlConsole),
   {
     loading: () => <LabBranchLoading label="SQL コンソールを準備中…" />,
   },
 );
+
+export function preloadCodeLabDependencies(
+  question: Question,
+  projectPreview = false,
+) {
+  if (question.kind === "sql") void loadSqlConsole();
+  if (question.kind === "git") void loadGitTerminal();
+  if (projectPreview) void loadOrderProjectPreview();
+}
 
 export type CodeLabProps = {
   track: Track;
@@ -366,6 +375,14 @@ function CodeLabInner({
       pending={isSubmitting}
     />
   );
+  const successDock = checked ? (
+    <SuccessDock
+      canContinue={!requiresExplanation || reflection.trim().length >= 10}
+      nextLabel={nextLabel}
+      onAnswer={showAnswer}
+      onNext={onNext}
+    />
+  ) : null;
 
   return (
     <main
@@ -482,7 +499,7 @@ function CodeLabInner({
                 {failReason ? (
                   <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
                 ) : null}
-                {toolbar}
+                {successDock ?? toolbar}
               </>
             }
           >
@@ -544,7 +561,7 @@ function CodeLabInner({
             {failReason ? (
               <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
             ) : null}
-            {toolbar}
+            {successDock ?? toolbar}
           </section>
         ) : isGit ? (
           <section className="editor-shell overflow-y-auto bg-[#10141c]">
@@ -571,7 +588,7 @@ function CodeLabInner({
             {failReason ? (
               <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
             ) : null}
-            {toolbar}
+            {successDock ?? toolbar}
           </section>
         ) : isNode ? (
           <section className="editor-shell is-term">
@@ -646,7 +663,7 @@ function CodeLabInner({
             {failReason ? (
               <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
             ) : null}
-            {toolbar}
+            {successDock ?? toolbar}
           </section>
         ) : (
           <>
@@ -685,7 +702,7 @@ function CodeLabInner({
               {failReason ? (
                 <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
               ) : null}
-              {toolbar}
+              {successDock ?? toolbar}
             </section>
             <aside className="console-stack min-h-[16rem] border-t border-[#c5c9d0] lg:border-t-0 lg:border-l">
               {isDom ? (
@@ -723,14 +740,6 @@ function CodeLabInner({
           </>
         )}
       </div>
-      {checked ? (
-        <SuccessDock
-          canContinue={!requiresExplanation || reflection.trim().length >= 10}
-          nextLabel={nextLabel}
-          onAnswer={showAnswer}
-          onNext={onNext}
-        />
-      ) : null}
       <AnswerReviewDialog
         open={reviewOpen}
         question={question}

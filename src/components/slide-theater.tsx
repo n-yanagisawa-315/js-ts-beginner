@@ -10,6 +10,7 @@ import type {
   ResolvedLessonDTO,
   ResolvedSlideDTO,
 } from "@/lib/course/client-dtos";
+import type { ConversationPage } from "@/lib/course/types";
 
 export function SlideTheater({
   lesson,
@@ -17,6 +18,7 @@ export function SlideTheater({
   slide,
   index,
   total,
+  conversationPages,
   conversationIndex,
   conversationTotal,
   continueLabel,
@@ -30,6 +32,7 @@ export function SlideTheater({
   slide: ResolvedSlideDTO;
   index: number;
   total: number;
+  conversationPages: ConversationPage[];
   conversationIndex: number;
   conversationTotal: number;
   continueLabel?: string;
@@ -91,6 +94,7 @@ export function SlideTheater({
         <SlideBoard
           slide={slide}
           titleId="slide-theater-title"
+          pages={conversationPages}
           pageIndex={conversationIndex}
         />
       </div>
