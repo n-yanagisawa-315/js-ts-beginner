@@ -1,4 +1,4 @@
-import type { Track } from "@/lib/course";
+import type { Track } from "@/lib/course/types";
 import { TRACK_META } from "@/lib/track-meta";
 
 const LABEL: Record<Track, string> = {

@@ -1,11 +1,12 @@
-import type { Lesson, Question } from "./course/types.ts";
+import type { ReviewLessonDTO } from "./course/client-dtos.ts";
+import type { Question } from "./course/types.ts";
 import {
   questionProgressKey,
   type LearningState,
 } from "./progress.ts";
 
 export type ReviewItem = {
-  lesson: Lesson;
+  lesson: ReviewLessonDTO;
   question: Question;
   lastAttemptAt: string;
   nextReviewAt: string;
@@ -234,7 +235,7 @@ function interleave(items: ReviewItem[]): ReviewItem[] {
 }
 
 export function buildReviewQueue(
-  lessons: Lesson[],
+  lessons: ReviewLessonDTO[],
   state: LearningState,
   now = new Date(),
 ): { items: ReviewItem[]; isPreview: boolean } {

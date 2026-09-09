@@ -1,4 +1,4 @@
-import type { Track } from "@/lib/course";
+import type { Track } from "@/lib/course/types";
 
 export type TrackMeta = {
   name: string;

@@ -7,7 +7,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import type { TermLine } from "@/lib/course";
+import type { TermLine } from "@/lib/course/types";
 
 export function NodeTermPrompt({ cwd }: { cwd: string }) {
   return <span className="node-term-cwd">{cwd} $</span>;

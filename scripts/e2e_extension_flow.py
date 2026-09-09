@@ -14,10 +14,14 @@ def advance_slides_until(page, role, name):
     for _ in range(40):
         if role_is_visible(page, role, name):
             return
-        page.get_by_role(
+        continue_button = page.get_by_role(
             "button",
             name=re.compile("会話を続ける|この内容を演習する|残りの演習へ|結果を見る"),
-        ).last.click()
+        )
+        if continue_button.count() == 0:
+            page.wait_for_timeout(50)
+            continue
+        continue_button.last.click()
     raise AssertionError(f"{name}へ移動できませんでした")
 
 
@@ -30,6 +34,7 @@ def enter_first_exercise(page, lesson_id, first_answer):
     page.get_by_role("button", name="予想を残して説明を見る").click()
     page.get_by_role("radio", name="半分くらい 50%").click()
     page.get_by_role("button", name="この自信で解答する").click()
+    expect(page.locator(".slide-stage")).to_be_visible()
     advance_slides_until(page, "radio", first_answer)
 
 

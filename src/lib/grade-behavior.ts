@@ -1,7 +1,5 @@
 import type { Question, Track } from "./course/types.ts";
 import { grade, hasRequiredSemicolons } from "./grade.ts";
-import { runDomQuestion } from "./run-dom.ts";
-import { runStudentJs } from "./run-js.ts";
 
 const FUNCTION_DECLARATION =
   /function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)|(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:\(([^)]*)\)|([A-Za-z_$][\w$]*))\s*=>/g;
@@ -39,6 +37,7 @@ async function gradeBehaviorCases(
       return `console.log("__course_case_${index}__" + JSON.stringify(await (${invocation})));`;
     })
     .join("\n");
+  const { runStudentJs } = await import("./run-js.ts");
   const result = await runStudentJs(`${raw}\n${probes}`);
   if (result.error) return false;
   return question.behaviorCases.every((test, index) => {
@@ -159,6 +158,7 @@ export async function gradeCodeByBehavior(
   if (behaviorResult !== undefined) return behaviorResult;
   if (!hasRequiredSemicolons(question.answer, raw)) return false;
   if (question.runtime === "dom") {
+    const { runDomQuestion } = await import("./run-dom.ts");
     const result = await runDomQuestion(question, raw);
     return result.passed;
   }
@@ -166,6 +166,7 @@ export async function gradeCodeByBehavior(
   const output = expectedOutput(question);
   if (!output) return grade(question, raw);
 
+  const { runStudentJs } = await import("./run-js.ts");
   const studentResult = await runStudentJs(raw);
   if (studentResult.error || !sameOutput(studentResult.logs, output)) return false;
 

@@ -21,6 +21,10 @@ import {
 const ORDER_EVENT = "js-ts-beginner-demo-orders";
 const SERVER_SNAPSHOT = JSON.stringify(SEED_ORDERS);
 
+export type OrderProjectPreviewProps = {
+  compact?: boolean;
+};
+
 function subscribeOrders(callback: () => void) {
   window.addEventListener(ORDER_EVENT, callback);
   window.addEventListener("storage", callback);
@@ -39,7 +43,9 @@ function writeOrders(orders: DemoOrder[]) {
   window.dispatchEvent(new Event(ORDER_EVENT));
 }
 
-export function OrderProjectPreview({ compact = false }: { compact?: boolean }) {
+export function OrderProjectPreview({
+  compact = false,
+}: OrderProjectPreviewProps) {
   const formId = useId();
   const stored = useSyncExternalStore(
     subscribeOrders,

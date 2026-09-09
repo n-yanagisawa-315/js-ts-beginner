@@ -17,6 +17,8 @@
     "audit:learning": "node scripts/audit-learning-quality.mjs",
     "audit:learning-engine": "node --experimental-strip-types scripts/audit-learning-engine.mjs",
     "audit:extensions": "node --experimental-strip-types scripts/audit-extensions.mjs",
+    "audit:client-boundary": "node scripts/audit-client-course-boundary.mjs",
+    "audit:progress-store": "node --experimental-strip-types scripts/audit-progress-store.mjs",
     "e2e:catalog": "python3 scripts/e2e_catalog_flow.py",
     "e2e:ui": "python3 scripts/e2e_ui_unification.py",
     "e2e:extensions": "python3 scripts/e2e_extension_flow.py"

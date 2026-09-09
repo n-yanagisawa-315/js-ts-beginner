@@ -25,7 +25,10 @@ const code = Source_Code_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "JS / TS / Node しくみ講座",
+  title: {
+    default: "JS / TS / Node しくみ講座",
+    template: "%s | JS / TS / Node しくみ講座",
+  },
   description:
     "JavaScript、TypeScript、Node.js の仕組みを、図とコードで見てから演習する講座",
 };

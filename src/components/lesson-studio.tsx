@@ -1,15 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
-import { CodeLab } from "@/components/code-lab";
+import type { CodeLabProps } from "@/components/code-lab";
 import { ConfidenceDialog } from "@/components/confidence-scale";
 import {
   LearningAssistant,
   type LearningAssistantContext,
 } from "@/components/learning-assistant";
 import { LearningFlowHeader } from "@/components/learning-flow-header";
-import { QuizChallenge } from "@/components/quiz-challenge";
+import type { QuizChallengeProps } from "@/components/quiz-challenge";
 import { SlideTheater } from "@/components/slide-theater";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,11 +33,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
-import {
-  nextLessonId,
-  prequestionForLesson,
-  type Lesson,
-} from "@/lib/course";
+import type {
+  LessonNavigationDTO,
+  LessonPageDTO,
+} from "@/lib/course/client-dtos";
+import type { Lesson } from "@/lib/course/types";
 import {
   nextSlideIndex,
   questionForSlide,
@@ -46,20 +47,37 @@ import {
 import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
 import { gradeQuestion } from "@/lib/grade-question";
 import {
+  getLearningStateSnapshot,
+  getServerLearningStateSnapshot,
   recordQuestionAssistance,
   recordQuestionAttempt,
   recordSelfExplanation,
   recordLessonLearningEvent,
-  emptyLearningStateSnapshot,
-  learningStateSnapshot,
   subscribeLearningState,
-  type LearningState,
   writeProgress,
 } from "@/lib/progress";
 
+const CodeLab = dynamic<CodeLabProps>(
+  () => import("@/components/code-lab").then((module) => module.CodeLab),
+  {
+    loading: () => <ExerciseLoading variant="code" />,
+  },
+);
+
+const QuizChallenge = dynamic<QuizChallengeProps>(
+  () =>
+    import("@/components/quiz-challenge").then(
+      (module) => module.QuizChallenge,
+    ),
+  {
+    loading: () => <ExerciseLoading variant="quiz" />,
+  },
+);
+
 type Phase = "predict" | "slides" | "quiz" | "exit" | "done";
 
-export function LessonStudio({ lesson }: { lesson: Lesson }) {
+export function LessonStudio({ course }: { course: LessonPageDTO }) {
+  const { lesson, navigation, prequestion, predictionOptions } = course;
   const [phase, setPhase] = useState<Phase>("predict");
   const [slide, setSlide] = useState(0);
   const [conversationPage, setConversationPage] = useState(0);
@@ -81,25 +99,21 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   const [prediction, setPrediction] = useState("");
   const [exitRecall, setExitRecall] = useState("");
   const [reflection, setReflection] = useState("");
-  const learningJson = useSyncExternalStore(
+  const learningState = useSyncExternalStore(
     subscribeLearningState,
-    learningStateSnapshot,
-    emptyLearningStateSnapshot,
+    getLearningStateSnapshot,
+    getServerLearningStateSnapshot,
   );
-  const previousExitRecall = useMemo(() => {
-    const state = JSON.parse(learningJson) as LearningState;
-    return (
-      state.lessonEvents
-        .filter(
-          (event) =>
-            event.lessonId === lesson.id && event.context === "exit-recall",
-        )
-        .at(-1)?.response ?? ""
-    );
-  }, [learningJson, lesson.id]);
+  const previousExitRecall =
+    learningState.lessonEvents
+      .filter(
+        (event) =>
+          event.lessonId === lesson.id && event.context === "exit-recall",
+      )
+      .at(-1)?.response ?? "";
 
   const question = questionForSlide(lesson, slide);
-  const nextId = nextLessonId(lesson.id);
+  const nextId = navigation.nextLessonId;
   const currentAnswer = question?.kind === "choice" ? (choice ?? "") : typed;
   const isCorrect = useMemo(
     () => (question ? grade(question, currentAnswer) : false),
@@ -387,6 +401,9 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
       <LearningCheckpoint
         mode="predict"
         lesson={lesson}
+        navigation={navigation}
+        prequestion={prequestion}
+        predictionOptions={predictionOptions}
         value={prediction}
         confidence={confidence}
         comparisonLabel={previousExitRecall ? "前回の出口想起" : undefined}
@@ -413,6 +430,9 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
       <LearningCheckpoint
         mode="exit"
         lesson={lesson}
+        navigation={navigation}
+        prequestion={prequestion}
+        predictionOptions={predictionOptions}
         value={exitRecall}
         confidence={confidence}
         comparisonLabel="学習前の予想"
@@ -438,6 +458,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
       <div className="flex min-h-full flex-1 flex-col">
         <LearningFlowHeader
           lesson={lesson}
+          navigation={navigation}
           stage="コード演習"
           current={Math.max(quizIndex, 0) + 1}
           total={quizTotal}
@@ -495,6 +516,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
       <div className="flex min-h-full flex-1 flex-col bg-paper">
         <LearningFlowHeader
           lesson={lesson}
+          navigation={navigation}
           stage="確認演習"
           current={Math.max(quizIndex, 0) + 1}
           total={quizTotal}
@@ -549,7 +571,11 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   if (phase === "done") {
     return (
       <div className="flex min-h-full flex-1 flex-col bg-paper">
-        <LearningFlowHeader lesson={lesson} stage="講義完了" />
+        <LearningFlowHeader
+          lesson={lesson}
+          navigation={navigation}
+          stage="講義完了"
+        />
         <main id="main-content" className="learning-done">
           <Card className="learning-done-card">
             <CardHeader>
@@ -612,6 +638,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
     <div className="flex min-h-full flex-1 flex-col">
       <SlideTheater
         lesson={lesson}
+        navigation={navigation}
         slide={currentSlide}
         index={slide}
         total={slideCount}
@@ -627,9 +654,29 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   );
 }
 
+function ExerciseLoading({ variant }: { variant: "code" | "quiz" }) {
+  return (
+    <main
+      id="main-content"
+      className={
+        variant === "code"
+          ? "flex min-h-0 flex-1 items-center justify-center bg-[#10141c] p-6 text-[var(--cream)]"
+          : "flex min-h-0 flex-1 items-center justify-center bg-paper p-6 text-ink"
+      }
+      role="status"
+      aria-live="polite"
+    >
+      <p>{variant === "code" ? "コード演習を準備中…" : "確認演習を準備中…"}</p>
+    </main>
+  );
+}
+
 function LearningCheckpoint({
   mode,
   lesson,
+  navigation,
+  prequestion,
+  predictionOptions,
   value,
   confidence,
   comparisonLabel,
@@ -641,6 +688,9 @@ function LearningCheckpoint({
 }: {
   mode: "predict" | "exit";
   lesson: Lesson;
+  navigation: LessonNavigationDTO;
+  prequestion: string;
+  predictionOptions: string[];
   value: string;
   confidence: number | null;
   comparisonLabel?: string;
@@ -654,13 +704,14 @@ function LearningCheckpoint({
   const prediction = mode === "predict";
   const title = prediction ? "説明を見る前に予想する" : "資料を閉じて思い出す";
   const prompt = prediction
-    ? prequestionForLesson(lesson)
+    ? prequestion
     : `「${lesson.title}」の仕組みを、コードを見ずに1〜3文で説明してください。正確さより、今取り出せることを確かめます。`;
 
   return (
     <div className="learning-checkpoint-shell">
       <LearningFlowHeader
         lesson={lesson}
+        navigation={navigation}
         stage={prediction ? "学習前の予想" : "講義末の出口想起"}
       />
       <main id="main-content" className="learning-checkpoint">
@@ -695,7 +746,7 @@ function LearningCheckpoint({
               orientation="vertical"
               className="learning-prediction-options-list"
             >
-              {predictionOptions(lesson).map((option, index) => (
+              {predictionOptions.map((option, index) => (
                 <ToggleGroupItem
                   key={option}
                   value={option}
@@ -771,22 +822,4 @@ function LearningCheckpoint({
       </main>
     </div>
   );
-}
-
-function predictionOptions(lesson: Lesson): string[] {
-  if (lesson.id === "js-run") {
-    return [
-      "JavaScriptは、書かれた命令を上から1行ずつ動かす",
-      "JavaScriptは、すべての行を同時に動かす",
-      "JavaScriptは、下の行から上へ向かって動かす",
-      "まだ分からないので、説明で確かめたい",
-    ];
-  }
-  const objective = lesson.objectives?.[0]?.label ?? lesson.title;
-  return [
-    `「${objective}」は、値や表示が変わる順番に関係する`,
-    `「${objective}」は、入力の種類や条件を確かめる`,
-    `「${objective}」は、操作や通信の後で処理を動かす`,
-    "まだ分からないので、説明で確かめたい",
-  ];
 }

@@ -1,9 +1,10 @@
 import { HomeTracks } from "@/components/home-tracks";
 import { OrderProjectPreview } from "@/components/order-project-preview";
 import { Badge } from "@/components/ui/badge";
-import { lessons } from "@/lib/course";
+import { getHomePageDTO } from "@/lib/course/server";
 
 export default function Home() {
+  const course = getHomePageDTO();
   return (
     <div className="course-catalog-page">
       <header className="course-catalog-hero">
@@ -27,7 +28,7 @@ export default function Home() {
       </header>
 
       <main id="main-content">
-        <HomeTracks lessons={lessons} />
+        <HomeTracks course={course} />
 
         <section className="course-project-showcase" aria-labelledby="project-title">
         <div className="course-section-heading">

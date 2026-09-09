@@ -29,7 +29,33 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@/components/ui/radio-group";
-import type { Question } from "@/lib/course";
+import { Spinner } from "@/components/ui/spinner";
+import type { Question } from "@/lib/course/types";
+
+export type QuizChallengeProps = {
+  question: Question;
+  index: number;
+  total: number;
+  correctCount: number;
+  choice: string | null;
+  typed: string;
+  checked: boolean;
+  isCorrect: boolean;
+  failReason: string | null;
+  onChoice: (value: string) => void;
+  onTyped: (value: string) => void;
+  onSubmit: () => void | Promise<void>;
+  onDismissFail: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+  onHintUsed?: (level: number) => void;
+  confidence: number | null;
+  onConfidence: (value: number) => void;
+  attempted: boolean;
+  reflection: string;
+  onReflection: (value: string) => void;
+  assistant?: ReactNode;
+};
 
 export function QuizChallenge({
   question,
@@ -53,46 +79,38 @@ export function QuizChallenge({
   reflection,
   onReflection,
   assistant,
-}: {
-  question: Question;
-  index: number;
-  total: number;
-  correctCount: number;
-  choice: string | null;
-  typed: string;
-  checked: boolean;
-  isCorrect: boolean;
-  failReason: string | null;
-  onChoice: (value: string) => void;
-  onTyped: (value: string) => void;
-  onSubmit: () => void;
-  onDismissFail: () => void;
-  onNext: () => void;
-  nextLabel?: string;
-  onHintUsed?: (level: number) => void;
-  confidence: number | null;
-  onConfidence: (value: number) => void;
-  attempted: boolean;
-  reflection: string;
-  onReflection: (value: string) => void;
-  assistant?: ReactNode;
-}) {
+}: QuizChallengeProps) {
   const inputId = useId();
   const explainId = useId();
   const hintId = useId();
   const explainRef = useRef<HTMLParagraphElement>(null);
+  const submittingRef = useRef(false);
   const [hintLevel, setHintLevel] = useState(0);
   const [confidenceOpen, setConfidenceOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFragmentIndexes, setSelectedFragmentIndexes] = useState<number[]>([]);
   const requiresExplanation = question.exerciseKind === "transfer";
   const hints = question.hints?.length ? question.hints : question.hint ? [question.hint] : [];
   const canSubmit =
     !checked &&
+    !isSubmitting &&
     (question.kind === "choice"
       ? Boolean(choice)
       : question.kind === "order"
         ? selectedFragmentIndexes.length === (question.fragments?.length ?? 0)
         : typed.trim() !== "");
+
+  async function submitAnswer() {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await onSubmit();
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
 
   function requestSubmit() {
     if (!canSubmit) return;
@@ -100,7 +118,7 @@ export function QuizChallenge({
       setConfidenceOpen(true);
       return;
     }
-    onSubmit();
+    void submitAnswer();
   }
 
   function selectFragment(fragmentIndex: number) {
@@ -401,11 +419,19 @@ export function QuizChallenge({
                 あとで解き直す
               </Button>
             ) : null}
-            <Button
-              onClick={requestSubmit}
-              disabled={!canSubmit}
-            >
-              {failReason ? "もう一度確かめる" : question.kind === "code" ? "できた！" : "解答する"}
+            <Button onClick={requestSubmit} disabled={!canSubmit}>
+              {isSubmitting ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  採点中…
+                </>
+              ) : failReason ? (
+                "もう一度確かめる"
+              ) : question.kind === "code" ? (
+                "できた！"
+              ) : (
+                "解答する"
+              )}
             </Button>
           </div>
         )}
@@ -417,7 +443,7 @@ export function QuizChallenge({
         onCancel={() => setConfidenceOpen(false)}
         onConfirm={() => {
           setConfidenceOpen(false);
-          onSubmit();
+          void submitAnswer();
         }}
       />
     </main>

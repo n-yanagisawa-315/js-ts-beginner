@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnswerDialog } from "@/components/answer-dialog";
 import { CopyableText } from "@/components/copyable-text";
@@ -8,10 +9,10 @@ import {
   ConfidenceScale,
 } from "@/components/confidence-scale";
 import { HighlightEditor } from "@/components/highlight-editor";
-import { GitTerminal } from "@/components/git-terminal";
+import type { GitTerminalProps } from "@/components/git-terminal";
 import { IconEye, IconFile, IconPlay, IconReset } from "@/components/icons";
-import { OrderProjectPreview } from "@/components/order-project-preview";
-import { SqlConsole } from "@/components/sql-console";
+import type { OrderProjectPreviewProps } from "@/components/order-project-preview";
+import type { SqlConsoleProps } from "@/components/sql-console";
 import { SelfExplanation } from "@/components/self-explanation";
 import {
   Alert,
@@ -19,6 +20,14 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Tabs,
@@ -35,9 +44,35 @@ import {
 import { gradeShell, mismatchLines } from "@/lib/grade";
 import { createDomDocument, runDomQuestion } from "@/lib/run-dom";
 import { runStudentJs, syntaxLine } from "@/lib/run-js";
-import type { Question, TermLine, Track } from "@/lib/course";
+import type { Question, TermLine, Track } from "@/lib/course/types";
 
-export function CodeLab(props: {
+const GitTerminal = dynamic<GitTerminalProps>(
+  () =>
+    import("@/components/git-terminal").then((module) => module.GitTerminal),
+  {
+    loading: () => <LabBranchLoading label="Git ターミナルを準備中…" />,
+  },
+);
+
+const OrderProjectPreview = dynamic<OrderProjectPreviewProps>(
+  () =>
+    import("@/components/order-project-preview").then(
+      (module) => module.OrderProjectPreview,
+    ),
+  {
+    loading: () => <LabBranchLoading label="注文画面を準備中…" />,
+  },
+);
+
+const SqlConsole = dynamic<SqlConsoleProps>(
+  () =>
+    import("@/components/sql-console").then((module) => module.SqlConsole),
+  {
+    loading: () => <LabBranchLoading label="SQL コンソールを準備中…" />,
+  },
+);
+
+export type CodeLabProps = {
   track: Track;
   question: Question;
   index: number;
@@ -62,7 +97,9 @@ export function CodeLab(props: {
   onReflection: (value: string) => void;
   assistant?: ReactNode;
   projectPreview?: boolean;
-}) {
+};
+
+export function CodeLab(props: CodeLabProps) {
   return (
     <CodeLabInner
       key={`${props.question.id}-${props.question.variantId ?? "base"}`}
@@ -91,44 +128,18 @@ function CodeLabInner({
   onAnswerViewed,
   confidence,
   onConfidence,
-  attempted,
   reflection,
   onReflection,
   assistant,
   projectPreview = false,
-}: {
-  track: Track;
-  question: Question;
-  index: number;
-  total: number;
-  correctCount: number;
-  typed: string;
-  checked: boolean;
-  failReason: string | null;
-  failTick: number;
-  onTyped: (value: string) => void;
-  onSubmit: (correctOverride?: boolean) => void | Promise<void>;
-  onDismissFail: () => void;
-  onNext: () => void;
-  nextLabel?: string;
-  onOpenSlide?: (trigger: HTMLButtonElement) => void;
-  onHintUsed?: (level: number) => void;
-  onAnswerViewed?: () => void;
-  confidence: number | null;
-  onConfidence: (value: number) => void;
-  attempted: boolean;
-  reflection: string;
-  onReflection: (value: string) => void;
-  assistant?: ReactNode;
-  projectPreview?: boolean;
-}) {
+}: CodeLabProps) {
   const editorId = useId();
   const explainId = useId();
   const explainRef = useRef<HTMLParagraphElement>(null);
-  const guideRef = useRef<HTMLElement>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [answerOpen, setAnswerOpen] = useState(false);
   const [confidenceOpen, setConfidenceOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [runError, setRunError] = useState<string | null>(null);
   const [termTab, setTermTab] = useState<1 | 2>(1);
@@ -185,16 +196,6 @@ function CodeLabInner({
   useEffect(() => {
     if (checked) explainRef.current?.focus();
   }, [checked]);
-
-  useEffect(() => {
-    if (!failReason) return;
-    requestAnimationFrame(() => {
-      guideRef.current?.scrollTo({
-        top: guideRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    });
-  }, [failReason, failTick]);
 
   async function runJs() {
     if (!canRun) {
@@ -285,9 +286,15 @@ function CodeLabInner({
           ? typeErrors.length === 0
           : undefined,
       );
+      setReviewOpen(true);
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function showAnswer() {
+    setAnswerOpen(true);
+    onAnswerViewed?.();
   }
 
   const toolbar = (
@@ -295,10 +302,8 @@ function CodeLabInner({
       checked={checked}
       canSubmit={canSubmit && !isRunning && !isSubmitting}
       canAdvance={Boolean(failReason) && reflection.trim().length >= 10}
-      canFinish={!requiresExplanation || reflection.trim().length >= 10}
       correctCount={correctCount}
       total={total}
-      nextLabel={nextLabel}
       onReset={() => {
         onTyped(question.starter ?? "");
         setConfidenceOpen(false);
@@ -318,10 +323,7 @@ function CodeLabInner({
         }
         setPane("file");
       }}
-      onAnswer={() => {
-        setAnswerOpen(true);
-        onAnswerViewed?.();
-      }}
+      onAnswer={showAnswer}
       onNext={onNext}
       onSubmit={submit}
       pending={isSubmitting}
@@ -335,7 +337,6 @@ function CodeLabInner({
     >
       <div className={`lab-grid min-h-0 flex-1${isNode ? " is-node" : ""}`}>
         <aside
-          ref={guideRef}
           className="flex min-h-0 touch-pan-y flex-col overflow-y-auto border-b border-line bg-desk text-ink lg:border-b-0 lg:border-r"
         >
           <div className="flex items-center justify-between px-4 py-3">
@@ -380,27 +381,6 @@ function CodeLabInner({
             fileName={fileName}
             isShell={isShell}
           />
-          {attempted ? (
-          <div className="px-4 pb-4">
-            <ConfidenceScale
-              value={confidence}
-              onChange={onConfidence}
-              tone="light"
-              disabled
-              result={checked}
-            />
-          </div>
-          ) : null}
-          {failReason || (checked && requiresExplanation) ? (
-            <div className="px-4 pb-4">
-              <SelfExplanation
-                question={question}
-                value={reflection}
-                onChange={onReflection}
-                mode={checked ? "reasoning" : "correction"}
-              />
-            </div>
-          ) : null}
           <div className="mt-auto flex flex-col gap-2 px-4 pb-4">
             {assistant}
             {hints.length > 0 ? (
@@ -472,10 +452,10 @@ function CodeLabInner({
                     正解。 {question.explain}
                   </p>
                 ) : null}
-                {toolbar}
                 {failReason ? (
                   <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
                 ) : null}
+                {toolbar}
               </>
             }
           >
@@ -524,10 +504,10 @@ function CodeLabInner({
                 正解。 {question.explain}
               </p>
             ) : null}
-            {toolbar}
             {failReason ? (
               <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
             ) : null}
+            {toolbar}
           </section>
         ) : isGit ? (
           <section className="editor-shell overflow-y-auto bg-[#10141c]">
@@ -551,10 +531,10 @@ function CodeLabInner({
                 正解。 {question.explain}
               </p>
             ) : null}
-            {toolbar}
             {failReason ? (
               <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
             ) : null}
+            {toolbar}
           </section>
         ) : isNode ? (
           <section className="editor-shell is-term">
@@ -626,10 +606,10 @@ function CodeLabInner({
                 正解。 {question.explain}
               </p>
             ) : null}
-            {toolbar}
             {failReason ? (
               <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
             ) : null}
+            {toolbar}
           </section>
         ) : (
           <>
@@ -665,10 +645,10 @@ function CodeLabInner({
                   正解。 {question.explain}
                 </p>
               ) : null}
-              {toolbar}
               {failReason ? (
                 <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
               ) : null}
+              {toolbar}
             </section>
             <aside className="console-stack min-h-[16rem] border-t border-[#c5c9d0] lg:border-t-0 lg:border-l">
               {isDom ? (
@@ -705,6 +685,24 @@ function CodeLabInner({
           </>
         )}
       </div>
+      {checked ? (
+        <SuccessDock
+          canContinue={!requiresExplanation || reflection.trim().length >= 10}
+          nextLabel={nextLabel}
+          onAnswer={showAnswer}
+          onNext={onNext}
+        />
+      ) : null}
+      <AnswerReviewDialog
+        open={reviewOpen}
+        question={question}
+        confidence={confidence}
+        correct={checked}
+        showExplanation={Boolean(failReason) || (checked && requiresExplanation)}
+        reflection={reflection}
+        onReflection={onReflection}
+        onClose={() => setReviewOpen(false)}
+      />
       <ConfidenceDialog
         open={confidenceOpen}
         value={confidence}
@@ -729,6 +727,15 @@ function CodeLabInner({
         onClose={() => setAnswerOpen(false)}
       />
     </main>
+  );
+}
+
+function LabBranchLoading({ label }: { label: string }) {
+  return (
+    <div className="editor-loading min-h-32" role="status" aria-live="polite">
+      <Spinner />
+      <span>{label}</span>
+    </div>
   );
 }
 
@@ -810,10 +817,8 @@ function LabToolbar({
   checked,
   canSubmit,
   canAdvance,
-  canFinish,
   correctCount,
   total,
-  nextLabel,
   onReset,
   onAnswer,
   onNext,
@@ -823,10 +828,8 @@ function LabToolbar({
   checked: boolean;
   canSubmit: boolean;
   canAdvance: boolean;
-  canFinish: boolean;
   correctCount: number;
   total: number;
-  nextLabel: string;
   onReset: () => void;
   onAnswer: () => void;
   onNext: () => void;
@@ -846,14 +849,7 @@ function LabToolbar({
       <span className="editor-score">
         正解 {correctCount} / {total}
       </span>
-      {checked ? (
-        <Button
-          disabled={!canFinish}
-          onClick={onNext}
-        >
-          {nextLabel}
-        </Button>
-      ) : (
+      {!checked ? (
         <div className="flex flex-wrap gap-2">
           {canAdvance ? (
             <Button variant="outline" onClick={onNext}>
@@ -873,8 +869,98 @@ function LabToolbar({
             )}
           </Button>
         </div>
-      )}
+      ) : null}
     </div>
+  );
+}
+
+function AnswerReviewDialog({
+  open,
+  question,
+  confidence,
+  correct,
+  showExplanation,
+  reflection,
+  onReflection,
+  onClose,
+}: {
+  open: boolean;
+  question: Question;
+  confidence: number | null;
+  correct: boolean;
+  showExplanation: boolean;
+  reflection: string;
+  onReflection: (value: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent className="answer-review-dialog">
+        <DialogHeader>
+          <DialogTitle>回答を振り返る</DialogTitle>
+          <DialogDescription>
+            回答前の自信と実際の結果を比べ、次の回答に活かします。
+          </DialogDescription>
+        </DialogHeader>
+        <ConfidenceScale
+          value={confidence}
+          onChange={() => undefined}
+          disabled
+          result={correct}
+        />
+        {showExplanation ? (
+          <SelfExplanation
+            question={question}
+            value={reflection}
+            onChange={onReflection}
+            mode={correct ? "reasoning" : "correction"}
+          />
+        ) : null}
+        <DialogFooter>
+          <Button onClick={onClose}>演習に戻る</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SuccessDock({
+  canContinue,
+  nextLabel,
+  onAnswer,
+  onNext,
+}: {
+  canContinue: boolean;
+  nextLabel: string;
+  onAnswer: () => void;
+  onNext: () => void;
+}) {
+  const titleId = useId();
+  const actionLabel = nextLabel === "結果を見る" ? nextLabel : "次に進む";
+
+  return (
+    <section className="success-dock" aria-labelledby={titleId}>
+      <div>
+        <h2 id={titleId}>Congratulations!</h2>
+        <p role="status">
+          {canContinue
+            ? `正解です！「${actionLabel}」を押して先へ進みましょう。`
+            : "正解です！振り返りを10文字以上入力すると次に進めます。"}
+        </p>
+      </div>
+      <div className="success-dock-actions">
+        <Button
+          variant="secondary"
+          className="bg-[#e3e8ec] text-[#536476] hover:bg-[#d4dce2] hover:text-[#344754]"
+          onClick={onAnswer}
+        >
+          解答を見る
+        </Button>
+        <Button disabled={!canContinue} onClick={onNext}>
+          {actionLabel}
+        </Button>
+      </div>
+    </section>
   );
 }
 

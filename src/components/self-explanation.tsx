@@ -7,7 +7,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
-import type { Question } from "@/lib/course";
+import type { Question } from "@/lib/course/types";
 
 export function SelfExplanation({
   question,

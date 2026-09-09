@@ -1,9 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
-import { CodeLab } from "@/components/code-lab";
-import { QuizChallenge } from "@/components/quiz-challenge";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import type { CodeLabProps } from "@/components/code-lab";
+import type { QuizChallengeProps } from "@/components/quiz-challenge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,41 +26,49 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, RotateCcw } from "lucide-react";
-import {
-  getChapter,
-  type Lesson,
-} from "@/lib/course";
+import type { ReviewPageDTO } from "@/lib/course/client-dtos";
 import { feedbackForIncorrectAnswer, grade } from "@/lib/grade";
 import { gradeQuestion } from "@/lib/grade-question";
 import {
-  readLearningState,
+  getLearningStateSnapshot,
   recordQuestionAssistance,
   recordQuestionAttempt,
   recordSelfExplanation,
 } from "@/lib/progress";
 import { buildReviewQueue } from "@/lib/review-queue";
 
-const subscribeToNothing = () => () => {};
+const CodeLab = dynamic<CodeLabProps>(
+  () => import("@/components/code-lab").then((module) => module.CodeLab),
+  {
+    loading: () => <ReviewExerciseLoading variant="code" />,
+  },
+);
 
-export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
+const QuizChallenge = dynamic<QuizChallengeProps>(
+  () =>
+    import("@/components/quiz-challenge").then(
+      (module) => module.QuizChallenge,
+    ),
+  {
+    loading: () => <ReviewExerciseLoading variant="quiz" />,
+  },
+);
+
+const subscribeToNothing = () => () => {};
+type ReviewQueue = ReturnType<typeof buildReviewQueue>;
+
+export function ReviewSession({ course }: { course: ReviewPageDTO }) {
+  const { lessons } = course;
   const hydrated = useSyncExternalStore(
     subscribeToNothing,
     () => true,
     () => false,
   );
-  const queue = useMemo(
-    () => (hydrated ? buildReviewQueue(lessons, readLearningState()) : null),
-    [hydrated, lessons],
-  );
+  const initialized = useRef(false);
+  const [queue, setQueue] = useState<ReviewQueue | null>(null);
   const [position, setPosition] = useState(0);
   const [choice, setChoice] = useState<string | null>(null);
-  const [typed, setTyped] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return (
-      buildReviewQueue(lessons, readLearningState()).items[0]?.question
-        .starter ?? ""
-    );
-  });
+  const [typed, setTyped] = useState("");
   const [checked, setChecked] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [failReason, setFailReason] = useState<string | null>(null);
@@ -70,6 +79,17 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
   const [attemptNumber, setAttemptNumber] = useState(0);
   const [attemptStartedAt, setAttemptStartedAt] = useState(() => Date.now());
   const [reflection, setReflection] = useState("");
+
+  useEffect(() => {
+    if (!hydrated || initialized.current) return;
+    initialized.current = true;
+    const initialQueue = buildReviewQueue(
+      lessons,
+      getLearningStateSnapshot(),
+    );
+    setQueue(initialQueue);
+    setTyped(initialQueue.items[0]?.question.starter ?? "");
+  }, [hydrated, lessons]);
 
   const item = queue?.items[position];
   const answer =
@@ -251,7 +271,7 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
     );
   }
 
-  const chapterTitle = getChapter(item.lesson.chapter)?.title;
+  const chapterTitle = item.lesson.chapterTitle;
   const nextLabel =
     position + 1 === queue.items.length ? "結果を見る" : "次の問題";
   const question = item.question;
@@ -327,6 +347,23 @@ export function ReviewSession({ lessons }: { lessons: Lesson[] }) {
         onReflection={setReflection}
       />
     </div>
+  );
+}
+
+function ReviewExerciseLoading({ variant }: { variant: "code" | "quiz" }) {
+  return (
+    <main
+      id="main-content"
+      className={
+        variant === "code"
+          ? "flex min-h-0 flex-1 items-center justify-center bg-[#10141c] p-6 text-[var(--cream)]"
+          : "flex min-h-0 flex-1 items-center justify-center bg-paper p-6 text-ink"
+      }
+      role="status"
+      aria-live="polite"
+    >
+      <p>{variant === "code" ? "コード演習を準備中…" : "復習問題を準備中…"}</p>
+    </main>
   );
 }
 

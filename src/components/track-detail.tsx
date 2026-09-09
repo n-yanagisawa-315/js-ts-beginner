@@ -10,7 +10,7 @@ import {
   FileCode2,
   Play,
 } from "lucide-react";
-import { useMemo, useSyncExternalStore, type CSSProperties } from "react";
+import { useSyncExternalStore, type CSSProperties } from "react";
 import { TrackIllustration } from "@/components/track-illustration";
 import {
   Alert,
@@ -34,38 +34,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import type { TrackPageDTO } from "@/lib/course/client-dtos";
 import {
-  LEVEL_LABEL,
-  lessonsByChapter,
-  type Lesson,
-  type Track,
-} from "@/lib/course";
-import {
-  emptyLearningStateSnapshot,
-  learningStateSnapshot,
+  getLearningStateSnapshot,
+  getServerLearningStateSnapshot,
   subscribeLearningState,
-  type LearningState,
 } from "@/lib/progress";
 import { TRACK_META } from "@/lib/track-meta";
 
-export function TrackDetail({
-  track,
-  lessons,
-}: {
-  track: Track;
-  lessons: Lesson[];
-}) {
-  const json = useSyncExternalStore(
+export function TrackDetail({ course }: { course: TrackPageDTO }) {
+  const state = useSyncExternalStore(
     subscribeLearningState,
-    learningStateSnapshot,
-    emptyLearningStateSnapshot,
+    getLearningStateSnapshot,
+    getServerLearningStateSnapshot,
   );
-  const state = useMemo(() => JSON.parse(json) as LearningState, [json]);
+  const { track, chapters, lessonCount, totalMinutes } = course;
+  const lessons = chapters.flatMap((chapter) => chapter.lessons);
   const meta = TRACK_META[track];
-  const groups = lessonsByChapter(lessons);
   const completed = lessons.filter((lesson) => state.lessons[lesson.id]).length;
-  const minutes = lessons.reduce((sum, lesson) => sum + lesson.minutes, 0);
-  const progress = lessons.length ? (completed / lessons.length) * 100 : 0;
+  const progress = lessonCount ? (completed / lessonCount) * 100 : 0;
   const nextLesson =
     lessons.find((lesson) => !state.lessons[lesson.id]) ?? lessons[0];
 
@@ -105,20 +92,20 @@ export function TrackDetail({
             <div className="track-hero-facts">
               <span>
                 <BookOpen aria-hidden="true" />
-                {lessons.length}講義
+                {lessonCount}講義
               </span>
               <span>
                 <FileCode2 aria-hidden="true" />
-                {lessons.length}演習
+                {lessonCount}演習
               </span>
               <span>
                 <Clock3 aria-hidden="true" />
-                目安{Math.max(1, Math.round(minutes / 60))}時間
+                目安{Math.max(1, Math.round(totalMinutes / 60))}時間
               </span>
             </div>
             <div className="track-hero-progress">
               <div>
-                <span>{completed}/{lessons.length}講義完了</span>
+                <span>{completed}/{lessonCount}講義完了</span>
                 <strong>{Math.round(progress)}%</strong>
               </div>
               <Progress
@@ -150,7 +137,8 @@ export function TrackDetail({
           <nav className="track-chapter-nav" aria-label={`${meta.name}の編一覧`}>
             <p>講座の編</p>
             <ol>
-              {groups.map(({ chapter, lessons: chapterLessons }) => {
+              {chapters.map((chapter) => {
+                const chapterLessons = chapter.lessons;
                 const chapterDone = chapterLessons.every(
                   (lesson) => state.lessons[lesson.id],
                 );
@@ -181,7 +169,8 @@ export function TrackDetail({
             </div>
 
             <div className="track-chapter-list">
-              {groups.map(({ chapter, lessons: chapterLessons }, index) => {
+              {chapters.map((chapter, index) => {
+                const chapterLessons = chapter.lessons;
                 const chapterCompleted = chapterLessons.filter(
                   (lesson) => state.lessons[lesson.id],
                 ).length;
@@ -205,7 +194,7 @@ export function TrackDetail({
                       </div>
                       <CardHeader>
                         <div className="flex flex-wrap items-center gap-2">
-                          <Badge>{LEVEL_LABEL[chapterLessons[0]?.level ?? "start"]}</Badge>
+                          <Badge>{chapter.levelLabel}</Badge>
                           {chapterCompleted === chapterLessons.length ? (
                             <Badge variant="secondary">
                               <Check aria-hidden="true" className="size-3.5" />

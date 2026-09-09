@@ -7,7 +7,7 @@ import {
   Clock3,
   RotateCcw,
 } from "lucide-react";
-import { useMemo, useSyncExternalStore, type CSSProperties } from "react";
+import { useSyncExternalStore, type CSSProperties } from "react";
 import { TrackIllustration } from "@/components/track-illustration";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,32 +20,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { TRACK_ORDER, type Lesson, type Track } from "@/lib/course";
+import type {
+  HomePageDTO,
+  HomeTrackDTO,
+} from "@/lib/course/client-dtos";
 import {
-  emptyLearningStateSnapshot,
-  learningStateSnapshot,
+  getLearningStateSnapshot,
+  getServerLearningStateSnapshot,
   learningStats,
   subscribeLearningState,
   type LearningState,
 } from "@/lib/progress";
 import { TRACK_META } from "@/lib/track-meta";
 
-type TrackLessons = Record<Track, Lesson[]>;
-
-export function HomeTracks({ lessons }: { lessons: Lesson[] }) {
-  const json = useSyncExternalStore(
+export function HomeTracks({ course }: { course: HomePageDTO }) {
+  const state = useSyncExternalStore(
     subscribeLearningState,
-    learningStateSnapshot,
-    emptyLearningStateSnapshot,
+    getLearningStateSnapshot,
+    getServerLearningStateSnapshot,
   );
-  const state = useMemo(() => JSON.parse(json) as LearningState, [json]);
-  const stats = useMemo(() => learningStats(state), [state]);
-  const tracks = Object.fromEntries(
-    TRACK_ORDER.map((track) => [
-      track,
-      lessons.filter((lesson) => lesson.track === track),
-    ]),
-  ) as TrackLessons;
+  const stats = learningStats(state);
 
   return (
     <section id="course-catalog" className="course-catalog-main">
@@ -62,12 +56,11 @@ export function HomeTracks({ lessons }: { lessons: Lesson[] }) {
         </div>
 
         <div className="course-card-grid">
-          {TRACK_ORDER.map((track, index) => (
+          {course.tracks.map((track, index) => (
             <TrackCard
-              key={track}
-              track={track}
+              key={track.track}
+              course={track}
               order={index + 1}
-              lessons={tracks[track]}
               state={state}
             />
           ))}
@@ -126,20 +119,18 @@ export function HomeTracks({ lessons }: { lessons: Lesson[] }) {
 }
 
 function TrackCard({
-  track,
+  course,
   order,
-  lessons,
   state,
 }: {
-  track: Track;
+  course: HomeTrackDTO;
   order: number;
-  lessons: Lesson[];
   state: LearningState;
 }) {
+  const { track, lessonIds, lessonCount, totalMinutes } = course;
   const meta = TRACK_META[track];
-  const completed = lessons.filter((lesson) => state.lessons[lesson.id]).length;
-  const minutes = lessons.reduce((sum, lesson) => sum + lesson.minutes, 0);
-  const progress = lessons.length ? (completed / lessons.length) * 100 : 0;
+  const completed = lessonIds.filter((id) => state.lessons[id]).length;
+  const progress = lessonCount ? (completed / lessonCount) * 100 : 0;
 
   return (
     <Card
@@ -167,18 +158,18 @@ function TrackCard({
         <CardContent className="course-track-stats">
           <span>
             <BookOpen aria-hidden="true" />
-            全{lessons.length}講義
+            全{lessonCount}講義
           </span>
           <span>
             <Clock3 aria-hidden="true" />
-            約{Math.max(1, Math.round(minutes / 60))}時間
+            約{Math.max(1, Math.round(totalMinutes / 60))}時間
           </span>
         </CardContent>
         <CardFooter className="course-track-progress">
           <div>
             <span>
               <CheckCircle2 aria-hidden="true" />
-              {completed}/{lessons.length}講義完了
+              {completed}/{lessonCount}講義完了
             </span>
             <strong>{Math.round(progress)}%</strong>
           </div>

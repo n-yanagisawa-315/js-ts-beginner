@@ -211,94 +211,240 @@ function parseQuestionProgress(value: unknown): Record<string, QuestionProgress>
   return questions;
 }
 
-export function readLearningState(): LearningState {
-  if (typeof window === "undefined") return EMPTY_LEARNING_STATE;
+type StorageRead = {
+  state: LearningState;
+  raw: string | null;
+  migrationKeys: string[];
+};
+
+const EMPTY_LEARNING_STATE_RAW = JSON.stringify(EMPTY_LEARNING_STATE);
+let cachedLearningState = EMPTY_LEARNING_STATE;
+let cachedCanonical = EMPTY_LEARNING_STATE_RAW;
+let cachedRaw: string | null = null;
+let cacheInitialized = false;
+let memoryOnlyState = false;
+let pendingMigrationKeys: string[] = [];
+
+function parseV3(raw: string | null): LearningState | null {
+  if (!raw) return null;
   try {
-    const raw = window.localStorage.getItem(V3_KEY);
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw);
-      if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        (parsed as { version?: unknown }).version === 3
-      ) {
-        const state = parsed as Partial<LearningState>;
-        return {
-          version: 3,
-          lessons: parseProgressMap(state.lessons),
-          questions: parseQuestionProgress(state.questions),
-          lessonEvents: Array.isArray(state.lessonEvents)
-            ? state.lessonEvents.slice(-500)
-            : [],
-          concepts:
-            typeof state.concepts === "object" && state.concepts !== null
-              ? state.concepts
-              : {},
-        };
-      }
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      (parsed as { version?: unknown }).version !== 3
+    ) {
+      return null;
     }
-
-    const v2Raw = window.localStorage.getItem(V2_KEY);
-    if (v2Raw) {
-      const parsed: unknown = JSON.parse(v2Raw);
-      if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        (parsed as { version?: unknown }).version === 2
-      ) {
-        const legacy = parsed as {
-          lessons?: unknown;
-          questions?: unknown;
-        };
-        const migrated: LearningState = {
-          version: 3,
-          lessons: parseProgressMap(legacy.lessons),
-          questions: parseQuestionProgress(legacy.questions),
-          lessonEvents: [],
-          concepts: {},
-        };
-        window.localStorage.setItem(V3_KEY, JSON.stringify(migrated));
-        return migrated;
-      }
-    }
-
-    const legacyRaw = window.localStorage.getItem(V1_KEY);
-    if (!legacyRaw) return EMPTY_LEARNING_STATE;
-    const migrated: LearningState = {
+    const state = parsed as Partial<LearningState>;
+    return {
       version: 3,
-      lessons: parseProgressMap(JSON.parse(legacyRaw)),
+      lessons: parseProgressMap(state.lessons),
+      questions: parseQuestionProgress(state.questions),
+      lessonEvents: Array.isArray(state.lessonEvents)
+        ? state.lessonEvents.slice(-500)
+        : [],
+      concepts:
+        typeof state.concepts === "object" && state.concepts !== null
+          ? state.concepts
+          : {},
+    };
+  } catch {
+    return null;
+  }
+}
+
+function parseV2(raw: string | null): LearningState | null {
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      (parsed as { version?: unknown }).version !== 2
+    ) {
+      return null;
+    }
+    const legacy = parsed as { lessons?: unknown; questions?: unknown };
+    return {
+      version: 3,
+      lessons: parseProgressMap(legacy.lessons),
+      questions: parseQuestionProgress(legacy.questions),
+      lessonEvents: [],
+      concepts: {},
+    };
+  } catch {
+    return null;
+  }
+}
+
+function parseV1(raw: string | null): LearningState | null {
+  if (!raw) return null;
+  try {
+    return {
+      version: 3,
+      lessons: parseProgressMap(JSON.parse(raw)),
       questions: {},
       lessonEvents: [],
       concepts: {},
     };
-    window.localStorage.setItem(V3_KEY, JSON.stringify(migrated));
-    return migrated;
   } catch {
-    return EMPTY_LEARNING_STATE;
+    return null;
   }
 }
 
+function readStorageState(v3Override?: string | null): StorageRead | null {
+  let hadStorageError = false;
+  const read = (key: string): string | null => {
+    try {
+      return window.localStorage.getItem(key);
+    } catch {
+      hadStorageError = true;
+      return null;
+    }
+  };
+
+  const v3Raw = v3Override === undefined ? read(V3_KEY) : v3Override;
+  if (
+    v3Raw !== null &&
+    v3Raw === cachedRaw &&
+    cacheInitialized &&
+    pendingMigrationKeys.length === 0
+  ) {
+    return { state: cachedLearningState, raw: v3Raw, migrationKeys: [] };
+  }
+  const v3 = parseV3(v3Raw);
+  if (v3) return { state: v3, raw: v3Raw, migrationKeys: [] };
+
+  const v2Raw = read(V2_KEY);
+  const v2 = parseV2(v2Raw);
+  if (v2) {
+    return {
+      state: v2,
+      raw: v2Raw,
+      migrationKeys: [V2_KEY, V1_KEY],
+    };
+  }
+
+  const v1Raw = read(V1_KEY);
+  const v1 = parseV1(v1Raw);
+  if (v1) {
+    return {
+      state: v1,
+      raw: v1Raw,
+      migrationKeys: [V1_KEY],
+    };
+  }
+
+  if (hadStorageError) return null;
+  return { state: EMPTY_LEARNING_STATE, raw: null, migrationKeys: [] };
+}
+
+function updateCache(result: StorageRead): boolean {
+  const canonical = JSON.stringify(result.state);
+  const changed = canonical !== cachedCanonical;
+  if (changed) {
+    cachedLearningState = result.state;
+    cachedCanonical = canonical;
+  }
+  cachedRaw = result.raw;
+  cacheInitialized = true;
+  memoryOnlyState = false;
+  pendingMigrationKeys = result.migrationKeys;
+  return changed;
+}
+
+export function getLearningStateSnapshot(): LearningState {
+  if (typeof window === "undefined") return EMPTY_LEARNING_STATE;
+  if (cacheInitialized || memoryOnlyState) return cachedLearningState;
+  const result = readStorageState();
+  if (result) updateCache(result);
+  return cachedLearningState;
+}
+
+export function getServerLearningStateSnapshot(): LearningState {
+  return EMPTY_LEARNING_STATE;
+}
+
+export function readLearningState(): LearningState {
+  return getLearningStateSnapshot();
+}
+
+function persistPendingMigration(): void {
+  if (pendingMigrationKeys.length === 0) return;
+  const raw = JSON.stringify(cachedLearningState);
+  try {
+    window.localStorage.setItem(V3_KEY, raw);
+  } catch {
+    return;
+  }
+  cachedRaw = raw;
+  pendingMigrationKeys.forEach((key) => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // V3 is already durable; a leftover legacy key is harmless.
+    }
+  });
+  pendingMigrationKeys = [];
+}
+
 function writeLearningState(state: LearningState): void {
-  window.localStorage.setItem(V3_KEY, JSON.stringify(state));
-  window.dispatchEvent(new Event(LEARNING_STATE_EVENT));
+  const raw = JSON.stringify(state);
+  const changed = raw !== cachedCanonical;
+  if (changed) {
+    cachedLearningState = state;
+    cachedCanonical = raw;
+  }
+  cachedRaw = raw;
+  cacheInitialized = true;
+  pendingMigrationKeys = [];
+  try {
+    window.localStorage.setItem(V3_KEY, raw);
+    memoryOnlyState = false;
+  } catch {
+    memoryOnlyState = true;
+  }
+  if (changed) window.dispatchEvent(new Event(LEARNING_STATE_EVENT));
 }
 
 export function subscribeLearningState(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(LEARNING_STATE_EVENT, onStoreChange);
+  if (typeof window === "undefined") return () => {};
+
+  const onStorage = (event: StorageEvent) => {
+    if (event.storageArea !== window.localStorage) return;
+    if (event.key !== null && event.key !== V3_KEY) return;
+    if (
+      event.key === V3_KEY &&
+      event.newValue !== null &&
+      event.newValue === cachedRaw
+    ) {
+      return;
+    }
+
+    const result =
+      event.key === V3_KEY
+        ? readStorageState(event.newValue)
+        : readStorageState();
+    if (result && updateCache(result)) onStoreChange();
+  };
+  const onLocalChange = () => onStoreChange();
+
+  window.addEventListener("storage", onStorage);
+  window.addEventListener(LEARNING_STATE_EVENT, onLocalChange);
+  if (!cacheInitialized) getLearningStateSnapshot();
+  persistPendingMigration();
   return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(LEARNING_STATE_EVENT, onStoreChange);
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener(LEARNING_STATE_EVENT, onLocalChange);
   };
 }
 
-export function learningStateSnapshot(): string {
-  return JSON.stringify(readLearningState());
-}
+/** @deprecated Use getLearningStateSnapshot. */
+export const learningStateSnapshot = getLearningStateSnapshot;
 
-export function emptyLearningStateSnapshot(): string {
-  return JSON.stringify(EMPTY_LEARNING_STATE);
-}
+/** @deprecated Use getServerLearningStateSnapshot. */
+export const emptyLearningStateSnapshot = getServerLearningStateSnapshot;
 
 export function readProgress(): ProgressMap {
   return readLearningState().lessons;

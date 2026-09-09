@@ -88,6 +88,7 @@ with sync_playwright() as playwright:
     page.get_by_role("button", name="予想を残して説明を見る").click()
     page.get_by_role("radio", name="かなり自信 75%").click()
     page.get_by_role("button", name="この自信で解答する").click()
+    expect(page.locator(".slide-stage")).to_be_visible()
     expect(page.locator(".story-ribbon")).to_be_visible()
     ribbon_text = page.locator(".story-ribbon p").inner_text()
     bubble_texts = page.locator(".talk-bubble").all_inner_texts()
@@ -109,8 +110,11 @@ with sync_playwright() as playwright:
             ".slide-stage footer [data-slot='button']"
         )
         if continue_button.count() == 0:
-            raise AssertionError("講義から演習へ進むボタンが見つかりません")
+            page.wait_for_timeout(50)
+            continue
         continue_button.last.click()
+    else:
+        raise AssertionError("講義から演習へ進めませんでした")
     assert saw_semantic_highlight, "会話中のコード語と一致する行が強調されませんでした"
     expect(page.get_by_text("演習", exact=True)).to_be_visible()
     expect(page.get_by_text("完成例を手がかりに再現する", exact=True)).to_be_visible()
@@ -146,6 +150,7 @@ with sync_playwright() as playwright:
     page.get_by_label("次へ進む前に、考え方の違いを1文で説明する").fill(
         "最初はコメントだけで表示されると思った。実際は表示命令が必要。"
     )
+    page.get_by_role("button", name="演習に戻る").click()
     expect(page.get_by_role("button", name="あとで解き直す")).to_be_visible()
     page.get_by_role("button", name="あとで解き直す").click()
     expect(page.locator(".slide-stage")).to_be_visible()
@@ -189,8 +194,11 @@ with sync_playwright() as playwright:
             ".slide-stage footer [data-slot='button']"
         )
         if continue_button.count() == 0:
-            raise AssertionError("DOM講義から演習へ進めません")
+            dom.wait_for_timeout(50)
+            continue
         continue_button.last.click()
+    else:
+        raise AssertionError("DOM講義から演習へ進めません")
     expect(dom.get_by_text("注文画面を作る:", exact=False)).to_be_visible()
     dom.locator(".monaco-editor:visible").last.click()
     dom.keyboard.press("Meta+A")
@@ -203,7 +211,8 @@ with sync_playwright() as playwright:
     dom.get_by_role("button", name="できた！").click()
     dom.get_by_role("radio", name="かなり自信 75%").click()
     dom.get_by_role("button", name="この自信で解答する").click()
-    expect(dom.get_by_role("button", name="次のスライド")).to_be_visible()
+    dom.get_by_role("button", name="演習に戻る").click()
+    expect(dom.get_by_role("button", name="次に進む")).to_be_visible()
 
     review = browser.new_page(viewport={"width": 1024, "height": 800})
     review.goto(BASE_URL)

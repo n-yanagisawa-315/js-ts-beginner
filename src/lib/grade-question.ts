@@ -1,12 +1,6 @@
 import type { Question, Track } from "@/lib/course/types";
 import { grade } from "@/lib/grade";
-import { gradeCodeByBehavior } from "@/lib/grade-behavior";
-import { executeGitCommand } from "@/lib/git/git-command";
-import {
-  createGitState,
-  gradeGitAssertions,
-} from "@/lib/git/git-state";
-import { runSqlQuestion, type SqlRow } from "@/lib/sql/sql-runner";
+import type { SqlRow } from "@/lib/sql/sql-runner";
 
 export type QuestionGradeResult = {
   passed: boolean;
@@ -34,6 +28,7 @@ async function gradeSql(
   source: string,
 ): Promise<QuestionGradeResult> {
   try {
+    const { runSqlQuestion } = await import("@/lib/sql/sql-runner");
     const statement = question.sqlExpectedTable
       ? `${source.replace(/;?\s*$/, ";")}\nSELECT * FROM ${question.sqlExpectedTable} ORDER BY rowid;`
       : source;
@@ -60,7 +55,15 @@ async function gradeSql(
   }
 }
 
-function gradeGit(question: Question, source: string): QuestionGradeResult {
+async function gradeGit(
+  question: Question,
+  source: string,
+): Promise<QuestionGradeResult> {
+  const [{ executeGitCommand }, { createGitState, gradeGitAssertions }] =
+    await Promise.all([
+      import("@/lib/git/git-command"),
+      import("@/lib/git/git-state"),
+    ]);
   let state = createGitState(question.gitInitialState);
   const diagnostics: string[] = [];
   for (const command of source.split("\n").map((line) => line.trim()).filter(Boolean)) {
@@ -92,7 +95,9 @@ export async function gradeQuestion(
   if (question.kind === "git") return gradeGit(question, response);
   const passed =
     question.kind === "code"
-      ? await gradeCodeByBehavior(question, response, track)
+      ? await import("@/lib/grade-behavior").then((module) =>
+          module.gradeCodeByBehavior(question, response, track),
+        )
       : grade(question, response);
   return {
     passed,

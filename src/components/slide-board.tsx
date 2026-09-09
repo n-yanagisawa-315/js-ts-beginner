@@ -4,7 +4,7 @@ import { TalkAvatar } from "@/components/talk-avatar";
 import { listingsFor } from "@/lib/course/diagram-listings";
 import { isSummarySlide, talkPages } from "@/lib/course/slide-layout";
 import { sourcesForDiagram } from "@/lib/course/sources";
-import type { Slide } from "@/lib/course";
+import type { Slide } from "@/lib/course/types";
 
 const INLINE_TOKEN =
   /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;

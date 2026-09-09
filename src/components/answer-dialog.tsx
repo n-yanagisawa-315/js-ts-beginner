@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { TermLine } from "@/lib/course";
+import type { TermLine } from "@/lib/course/types";
 
 export function AnswerDialog({
   open,

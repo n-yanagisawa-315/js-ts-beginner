@@ -1,19 +1,38 @@
 import assert from "node:assert/strict";
 
 const storage = new Map();
+const listeners = new Map();
+const localStorage = {
+  getItem: (key) => storage.get(key) ?? null,
+  setItem: (key, value) => storage.set(key, value),
+  removeItem: (key) => storage.delete(key),
+  clear: () => storage.clear(),
+};
 globalThis.window = {
-  localStorage: {
-    getItem: (key) => storage.get(key) ?? null,
-    setItem: (key, value) => storage.set(key, value),
-    removeItem: (key) => storage.delete(key),
-    clear: () => storage.clear(),
+  localStorage,
+  dispatchEvent: (event) => {
+    for (const listener of listeners.get(event.type) ?? []) listener(event);
+    return true;
   },
-  dispatchEvent: () => true,
-  addEventListener: () => {},
-  removeEventListener: () => {},
+  addEventListener: (type, listener) => {
+    const current = listeners.get(type) ?? new Set();
+    current.add(listener);
+    listeners.set(type, current);
+  },
+  removeEventListener: (type, listener) => listeners.get(type)?.delete(listener),
 };
 
 const progress = await import("../src/lib/progress.ts");
+progress.subscribeLearningState(() => {});
+function resetStorage() {
+  storage.clear();
+  window.dispatchEvent({
+    type: "storage",
+    key: null,
+    newValue: null,
+    storageArea: localStorage,
+  });
+}
 const { buildReviewQueue, reviewVariant, DEFAULT_SESSION_SIZE } = await import(
   "../src/lib/review-queue.ts"
 );
@@ -131,7 +150,7 @@ assert.equal(
   "概念も期限後の無支援再確認まで要復習を維持する",
 );
 
-storage.clear();
+resetStorage();
 const assistedInitial = progress.recordQuestionAttempt({
   lessonId: "lesson-b",
   questionId: "q1",
@@ -148,7 +167,7 @@ assert.equal(
   "答え閲覧後は短い無支援再確認を予定する",
 );
 
-storage.clear();
+resetStorage();
 const metricFirst = progress.recordQuestionAttempt({
   lessonId: "lesson-metric",
   questionId: "q1",
@@ -173,7 +192,7 @@ assert.equal(
   "期限前の先取り回答を保持率へ含めない",
 );
 
-storage.clear();
+resetStorage();
 progress.recordQuestionAttempt({
   lessonId: "lesson-supported-confidence",
   questionId: "q1",
@@ -347,7 +366,7 @@ assert.equal(
   "各選択肢に固有の説明を返す",
 );
 
-storage.clear();
+resetStorage();
 const lessons = [
   {
     id: "lesson-a",
@@ -385,7 +404,7 @@ assert.equal(queue.isPreview, false);
 assert.equal(queue.items.length, DEFAULT_SESSION_SIZE, "復習は短い既定件数に制限する");
 assert.ok(queue.items.every((item) => item.due));
 
-storage.clear();
+resetStorage();
 storage.set(
   "js-ts-beginner-learning-v2",
   JSON.stringify({
@@ -394,7 +413,8 @@ storage.set(
     questions: {},
   }),
 );
-const migrated = progress.readLearningState();
+const migrationProgress = await import("../src/lib/progress.ts?migration-audit");
+const migrated = migrationProgress.readLearningState();
 assert.equal(migrated.version, 3);
 assert.deepEqual(migrated.lessons.legacy, { score: 1, total: 2 });
 

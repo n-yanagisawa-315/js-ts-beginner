@@ -5,10 +5,12 @@ import { LearningFlowHeader } from "@/components/learning-flow-header";
 import { SlideBoard } from "@/components/slide-board";
 import { Button } from "@/components/ui/button";
 import { IconChevron } from "@/components/icons";
-import type { Lesson, Slide } from "@/lib/course";
+import type { LessonNavigationDTO } from "@/lib/course/client-dtos";
+import type { Lesson, Slide } from "@/lib/course/types";
 
 export function SlideTheater({
   lesson,
+  navigation,
   slide,
   index,
   total,
@@ -21,6 +23,7 @@ export function SlideTheater({
   assistant,
 }: {
   lesson: Lesson;
+  navigation: LessonNavigationDTO;
   slide: Slide;
   index: number;
   total: number;
@@ -68,6 +71,7 @@ export function SlideTheater({
     >
       <LearningFlowHeader
         lesson={lesson}
+        navigation={navigation}
         stage={
           conversationTotal > 1
             ? `スライド・会話 ${conversationIndex + 1}/${conversationTotal}`

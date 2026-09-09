@@ -21,29 +21,24 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  getChapter,
-  lessonsByChapter,
-  lessonsByTrack,
-  TRACK_LABEL,
-  type Lesson,
-} from "@/lib/course";
+import type { LessonNavigationDTO } from "@/lib/course/client-dtos";
+import type { Lesson } from "@/lib/course/types";
 
 export function LearningFlowHeader({
   lesson,
+  navigation,
   stage,
   current,
   total,
   dark = false,
 }: {
   lesson: Lesson;
+  navigation: LessonNavigationDTO;
   stage: string;
   current?: number;
   total?: number;
   dark?: boolean;
 }) {
-  const chapter = getChapter(lesson.chapter);
-  const groups = lessonsByChapter(lessonsByTrack(lesson.track));
   const percent =
     current !== undefined && total
       ? Math.max(0, Math.min(100, (current / total) * 100))
@@ -67,7 +62,7 @@ export function LearningFlowHeader({
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link href={`/track/${lesson.track}`}>
-                  {TRACK_LABEL[lesson.track]}
+                  {navigation.trackLabel}
                 </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -75,7 +70,7 @@ export function LearningFlowHeader({
               <ChevronRight aria-hidden="true" />
             </BreadcrumbSeparator>
             <BreadcrumbItem className="hidden sm:flex">
-              <BreadcrumbPage>{chapter?.title ?? lesson.title}</BreadcrumbPage>
+              <BreadcrumbPage>{navigation.chapterTitle}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -104,17 +99,17 @@ export function LearningFlowHeader({
           </SheetTrigger>
           <SheetContent className="learning-outline-sheet">
             <SheetHeader>
-              <SheetTitle>{TRACK_LABEL[lesson.track]}の講義一覧</SheetTitle>
+              <SheetTitle>{navigation.trackLabel}の講義一覧</SheetTitle>
               <SheetDescription>
                 現在地を確認し、別の講義へ移動できます。
               </SheetDescription>
             </SheetHeader>
-            <nav aria-label={`${TRACK_LABEL[lesson.track]}の講義一覧`}>
-              {groups.map(({ chapter: groupChapter, lessons }) => (
-                <section key={groupChapter.id}>
-                  <h2>{groupChapter.title}</h2>
+            <nav aria-label={`${navigation.trackLabel}の講義一覧`}>
+              {navigation.outline.map((chapter) => (
+                <section key={chapter.id}>
+                  <h2>{chapter.title}</h2>
                   <ul>
-                    {lessons.map((item) => (
+                    {chapter.lessons.map((item) => (
                       <li key={item.id}>
                         <Link
                           href={`/lesson/${item.id}`}

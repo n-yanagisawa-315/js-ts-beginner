@@ -1610,6 +1610,53 @@ a[aria-disabled="true"] {
   padding: 6px 10px;
 }
 
+.success-dock {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-left: 7px solid #27b8c3;
+  background: #f5f7f9;
+  padding: 18px 24px 20px 32px;
+  color: #536476;
+  box-shadow: 0 -5px 16px rgb(0 0 0 / 18%);
+}
+
+.success-dock h2 {
+  margin: 0 0 8px;
+  color: #c83f66;
+  font-size: clamp(1.55rem, 3vw, 2rem);
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.success-dock p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.success-dock-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .success-dock {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px 16px 20px 20px;
+  }
+
+  .success-dock-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .editor-tool {
   display: inline-flex;
   min-height: 44px;
@@ -4019,6 +4066,28 @@ button.console-window-play:hover {
   justify-content: flex-end;
   gap: 8px;
   margin: 0;
+}
+
+.answer-review-dialog[data-slot="dialog-content"] {
+  display: grid;
+  width: min(calc(100vw - 32px), 36rem);
+  max-height: min(90dvh, 760px);
+  gap: 20px;
+  overflow-y: auto;
+  border-color: var(--border);
+  background: var(--card);
+  padding: clamp(20px, 5vw, 32px);
+  color: var(--card-foreground);
+}
+
+.answer-review-dialog > [data-slot="dialog-header"] {
+  align-items: stretch;
+  gap: 6px;
+  text-align: left;
+}
+
+.answer-review-dialog > [data-slot="dialog-footer"] {
+  justify-content: flex-end;
 }
 
 .confidence-options {
