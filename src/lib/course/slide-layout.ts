@@ -142,17 +142,6 @@ function storyLines(slide: Slide): TalkLine[] | undefined {
   ];
 }
 
-function excerpt(text: string, maxLength = 180): string {
-  if (text.length <= maxLength) return text;
-  const sentences = text.match(/[^。！？]+[。！？]?/g) ?? [text];
-  let result = "";
-  for (const sentence of sentences) {
-    if (result && result.length + sentence.length > maxLength) break;
-    result += sentence;
-  }
-  return result || `${text.slice(0, maxLength)}…`;
-}
-
 const SYNC_STOP_WORDS = new Set([
   "JavaScript",
   "TypeScript",
@@ -367,44 +356,14 @@ function pagesFromExplicitTalk(slide: Slide, lines: TalkLine[]): ConversationPag
     pages.push({ lines: story, focus: "story" });
   }
   for (let index = 0; index < lines.length; index += 4) {
+    const pointCount = slide.points?.length ?? 0;
     pages.push({
       lines: lines.slice(index, index + 4),
-      focus: "intro",
+      focus: pointCount > 0 ? "point" : "intro",
+      pointIndex:
+        pointCount > 0 ? Math.min(Math.floor(index / 4), pointCount - 1) : undefined,
     });
   }
-  const points = slide.points ?? [];
-
-  if (slide.lead) {
-    pages.push({
-      lines: [
-        {
-          speaker: "beginner",
-          text: "右のコードと図では、どこを見ればこの仕組みを確かめられますか？",
-        },
-        {
-          speaker: "engineer",
-          text: excerpt(slide.lead),
-        },
-      ],
-      focus: "intro",
-    });
-  }
-  points.forEach((point, index) => {
-    pages.push({
-      lines: [
-        {
-          speaker: "beginner",
-          text: POINT_QUESTIONS[index] ?? "ほかにも大事な点はありますか？",
-        },
-        {
-          speaker: "engineer",
-          text: point,
-        },
-      ],
-      focus: "point",
-      pointIndex: index,
-    });
-  });
 
   const mechanics = mechanismLines(slide);
   if (mechanics) {

@@ -1,6 +1,6 @@
 # JS / TS / Node しくみ講座
 
-JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で学ぶ初心者向けWeb教材です。49講義、262スライド、213問を収録しています。
+JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で学ぶ初心者向けWeb教材です。49講義、269スライド、220問を収録しています。
 
 公開サイト: [https://js-ts-beginner.vercel.app](https://js-ts-beginner.vercel.app)
 
@@ -11,6 +11,7 @@ JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で�
 - コード行と実行状態を対応させた図解
 - 予想、完成例、1行穴埋め、行並べ替え、独力問題、転移問題
 - 誤答選択肢に応じたフィードバックと自己説明
+- WebGPU対応端末の中だけで動く、段階的ヒント型のAI質問機能
 - 期限後の無支援初回正答だけを進級に使う復習キュー
 - 保持率、概念別習熟、自信度と正答のずれを表示
 
@@ -23,6 +24,8 @@ JavaScript、TypeScript、Node.jsを、コード・会話・図解・演習で�
 - Node.js 12講義: ランタイム、CLI、CJS/ESM、process、fs、HTTP、ストリーム、libuv、本番運用
 
 学習履歴はブラウザの `localStorage` に保存されます。アカウント登録や健康情報の収集はありません。
+
+AI質問機能はWebLLMとQwen3.5 0.8Bを使用します。質問を外部APIへ送信しませんが、初回にモデルを取得し、約1.6GBの端末メモリを使用します。WebGPU対応ブラウザが必要です。AIの利用は学習支援として記録され、無支援での習熟判定とは分けて扱います。
 
 ## ローカル実行
 

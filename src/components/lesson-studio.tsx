@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { CodeLab } from "@/components/code-lab";
 import { ConfidenceScale } from "@/components/confidence-scale";
+import {
+  LearningAssistant,
+  type LearningAssistantContext,
+} from "@/components/learning-assistant";
 import { QuizChallenge } from "@/components/quiz-challenge";
 import { SlideTheater } from "@/components/slide-theater";
 import {
@@ -113,6 +117,56 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
           : "残りの演習へ";
   const nextQuizLabel =
     nextIndex === undefined && allQuizzesDone ? "結果を見る" : "次のスライド";
+  const assistantQuestion = phase === "quiz" ? question : undefined;
+  const assistantPage = conversationPages[
+    Math.min(conversationPage, Math.max(conversationPages.length - 1, 0))
+  ];
+  const assistantContext: LearningAssistantContext = {
+    lessonTitle: lesson.title,
+    lessonSummary: lesson.summary,
+    phase:
+      phase === "predict"
+        ? "学習前の予想"
+        : phase === "slides"
+          ? "スライドの説明"
+          : phase === "quiz"
+            ? "演習"
+            : phase === "exit"
+              ? "学習後の想起"
+              : "講義完了",
+    slideTitle: currentSlide?.title,
+    conversation: assistantPage?.lines.map((line) => line.text).join(" "),
+    points: currentSlide?.points,
+    questionPrompt: assistantQuestion?.prompt,
+    learnerAnswer: assistantQuestion ? currentAnswer : undefined,
+    attempted: assistantQuestion ? attemptNumber > 0 : undefined,
+    correct: assistantQuestion ? checked : undefined,
+    feedback: assistantQuestion ? (failReason ?? undefined) : undefined,
+  };
+
+  function withAssistant(content: ReactNode) {
+    return (
+      <>
+        {content}
+        <LearningAssistant
+          key={`${lesson.id}-${phase}-${slide}`}
+          context={assistantContext}
+          onAssistance={
+            assistantQuestion
+              ? () => {
+                  setHintLevel((level) => Math.max(level, 1));
+                  recordQuestionAssistance({
+                    lessonId: lesson.id,
+                    questionId: assistantQuestion.id,
+                    hintUsed: true,
+                  });
+                }
+              : undefined
+          }
+        />
+      </>
+    );
+  }
 
   function resetAttempt(starter = "") {
     setChoice(null);
@@ -299,7 +353,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (phase === "predict") {
-    return (
+    return withAssistant(
       <LearningCheckpoint
         mode="predict"
         lesson={lesson}
@@ -324,7 +378,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (phase === "exit") {
-    return (
+    return withAssistant(
       <LearningCheckpoint
         mode="exit"
         lesson={lesson}
@@ -348,7 +402,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (codeQuiz && question) {
-    return (
+    return withAssistant(
       <div className="flex min-h-full flex-1 flex-col">
         <CodeLab
           track={lesson.track}
@@ -397,7 +451,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (phase === "quiz" && question) {
-    return (
+    return withAssistant(
       <div className="flex min-h-full flex-1 flex-col bg-paper">
         <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-6">
           <Link
@@ -459,7 +513,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
   }
 
   if (phase === "done") {
-    return (
+    return withAssistant(
       <div className="flex min-h-full flex-1 flex-col bg-paper">
         <article className="flex flex-1 flex-col items-start justify-center px-5 py-16 sm:px-10 lg:px-14">
           <p className="font-mono text-xs tracking-[0.18em] text-studio">
@@ -518,7 +572,7 @@ export function LessonStudio({ lesson }: { lesson: Lesson }) {
 
   if (!currentSlide) return null;
 
-  return (
+  return withAssistant(
     <div className="flex min-h-full flex-1 flex-col">
       <SlideTheater
         kicker={`${chapterTitle} · ${lesson.title}`}

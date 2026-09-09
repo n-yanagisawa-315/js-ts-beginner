@@ -338,6 +338,7 @@ function misconceptionByAnswer(
 
 function fadedStarter(question: Question, level: ScaffoldLevel): string | undefined {
   if (question.kind !== "code" || level !== "faded") return question.starter;
+  if (question.starter?.trim()) return question.starter;
   const lines = question.answer.split("\n");
   const target = lines.findIndex(
     (line) =>

@@ -97,6 +97,7 @@ function CodeLabInner({
   const explainId = useId();
   const explainRef = useRef<HTMLParagraphElement>(null);
   const confidenceRef = useRef<HTMLDivElement>(null);
+  const guideRef = useRef<HTMLElement>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [answerOpen, setAnswerOpen] = useState(false);
   const [confidenceMissing, setConfidenceMissing] = useState(false);
@@ -111,6 +112,12 @@ function CodeLabInner({
   const isShell = question.kind === "shell";
   const cwd = question.cwd ?? "app";
   const canRun = track !== "ts";
+  const hasOutputSample = Boolean(question.sample?.trim());
+  const expectedResult = hasOutputSample
+    ? question.sample
+    : track === "ts"
+      ? "型エラーがなく、指定された型の約束を満たせば完了です。"
+      : "この問題は表示結果ではなく、指定されたコードの形と動作を採点します。";
   const canSubmit = !checked && typed.trim() !== "";
   const requiresExplanation = question.exerciseKind === "transfer";
   const hints = question.hints?.length
@@ -130,6 +137,16 @@ function CodeLabInner({
   useEffect(() => {
     if (checked) explainRef.current?.focus();
   }, [checked]);
+
+  useEffect(() => {
+    if (!failReason) return;
+    requestAnimationFrame(() => {
+      guideRef.current?.scrollTo({
+        top: guideRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+  }, [failReason, failTick]);
 
   async function runJs() {
     if (!canRun) {
@@ -213,9 +230,12 @@ function CodeLabInner({
   );
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#10141c] text-[var(--cream)]">
+    <div className="flex max-h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[#10141c] text-[var(--cream)] lg:overflow-hidden">
       <div className={`lab-grid min-h-0 flex-1${isNode ? " is-node" : ""}`}>
-        <aside className="flex min-h-0 flex-col overflow-y-auto border-b border-line bg-desk text-ink lg:border-b-0 lg:border-r">
+        <aside
+          ref={guideRef}
+          className="flex min-h-0 touch-pan-y flex-col overflow-y-auto border-b border-line bg-desk text-ink lg:border-b-0 lg:border-r"
+        >
           <div className="flex items-center justify-between px-4 py-3">
             <Link
               href="/"
@@ -483,9 +503,9 @@ function CodeLabInner({
                   <p className="text-white/35">実行結果がここに出ます</p>
                 )}
               </OutputPane>
-              <OutputPane title="見本">
+              <OutputPane title={hasOutputSample ? "出力見本" : "達成条件"}>
                 <pre className="whitespace-pre-wrap">
-                  {question.sample ?? "（この問題の見本はありません）"}
+                  {expectedResult}
                 </pre>
               </OutputPane>
             </aside>

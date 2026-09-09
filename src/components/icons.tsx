@@ -139,6 +139,22 @@ export function IconChallenge({ className }: { className?: string }) {
   );
 }
 
+export function IconQuestion({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v7a3.5 3.5 0 0 1-3.5 3.5H11l-4.5 4v-4.3A3.5 3.5 0 0 1 5 12.8z" />
+      <path d="M9.8 7.4a2.3 2.3 0 0 1 4.4.9c0 1.8-2.2 1.8-2.2 3.2M12 13.8v.2" />
+    </svg>
+  );
+}
+
 export function IconBookmark({ className }: { className?: string }) {
   return (
     <svg

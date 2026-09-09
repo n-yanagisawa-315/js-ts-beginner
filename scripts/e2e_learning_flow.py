@@ -69,6 +69,14 @@ with sync_playwright() as playwright:
     page.goto(f"{BASE_URL}/lesson/js-run")
     page.wait_for_load_state("networkidle")
     expect(page.get_by_role("heading", name="説明を見る前に予想する")).to_be_visible()
+    page.get_by_role("button", name="ここを質問").click()
+    expect(page.get_by_role("heading", name="どこが分からない？")).to_be_visible()
+    expect(page.get_by_role("button", name="端末内AIを準備する")).to_be_visible()
+    expect(page.get_by_text("質問は外部APIへ送らず", exact=False)).to_be_visible()
+    if not page.evaluate("'gpu' in navigator"):
+        page.get_by_role("button", name="端末内AIを準備する").click()
+        expect(page.get_by_text("この端末ではAIを動かせません")).to_be_visible()
+    page.get_by_role("button", name="質問パネルを閉じる").click()
     page.get_by_role("button", name="まだ分からない").click()
     page.get_by_role("button", name="かなり自信 75%").click()
     page.get_by_role("button", name="予想を残して説明を見る").click()
@@ -106,6 +114,13 @@ with sync_playwright() as playwright:
     page.get_by_role("button", name="半分くらい 50%").click()
     page.get_by_role("button", name="できた！").click()
     expect(page.get_by_role("button", name="半分くらい 50%")).to_be_disabled()
+    page.wait_for_timeout(300)
+    guide_scroll = page.locator("aside").first.evaluate(
+        "(node) => ({ top: node.scrollTop, height: node.clientHeight, full: node.scrollHeight })"
+    )
+    assert guide_scroll["full"] <= guide_scroll["height"] or guide_scroll["top"] > 0, (
+        "不正解後の説明欄へスクロールできていません"
+    )
     page.get_by_label("次へ進む前に、考え方の違いを1文で説明する").fill(
         "最初はコメントだけで表示されると思った。実際は表示命令が必要。"
     )
@@ -116,6 +131,12 @@ with sync_playwright() as playwright:
     mobile = browser.new_page(viewport={"width": 375, "height": 812})
     mobile.goto(f"{BASE_URL}/lesson/js-run")
     mobile.wait_for_load_state("networkidle")
+    mobile.get_by_role("button", name="ここを質問").click()
+    assistant_width = mobile.locator(".learning-assistant-panel").evaluate(
+        "(node) => node.getBoundingClientRect().width"
+    )
+    assert assistant_width <= 375, "質問パネルがモバイル画面幅を超えています"
+    mobile.get_by_role("button", name="質問パネルを閉じる").click()
     mobile.get_by_role("button", name="まだ分からない").click()
     mobile.get_by_role("button", name="まだ迷う 25%").click()
     mobile.get_by_role("button", name="予想を残して説明を見る").click()
@@ -146,4 +167,4 @@ with sync_playwright() as playwright:
 
     browser.close()
 
-print("初回予想・形成的誤答・モバイル同期図解・期限復習・保持ダッシュボードを確認しました。")
+print("端末内AI導線・初回予想・形成的誤答・モバイル同期図解・期限復習・保持ダッシュボードを確認しました。")

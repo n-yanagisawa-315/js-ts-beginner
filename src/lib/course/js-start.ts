@@ -811,19 +811,35 @@ console.log(title);
         talk: [
           {
             speaker: "beginner",
-            text: "let name = \"Aya\"は、全部まとめて代入と呼ぶのですか？",
+            text: "まず「宣言」は、実際のコードではどの部分ですか？",
           },
           {
             speaker: "engineer",
-            text: "一行で宣言と初期化をしています。すでに作ったnameへ別の値を付ける操作が代入です。",
+            text: "let score; が宣言です。JavaScriptへ「scoreという名前をこれから使う」と知らせます。この時点では最初の値を渡していないため、scoreを読むとundefinedです。",
           },
           {
             speaker: "beginner",
-            text: "イコールの左側から先に動くのでしょうか？",
+            text: "では「初期化」は、どの操作ですか？",
           },
           {
             speaker: "engineer",
-            text: "先に右側を評価して値を決め、その結果を左側の名前へ結び付けます。まずは三つの用語を同じ操作として混ぜないことが大切です。",
+            text: "let score = 10; のように、宣言と同時に最初の値10を結び付ける操作です。let score; score = 10; と2行で書く場合も、scoreへ最初の値が入る時点が初期化です。",
+          },
+          {
+            speaker: "beginner",
+            text: "最初の値を10から20へ変える場合も、初期化ですか？",
+          },
+          {
+            speaker: "engineer",
+            text: "いいえ。すでに10を持つscoreへ score = 20; と別の値を結び付けるのは代入です。特に、値を持つ名前を更新する操作を再代入と呼びます。",
+          },
+          {
+            speaker: "beginner",
+            text: "score = score + 1; は、左右のscoreを同時に変更しますか？",
+          },
+          {
+            speaker: "engineer",
+            text: "同時ではありません。まず右側のscoreから今の値20を読み、1を足して21を作ります。その後、左側のscoreへ21を再代入します。右側を先、左側を最後の順で追います。",
           },
         ],
         diagram: "label",

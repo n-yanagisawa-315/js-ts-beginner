@@ -17,7 +17,7 @@ const progress = await import("../src/lib/progress.ts");
 const { buildReviewQueue, reviewVariant, DEFAULT_SESSION_SIZE } = await import(
   "../src/lib/review-queue.ts"
 );
-const { applyCourseLearningDesign } = await import(
+const { applyCourseLearningDesign, applyLearningDesign } = await import(
   "../src/lib/course/learning-design.ts"
 );
 
@@ -307,6 +307,15 @@ assert.equal(
 assert.notEqual(
   workedCodeDesigned.questions[0].starter,
   workedCodeDesigned.questions[0].answer,
+);
+const authoredFadedLesson = fixtureLesson("authored-faded", 1);
+authoredFadedLesson.questions[1].starter =
+  "let score;\n// ここで最初の値を代入";
+const authoredFadedDesigned = applyLearningDesign(authoredFadedLesson);
+assert.equal(
+  authoredFadedDesigned.questions[1].starter,
+  "let score;\n// ここで最初の値を代入",
+  "手作業で設計したstarterを自動穴埋めで上書きしない",
 );
 assert.match(designed[0].questions[1].starter, /ここを1行だけ補う/);
 assert.equal(

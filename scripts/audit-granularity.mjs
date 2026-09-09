@@ -173,6 +173,16 @@ if (
 ) {
   issues.push("会話生成: 一つのページへ関数規則または複数要点を再結合しています");
 }
+const explicitTalkSection = slideLayout.slice(
+  slideLayout.indexOf("function pagesFromExplicitTalk"),
+  slideLayout.indexOf("export function talkPages"),
+);
+if (
+  explicitTalkSection.includes("POINT_QUESTIONS") ||
+  explicitTalkSection.includes("points.forEach")
+) {
+  issues.push("会話生成: 詳しい会話の後へ薄い箇条書き会話を自動追加しています");
+}
 
 const learningDesign = fs.readFileSync(
   path.join(COURSE_DIR, "learning-design.ts"),

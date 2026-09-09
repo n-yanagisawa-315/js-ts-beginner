@@ -102,6 +102,7 @@ for (const file of COURSE_FILES) {
     }
 
     let previousSpeaker;
+    let engineerTextLength = 0;
     lines.forEach((line, index) => {
       const lineFields = propertiesOf(line);
       const speaker = textOf(lineFields.get("speaker"));
@@ -124,7 +125,13 @@ for (const file of COURSE_FILES) {
       if (speaker === "beginner" && text) {
         beginnerLines.set(text, (beginnerLines.get(text) ?? 0) + 1);
       }
+      if (speaker === "engineer") {
+        engineerTextLength += text.length;
+      }
     });
+    if (engineerTextLength < 50) {
+      issues.push(`${label}: エンジニアの説明が合計50文字未満です`);
+    }
   }
 }
 
