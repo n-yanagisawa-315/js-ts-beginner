@@ -66,18 +66,29 @@ const QuizChallenge = dynamic<QuizChallengeProps>(
 const subscribeToNothing = () => () => {};
 const REVIEW_REQUEST_TIMEOUT_MS = 15_000;
 
-function preloadReviewExercises(response: ReviewBatchResponse) {
-  const codeQuestions = response.items.filter(({ question }) =>
-    ["code", "shell", "sql", "git"].includes(question.kind),
-  );
-  if (codeQuestions.length > 0) {
-    void loadCodeLab().then((module) => {
-      for (const { question } of codeQuestions) {
-        module.preloadCodeLabDependencies(question);
-      }
-    });
+function isCodeQuestion(kind: ReviewQueue["items"][number]["question"]["kind"]) {
+  return kind === "code" || kind === "shell" || kind === "sql" || kind === "git";
+}
+
+function preloadReviewExerciseChunks(queue: ReviewQueue) {
+  if (queue.items.some(({ question }) => isCodeQuestion(question.kind))) {
+    void loadCodeLab();
   }
-  if (codeQuestions.length < response.items.length) void loadQuizChallenge();
+  if (queue.items.some(({ question }) => !isCodeQuestion(question.kind))) {
+    void loadQuizChallenge();
+  }
+}
+
+function preloadCodeLabRuntimes(response: ReviewBatchResponse) {
+  const codeQuestions = response.items.filter(({ question }) =>
+    isCodeQuestion(question.kind),
+  );
+  if (codeQuestions.length === 0) return;
+  void loadCodeLab().then((module) => {
+    for (const { question } of codeQuestions) {
+      module.preloadCodeLabDependencies(question);
+    }
+  });
 }
 
 function reviewBatchRequest(queue: ReviewQueue): ReviewBatchRequest {
@@ -155,10 +166,12 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
       () => controller.abort(),
       REVIEW_REQUEST_TIMEOUT_MS,
     );
-    void fetchReviewBatch(request, controller.signal)
+    const batchPromise = fetchReviewBatch(request, controller.signal);
+    preloadReviewExerciseChunks(initialQueue);
+    void batchPromise
       .then((response) => {
         if (generation !== requestGeneration.current) return;
-        preloadReviewExercises(response);
+        preloadCodeLabRuntimes(response);
         setBatch(response);
         setTyped(response.items[0]?.question.starter ?? "");
       })
@@ -198,12 +211,14 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
       REVIEW_REQUEST_TIMEOUT_MS,
     );
     try {
-      const response = await fetchReviewBatch(
+      const batchPromise = fetchReviewBatch(
         reviewBatchRequest(queue),
         controller.signal,
       );
+      preloadReviewExerciseChunks(queue);
+      const response = await batchPromise;
       if (generation !== requestGeneration.current) return;
-      preloadReviewExercises(response);
+      preloadCodeLabRuntimes(response);
       setBatch(response);
       setTyped(response.items[0]?.question.starter ?? "");
     } catch (error) {

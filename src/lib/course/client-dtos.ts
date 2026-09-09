@@ -1,6 +1,7 @@
 import type {
   ChapterId,
   Lesson,
+  Question,
   Slide,
   Track,
 } from "./types";
@@ -85,6 +86,7 @@ export type LessonPageDTO = {
 
 export type ReviewQuestionIndexDTO = {
   id: string;
+  kind: Question["kind"];
   contrastGroup: string | null;
   catalogOrder: number;
 };

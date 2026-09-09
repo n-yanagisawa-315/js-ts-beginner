@@ -1,6 +1,15 @@
+import {
+  clearPersistedLearningState,
+  openLearningStateDatabase,
+  readPersistedLearningState,
+  supportsLearningStateDatabase,
+  writePersistedLearningState,
+} from "./progress-indexed-db.ts";
+
 const V1_KEY = "js-ts-beginner-progress-v1";
 const V2_KEY = "js-ts-beginner-learning-v2";
 const V3_KEY = "js-ts-beginner-learning-v3";
+const SUMMARY_KEY = "js-ts-beginner-learning-summary-v4";
 export const LEARNING_STATE_EVENT = "js-ts-beginner-learning-state";
 
 const CORRECT_INTERVALS = [1, 3, 7, 14, 30, 60] as const;
@@ -404,19 +413,52 @@ type V3Parse = {
 
 type StorageRead = {
   state: LearningState;
-  v3Raw: string | null;
-  persistencePending: boolean;
+  revision: string;
+  fullState: boolean;
   migrationKeys: string[];
 };
 
-const EMPTY_LEARNING_STATE_RAW = JSON.stringify(EMPTY_LEARNING_STATE);
+type SummaryQuestionProgress = Omit<
+  QuestionProgress,
+  "attemptHistory" | "selfExplanations"
+>;
+
+type LearningStateSummary = {
+  version: 4;
+  revision: string;
+  persistedRevision: string | null;
+  lessons: ProgressMap;
+  questions: Record<string, SummaryQuestionProgress>;
+  concepts: Record<string, ConceptProgress>;
+};
+
 let cachedLearningState = EMPTY_LEARNING_STATE;
-let cachedCanonical = EMPTY_LEARNING_STATE_RAW;
-let cachedRaw: string | null = null;
 let cacheInitialized = false;
-let memoryOnlyState = false;
-let pendingV3Persistence = false;
 let pendingMigrationKeys: string[] = [];
+let currentRevision = "";
+let hydratedRevision = "";
+let lastRevisionTime = 0;
+let revisionCounter = 0;
+const writerId =
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+let hydrationStarted = false;
+let lifecycleListenersInstalled = false;
+let databasePromise: ReturnType<typeof openLearningStateDatabase> | null = null;
+let pendingFullWrite:
+  | { revision: string; state: LearningState }
+  | null = null;
+let writePromise: Promise<void> | null = null;
+let idleHandle: number | ReturnType<typeof globalThis.setTimeout> | null = null;
+let fallbackToLocalStorage = false;
+
+function nextRevision(): string {
+  const now = Math.max(Date.now(), lastRevisionTime);
+  revisionCounter = now === lastRevisionTime ? revisionCounter + 1 : 0;
+  lastRevisionTime = now;
+  return `${String(now).padStart(15, "0")}-${String(revisionCounter).padStart(6, "0")}-${writerId}`;
+}
 
 function parseV3(raw: string | null): V3Parse | null {
   if (!raw) return null;
@@ -482,7 +524,77 @@ function parseV1(raw: string | null): LearningState | null {
   }
 }
 
-function readStorageState(v3Override?: string | null): StorageRead | null {
+function parseSummary(raw: string | null): StorageRead | null {
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      !isRecord(parsed) ||
+      parsed.version !== 4 ||
+      typeof parsed.revision !== "string"
+    ) {
+      return null;
+    }
+    return {
+      state: {
+        version: 3,
+        lessons: parseProgressMap(parsed.lessons),
+        questions: parseQuestionProgress(parsed.questions),
+        lessonEvents: [],
+        concepts: parseConcepts(parsed.concepts),
+      },
+      revision: parsed.revision,
+      fullState: false,
+      migrationKeys: [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function summaryFor(
+  state: LearningState,
+  revision: string,
+): LearningStateSummary {
+  const questions: Record<string, SummaryQuestionProgress> = {};
+  for (const [key, question] of Object.entries(state.questions)) {
+    const summary: Partial<QuestionProgress> = { ...question };
+    delete summary.attemptHistory;
+    delete summary.selfExplanations;
+    questions[key] = summary as SummaryQuestionProgress;
+  }
+  return {
+    version: 4,
+    revision,
+    persistedRevision: hydratedRevision === revision ? revision : null,
+    lessons: state.lessons,
+    questions,
+    concepts: state.concepts,
+  };
+}
+
+function summarySignalsPersistedState(
+  raw: string | null,
+  revision: string,
+): boolean {
+  if (!raw) return false;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return (
+      isRecord(parsed) &&
+      parsed.version === 4 &&
+      parsed.revision === revision &&
+      parsed.persistedRevision === revision
+    );
+  } catch {
+    return false;
+  }
+}
+
+function readStorageState(
+  summaryOverride?: string | null,
+  v3Override?: string | null,
+): StorageRead | null {
   let hadStorageError = false;
   const read = (key: string): string | null => {
     try {
@@ -494,25 +606,13 @@ function readStorageState(v3Override?: string | null): StorageRead | null {
   };
 
   const v3Raw = v3Override === undefined ? read(V3_KEY) : v3Override;
-  if (
-    v3Raw !== null &&
-    v3Raw === cachedRaw &&
-    cacheInitialized
-  ) {
-    return {
-      state: cachedLearningState,
-      v3Raw,
-      persistencePending: pendingV3Persistence,
-      migrationKeys: pendingMigrationKeys,
-    };
-  }
   const v3 = parseV3(v3Raw);
   if (v3) {
     return {
       state: v3.state,
-      v3Raw,
-      persistencePending: v3.repaired,
-      migrationKeys: [],
+      revision: nextRevision(),
+      fullState: true,
+      migrationKeys: [V3_KEY],
     };
   }
 
@@ -521,9 +621,9 @@ function readStorageState(v3Override?: string | null): StorageRead | null {
   if (v2) {
     return {
       state: v2,
-      v3Raw,
-      persistencePending: true,
-      migrationKeys: [V2_KEY, V1_KEY],
+      revision: nextRevision(),
+      fullState: true,
+      migrationKeys: [V3_KEY, V2_KEY, V1_KEY],
     };
   }
 
@@ -532,39 +632,40 @@ function readStorageState(v3Override?: string | null): StorageRead | null {
   if (v1) {
     return {
       state: v1,
-      v3Raw,
-      persistencePending: true,
-      migrationKeys: [V1_KEY],
+      revision: nextRevision(),
+      fullState: true,
+      migrationKeys: [V3_KEY, V1_KEY],
     };
   }
 
+  const summaryRaw =
+    summaryOverride === undefined ? read(SUMMARY_KEY) : summaryOverride;
+  const summary = parseSummary(summaryRaw);
+  if (summary) return summary;
   if (hadStorageError) return null;
   return {
     state: EMPTY_LEARNING_STATE,
-    v3Raw,
-    persistencePending: v3Raw !== null,
+    revision: "",
+    fullState: false,
     migrationKeys: [],
   };
 }
 
 function updateCache(result: StorageRead): boolean {
-  const canonical = JSON.stringify(result.state);
-  const changed = canonical !== cachedCanonical;
-  if (changed) {
-    cachedLearningState = result.state;
-    cachedCanonical = canonical;
-  }
-  cachedRaw = result.v3Raw;
+  const changed =
+    result.revision !== currentRevision ||
+    (result.fullState && hydratedRevision !== result.revision);
+  if (changed) cachedLearningState = result.state;
   cacheInitialized = true;
-  memoryOnlyState = false;
-  pendingV3Persistence = result.persistencePending;
+  currentRevision = result.revision;
+  if (result.fullState) hydratedRevision = result.revision;
   pendingMigrationKeys = result.migrationKeys;
   return changed;
 }
 
 export function getLearningStateSnapshot(): LearningState {
   if (typeof window === "undefined") return EMPTY_LEARNING_STATE;
-  if (cacheInitialized || memoryOnlyState) return cachedLearningState;
+  if (cacheInitialized) return cachedLearningState;
   const result = readStorageState();
   if (result) updateCache(result);
   return cachedLearningState;
@@ -590,51 +691,184 @@ function removePendingMigrationKeys(): void {
   pendingMigrationKeys = remaining;
 }
 
-function persistPendingState(): void {
-  if (pendingV3Persistence) {
-    const raw = cachedCanonical;
-    try {
-      window.localStorage.setItem(V3_KEY, raw);
-    } catch {
-      memoryOnlyState = true;
-      return;
-    }
-    cachedRaw = raw;
-    pendingV3Persistence = false;
-    memoryOnlyState = false;
+function persistSummary(state = cachedLearningState, revision = currentRevision): void {
+  try {
+    window.localStorage.setItem(
+      SUMMARY_KEY,
+      JSON.stringify(summaryFor(state, revision)),
+    );
+  } catch {
+    // The in-memory state remains authoritative for this tab.
   }
-  removePendingMigrationKeys();
 }
 
 export function initializeLearningState(): LearningState {
   if (typeof window === "undefined") return EMPTY_LEARNING_STATE;
-  if (!cacheInitialized && !memoryOnlyState) {
+  if (!cacheInitialized) {
     const result = readStorageState();
     if (result) updateCache(result);
   }
-  persistPendingState();
+  startHydration();
+  installLifecycleListeners();
   return cachedLearningState;
 }
 
 function writeLearningState(state: LearningState): void {
-  const raw = JSON.stringify(state);
-  const changed = raw !== cachedCanonical;
-  if (changed) {
-    cachedLearningState = state;
-    cachedCanonical = raw;
-  }
+  const revision = nextRevision();
+  cachedLearningState = state;
+  currentRevision = revision;
+  hydratedRevision = "";
   cacheInitialized = true;
+  persistSummary(state, revision);
+  pendingFullWrite = { revision, state };
+  scheduleFullWrite();
+  window.dispatchEvent(new Event(LEARNING_STATE_EVENT));
+}
+
+function database(): ReturnType<typeof openLearningStateDatabase> {
+  databasePromise ??= openLearningStateDatabase();
+  return databasePromise;
+}
+
+function persistFallbackState(state: LearningState): void {
   try {
-    window.localStorage.setItem(V3_KEY, raw);
-    cachedRaw = raw;
-    pendingV3Persistence = false;
-    memoryOnlyState = false;
-    removePendingMigrationKeys();
+    window.localStorage.setItem(V3_KEY, JSON.stringify(state));
   } catch {
-    pendingV3Persistence = true;
-    memoryOnlyState = true;
+    // Memory remains usable when browser storage is blocked or full.
   }
-  if (changed) window.dispatchEvent(new Event(LEARNING_STATE_EVENT));
+}
+
+async function flushPendingWrite(): Promise<void> {
+  if (writePromise) return writePromise;
+  writePromise = (async () => {
+    while (pendingFullWrite) {
+      const pending = pendingFullWrite;
+      pendingFullWrite = null;
+      if (fallbackToLocalStorage || !supportsLearningStateDatabase()) {
+        fallbackToLocalStorage = true;
+        persistFallbackState(pending.state);
+        continue;
+      }
+      try {
+        const db = await database();
+        await writePersistedLearningState(db, pending);
+        if (pending.revision === currentRevision) {
+          hydratedRevision = pending.revision;
+          persistSummary();
+        }
+        removePendingMigrationKeys();
+      } catch {
+        fallbackToLocalStorage = true;
+        databasePromise = null;
+        persistFallbackState(pending.state);
+      }
+    }
+  })().finally(() => {
+    writePromise = null;
+    if (pendingFullWrite) scheduleFullWrite();
+  });
+  return writePromise;
+}
+
+export function flushLearningStatePersistence(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (idleHandle !== null) {
+    if ("cancelIdleCallback" in window && typeof window.cancelIdleCallback === "function") {
+      window.cancelIdleCallback(idleHandle as number);
+    } else {
+      globalThis.clearTimeout(idleHandle);
+    }
+    idleHandle = null;
+  }
+  return flushPendingWrite();
+}
+
+function scheduleFullWrite(): void {
+  if (idleHandle !== null || writePromise) return;
+  const run = () => {
+    idleHandle = null;
+    void flushPendingWrite();
+  };
+  if ("requestIdleCallback" in window && typeof window.requestIdleCallback === "function") {
+    idleHandle = window.requestIdleCallback(run, { timeout: 1_000 });
+  } else {
+    idleHandle = globalThis.setTimeout(run, 50);
+  }
+}
+
+async function hydrateFromDatabase(
+  expectedRevision?: string,
+  retryCount = 0,
+): Promise<void> {
+  if (fallbackToLocalStorage || !supportsLearningStateDatabase()) return;
+  try {
+    const persisted = await readPersistedLearningState(await database());
+    if (!persisted) return;
+    const parsed = parseV3(JSON.stringify(persisted.state));
+    if (!parsed) return;
+    if (
+      persisted.revision.localeCompare(currentRevision) > 0 ||
+      (persisted.revision === currentRevision &&
+        hydratedRevision !== persisted.revision)
+    ) {
+      updateCache({
+        state: parsed.state,
+        revision: persisted.revision,
+        fullState: true,
+        migrationKeys: [],
+      });
+      persistSummary();
+      window.dispatchEvent(new Event(LEARNING_STATE_EVENT));
+    }
+    if (
+      expectedRevision &&
+      persisted.revision.localeCompare(expectedRevision) < 0 &&
+      retryCount < 4
+    ) {
+      globalThis.setTimeout(
+        () => void hydrateFromDatabase(expectedRevision, retryCount + 1),
+        150,
+      );
+    }
+  } catch {
+    fallbackToLocalStorage = true;
+    databasePromise = null;
+  }
+}
+
+function startHydration(): void {
+  if (hydrationStarted) return;
+  hydrationStarted = true;
+  if (!supportsLearningStateDatabase()) {
+    fallbackToLocalStorage = true;
+    if (currentRevision) persistFallbackState(cachedLearningState);
+    return;
+  }
+  if (pendingMigrationKeys.length > 0) {
+    pendingFullWrite = {
+      revision: currentRevision || nextRevision(),
+      state: cachedLearningState,
+    };
+    if (!currentRevision) currentRevision = pendingFullWrite.revision;
+    void flushPendingWrite().then(() => persistSummary());
+    return;
+  }
+  void hydrateFromDatabase();
+}
+
+function installLifecycleListeners(): void {
+  if (lifecycleListenersInstalled) return;
+  lifecycleListenersInstalled = true;
+  const flush = () => void flushLearningStatePersistence();
+  if (typeof document === "undefined") {
+    window.addEventListener("pagehide", flush);
+    return;
+  }
+  const onVisibilityChange = () => {
+    if (document.visibilityState === "hidden") flush();
+  };
+  window.addEventListener("pagehide", flush);
+  document.addEventListener("visibilitychange", onVisibilityChange);
 }
 
 export function subscribeLearningState(onStoreChange: () => void) {
@@ -642,20 +876,46 @@ export function subscribeLearningState(onStoreChange: () => void) {
 
   const onStorage = (event: StorageEvent) => {
     if (event.storageArea !== window.localStorage) return;
-    if (event.key !== null && event.key !== V3_KEY) return;
     if (
-      event.key === V3_KEY &&
-      event.newValue !== null &&
-      event.newValue === cachedRaw
-    ) {
+      event.key !== null &&
+      event.key !== SUMMARY_KEY &&
+      event.key !== V3_KEY
+    ) return;
+    if (event.key === null) {
+      pendingFullWrite = null;
+      const changed = updateCache({
+        state: EMPTY_LEARNING_STATE,
+        revision: "",
+        fullState: false,
+        migrationKeys: [],
+      });
+      void database()
+        .then(clearPersistedLearningState)
+        .catch(() => {});
+      if (changed) onStoreChange();
       return;
     }
-
     const result =
-      event.key === V3_KEY
-        ? readStorageState(event.newValue)
-        : readStorageState();
-    if (result && updateCache(result)) onStoreChange();
+      event.key === SUMMARY_KEY
+        ? parseSummary(event.newValue)
+        : readStorageState(undefined, event.newValue);
+    if (!result) return;
+    const comparison = result.revision.localeCompare(currentRevision);
+    if (comparison < 0) return;
+    if (comparison === 0) {
+      if (
+        event.key === SUMMARY_KEY &&
+        hydratedRevision !== result.revision &&
+        summarySignalsPersistedState(event.newValue, result.revision)
+      ) {
+        void hydrateFromDatabase(result.revision);
+      }
+      return;
+    }
+    if (updateCache(result)) {
+      onStoreChange();
+      if (!result.fullState) void hydrateFromDatabase(result.revision);
+    }
   };
   const onLocalChange = () => onStoreChange();
 
@@ -695,6 +955,8 @@ export function readProgress(): ProgressMap {
 
 export function writeProgress(id: string, score: number, total: number): void {
   const current = readLearningState();
+  const previous = current.lessons[id];
+  if (previous?.score === score && previous.total === total) return;
   writeLearningState({
     ...current,
     lessons: { ...current.lessons, [id]: { score, total } },

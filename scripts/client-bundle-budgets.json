@@ -22,5 +22,24 @@
     "track.rsc": { "raw": 15500, "gzip": 5700 },
     "lesson.html": { "raw": 71000, "gzip": 16700 },
     "lesson.rsc": { "raw": 52500, "gzip": 13400 }
+  },
+  "turbopack": {
+    "routes": {
+      "home": { "raw": 750000, "gzip": 240000 },
+      "review": { "raw": 730000, "gzip": 230000 },
+      "track": { "raw": 730000, "gzip": 230000 },
+      "lesson": { "raw": 900000, "gzip": 285000 }
+    },
+    "lazy": {},
+    "documents": {
+      "home.html": { "raw": 75000, "gzip": 12000 },
+      "home.rsc": { "raw": 32000, "gzip": 7000 },
+      "review.html": { "raw": 65000, "gzip": 11000 },
+      "review.rsc": { "raw": 55000, "gzip": 10000 },
+      "track.html": { "raw": 200000, "gzip": 18000 },
+      "track.rsc": { "raw": 100000, "gzip": 12000 },
+      "lesson.html": { "raw": 71000, "gzip": 16700 },
+      "lesson.rsc": { "raw": 52500, "gzip": 13400 }
+    }
   }
 }

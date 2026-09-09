@@ -183,19 +183,29 @@ export function CopyableText({
   className,
   code,
   copyValues,
+  tokensOnly = false,
 }: {
   text: string;
   className?: string;
   code?: string;
   copyValues?: string[];
+  tokensOnly?: boolean;
 }) {
   const liveId = useId();
   const [copied, setCopied] = useState<string | null>(null);
-  const pieces = piecesOf(
+  const parsedPieces = piecesOf(
     text.replaceAll("starter", "最初から入っているコード"),
     code,
     copyValues,
   );
+  const seenTokens = new Set<string>();
+  const pieces = tokensOnly
+    ? parsedPieces.filter((piece) => {
+        if (piece.kind !== "code" || seenTokens.has(piece.value)) return false;
+        seenTokens.add(piece.value);
+        return true;
+      })
+    : parsedPieces;
 
   async function copy(value: string) {
     const ok = await copyText(value);

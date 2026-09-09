@@ -13,7 +13,6 @@ const REQUIRED_BUILD_FILES = [
   "build-manifest.json",
   "routes-manifest.json",
   "prerender-manifest.json",
-  "react-loadable-manifest.json",
 ];
 const ROUTES = {
   home: "index",
@@ -35,6 +34,10 @@ const LAZY_GROUPS = {
   "git-terminal": "components/code-lab.tsx -> @/components/git-terminal",
   monaco: "components/highlight-editor.tsx -> @monaco-editor/react",
 };
+const TURBOPACK_LOADABLE_MANIFESTS = [
+  "server/app/review/page/react-loadable-manifest.json",
+  "server/app/lesson/[id]/page/react-loadable-manifest.json",
+];
 const FORBIDDEN_MODULE_PATHS = [
   "/src/lib/course/server.ts",
   "/src/lib/course/index.ts",
@@ -129,20 +132,38 @@ for (const [name, routeFile] of Object.entries(ROUTES)) {
   measurements.documents[`${name}.rsc`] = measureFiles([rscFile]);
 }
 
-const loadable = JSON.parse(
-  fs.readFileSync(path.join(NEXT, "react-loadable-manifest.json"), "utf8"),
-);
-for (const [name, manifestKey] of Object.entries(LAZY_GROUPS)) {
-  const files = loadable[manifestKey]?.files;
-  if (!Array.isArray(files) || files.length === 0) {
-    failures.push(`lazy chunk manifest entryがありません: ${manifestKey}`);
-    continue;
+const webpackLoadableManifest = path.join(NEXT, "react-loadable-manifest.json");
+const isTurbopackBuild = !fs.existsSync(webpackLoadableManifest);
+if (!isTurbopackBuild) {
+  const loadable = JSON.parse(fs.readFileSync(webpackLoadableManifest, "utf8"));
+  for (const [name, manifestKey] of Object.entries(LAZY_GROUPS)) {
+    const files = loadable[manifestKey]?.files;
+    if (!Array.isArray(files) || files.length === 0) {
+      failures.push(`lazy chunk manifest entryがありません: ${manifestKey}`);
+      continue;
+    }
+    measurements.lazy[name] = measureFiles(
+      [...new Set(files)]
+        .filter((file) => file.endsWith(".js"))
+        .map((file) => path.join(NEXT, file)),
+    );
   }
-  measurements.lazy[name] = measureFiles(
-    [...new Set(files)]
-      .filter((file) => file.endsWith(".js"))
-      .map((file) => path.join(NEXT, file)),
-  );
+} else {
+  const lazyFiles = new Set();
+  for (const relativePath of TURBOPACK_LOADABLE_MANIFESTS) {
+    const manifestFile = requireFile(relativePath);
+    if (!manifestFile) continue;
+    const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    for (const entry of Object.values(manifest)) {
+      for (const file of entry.files ?? []) {
+        if (file.endsWith(".js")) lazyFiles.add(file);
+      }
+    }
+  }
+  if (lazyFiles.size === 0) {
+    failures.push("Turbopackのlazy chunk manifestが空です");
+  }
+  for (const file of lazyFiles) requireFile(file);
 }
 
 const reviewPayload = [
@@ -165,7 +186,11 @@ for (const answer of REVIEW_ANSWER_SENTINELS) {
   }
 }
 
-const budgets = JSON.parse(fs.readFileSync(BUDGET_FILE, "utf8"));
+const configuredBudgets = JSON.parse(fs.readFileSync(BUDGET_FILE, "utf8"));
+const budgets = isTurbopackBuild
+  ? configuredBudgets.turbopack
+  : configuredBudgets;
+if (!budgets) failures.push("現在のbundler用の予算が未定義です");
 for (const category of ["routes", "lazy", "documents"]) {
   for (const [name, measurement] of Object.entries(measurements[category])) {
     const budget = budgets[category]?.[name];
@@ -222,6 +247,10 @@ function finish() {
     console.error(failures.map((failure) => `- ${failure}`).join("\n"));
     process.exit(1);
   }
-  console.log("Client参照、catalog混入、初期JS、lazy chunk、HTML/RSC予算を確認しました。");
+  console.log(
+    !isTurbopackBuild
+      ? "Client参照、catalog混入、初期JS、lazy chunk、HTML/RSC予算を確認しました。"
+      : "Client参照、catalog混入、初期JS、Turbopack lazy manifest、HTML/RSC予算を確認しました。",
+  );
   process.exit(0);
 }

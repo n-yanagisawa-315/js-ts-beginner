@@ -1,5 +1,5 @@
 import { execFile, spawn } from "node:child_process";
-import { mkdir, readFile, rm } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm } from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -164,11 +164,32 @@ async function stopServer() {
 }
 
 async function delayLessonCodeLabChunk() {
-  const manifest = JSON.parse(
-    await readFile(path.join(ROOT, ".next", "react-loadable-manifest.json"), "utf8"),
+  const webpackManifest = path.join(
+    ROOT,
+    ".next",
+    "react-loadable-manifest.json",
   );
-  const files =
-    manifest["components/lesson-studio.tsx -> @/components/code-lab"]?.files;
+  let files;
+  try {
+    const manifest = JSON.parse(await readFile(webpackManifest, "utf8"));
+    files =
+      manifest["components/lesson-studio.tsx -> @/components/code-lab"]?.files;
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    const chunksDirectory = path.join(ROOT, ".next", "static", "chunks");
+    const chunkNames = (await readdir(chunksDirectory)).filter((name) =>
+      name.endsWith(".js"),
+    );
+    const chunkSources = await Promise.all(
+      chunkNames.map(async (name) => ({
+        name,
+        source: await readFile(path.join(chunksDirectory, name), "utf8"),
+      })),
+    );
+    files = chunkSources
+      .filter(({ source }) => source.includes("preloadCodeLabDependencies"))
+      .map(({ name }) => `static/chunks/${name}`);
+  }
   if (!Array.isArray(files) || files.length === 0) {
     throw new Error("CodeLabの遅延chunkをmanifestから特定できません");
   }
@@ -397,8 +418,9 @@ const suites = {
     await waitText("今の自信はどのくらい？");
     await clickRole("radio", "かなり自信 75%");
     await clickRole("button", "この自信で解答する");
+    await ab(["wait", "100"]);
     await assertEval(
-      "JSON.parse(localStorage.getItem('js-ts-beginner-learning-v3')).lessonEvents[0]?.context === 'prequestion'",
+      "new Promise((resolve) => { const open = indexedDB.open('js-ts-beginner-learning', 1); open.onsuccess = () => { const get = open.result.transaction('learning-state', 'readonly').objectStore('learning-state').get('current'); get.onsuccess = () => resolve(get.result?.state?.lessonEvents?.[0]?.context === 'prequestion'); get.onerror = () => resolve(false); }; open.onerror = () => resolve(false); })",
       "予想イベントが保存されていません",
     );
     await delayLessonCodeLabChunk();
@@ -538,6 +560,7 @@ const suites = {
 
   async review() {
     const key = "js-ts-beginner-learning-v3";
+    const summaryKey = "js-ts-beginner-learning-summary-v4";
     await setStorage({
       [key]: "{broken",
       "js-ts-beginner-learning-v2": {
@@ -547,9 +570,8 @@ const suites = {
     });
     await open("/review");
     await waitText("期限到来");
-    await assertEval(
-      `JSON.parse(localStorage.getItem(${JSON.stringify(key)})).version === 3 && localStorage.getItem('js-ts-beginner-learning-v2') === null`,
-      "legacy進捗がv3へ移行されません",
+    await waitFn(
+      `JSON.parse(localStorage.getItem(${JSON.stringify(summaryKey)}))?.version === 4 && localStorage.getItem('js-ts-beginner-learning-v2') === null`,
     );
 
     await setStorage({ [key]: learningState({ "js-run:q1": questionProgress() }) });

@@ -209,6 +209,7 @@ export function getReviewPageDTO(): ReviewPageDTO {
       title: lesson.title,
       questions: lesson.questions.map((question) => ({
         id: question.id,
+        kind: question.kind,
         contrastGroup: question.contrastGroup ?? null,
         catalogOrder: catalogOrder++,
       })),

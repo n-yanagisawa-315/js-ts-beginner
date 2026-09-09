@@ -25,9 +25,9 @@ const index = [
     chapterTitle: "構文",
     title: "講義A",
     questions: [
-      { id: "a1", contrastGroup: "contrast", catalogOrder: 0 },
-      { id: "a2", contrastGroup: "contrast", catalogOrder: 1 },
-      { id: "bad-date", contrastGroup: null, catalogOrder: 2 },
+      { id: "a1", kind: "choice", contrastGroup: "contrast", catalogOrder: 0 },
+      { id: "a2", kind: "code", contrastGroup: "contrast", catalogOrder: 1 },
+      { id: "bad-date", kind: "input", contrastGroup: null, catalogOrder: 2 },
     ],
   },
   {
@@ -36,7 +36,9 @@ const index = [
     chapter: "ts-intro",
     chapterTitle: "TypeScript",
     title: "講義B",
-    questions: [{ id: "future", contrastGroup: null, catalogOrder: 3 }],
+    questions: [
+      { id: "future", kind: "order", contrastGroup: null, catalogOrder: 3 },
+    ],
   },
 ];
 
@@ -141,8 +143,8 @@ const tieIndex = [
   {
     ...index[0],
     questions: [
-      { id: "later", contrastGroup: null, catalogOrder: 20 },
-      { id: "earlier", contrastGroup: null, catalogOrder: 10 },
+      { id: "later", kind: "choice", contrastGroup: null, catalogOrder: 20 },
+      { id: "earlier", kind: "choice", contrastGroup: null, catalogOrder: 10 },
     ],
   },
 ];
@@ -295,6 +297,7 @@ const dtoSource = fs.readFileSync(
   "utf8",
 );
 const reviewTypes = dtoSource.slice(dtoSource.indexOf("export type ReviewQuestionIndexDTO"));
+assert.match(reviewTypes, /kind:\s*Question\["kind"\]/);
 for (const field of [
   "answer",
   "explain",
@@ -316,6 +319,7 @@ const getReviewSource = serverSource.slice(
   serverSource.indexOf("export function resolveReviewBatch"),
 );
 assert.match(getReviewSource, /questions:\s*lesson\.questions\.map/);
+assert.match(getReviewSource, /kind:\s*question\.kind/);
 assert.doesNotMatch(getReviewSource, /questions:\s*lesson\.questions[,}\n]/);
 
 const routeSource = fs.readFileSync(
@@ -334,6 +338,12 @@ assert.doesNotMatch(clientSource, /@\/lib\/course\/server/);
 assert.match(clientSource, /\/api\/review\/questions/);
 assert.match(clientSource, /question\.kind === "sql"/);
 assert.match(clientSource, /question\.kind === "git"/);
+assert.match(clientSource, /preloadReviewExerciseChunks\(initialQueue\)/);
+assert.ok(
+  clientSource.indexOf("preloadReviewExerciseChunks(initialQueue)") <
+    clientSource.indexOf(".then((response)"),
+  "API応答前にkindベースのchunk preloadを開始する",
+);
 
 console.log(
   "軽量index、期限/先取り排他、優先度・交互化・catalog順、変種、バッチ検証、サーバー解決、Client境界を確認しました。",

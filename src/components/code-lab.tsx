@@ -833,9 +833,22 @@ function QuestionGuide({
         </p>
       </div>
 
-      {steps.length > 0 ? (
-        <div className="question-guide-block">
-          <p className="question-guide-label">進め方</p>
+      <div className="question-guide-block">
+        <p className="question-guide-label">進め方</p>
+        <p className={`question-guide-copy${steps.length > 0 ? " mb-3" : ""}`}>
+          <span>入力に使う名前・値: </span>
+          <CopyableText
+            text={[question.prompt, question.lead, ...allSteps]
+              .filter(Boolean)
+              .join("\n")}
+            code={question.answer}
+            copyValues={
+              isShell ? [question.answer, ...(question.aliases ?? [])] : undefined
+            }
+            tokensOnly
+          />
+        </p>
+        {steps.length > 0 ? (
           <ol className="question-steps">
             {steps.map((step, stepIndex) => (
               <li key={step}>
@@ -854,8 +867,8 @@ function QuestionGuide({
               </li>
             ))}
           </ol>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </section>
   );
 }

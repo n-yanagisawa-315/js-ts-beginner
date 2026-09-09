@@ -1,16 +1,21 @@
-"use client";
-
 import Link from "next/link";
 import {
   ArrowLeft,
   BookOpen,
-  Check,
   CheckCircle2,
   Clock3,
   FileCode2,
-  Play,
 } from "lucide-react";
-import { useSyncExternalStore, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
+import {
+  ChapterCompletionBadge,
+  ChapterCompletionCount,
+  ChapterStartButton,
+  CompletionCheck,
+  LearningProgressProvider,
+  LessonCompletionNumber,
+  TrackHeroProgress,
+} from "@/components/learning-progress-islands";
 import { TrackIllustration } from "@/components/track-illustration";
 import {
   Alert,
@@ -24,7 +29,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -33,28 +37,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import type { TrackPageDTO } from "@/lib/course/client-dtos";
-import {
-  getLearningStateSnapshot,
-  getServerLearningStateSnapshot,
-  subscribeLearningState,
-} from "@/lib/progress";
 import { TRACK_META } from "@/lib/track-meta";
 
 export function TrackDetail({ course }: { course: TrackPageDTO }) {
-  const state = useSyncExternalStore(
-    subscribeLearningState,
-    getLearningStateSnapshot,
-    getServerLearningStateSnapshot,
-  );
   const { track, chapters, lessonCount, totalMinutes } = course;
   const lessons = chapters.flatMap((chapter) => chapter.lessons);
   const meta = TRACK_META[track];
-  const completed = lessons.filter((lesson) => state.lessons[lesson.id]).length;
-  const progress = lessonCount ? (completed / lessonCount) * 100 : 0;
-  const nextLesson =
-    lessons.find((lesson) => !state.lessons[lesson.id]) ?? lessons[0];
+  const lessonIds = lessons.map((lesson) => lesson.id);
 
   return (
     <main
@@ -63,12 +53,13 @@ export function TrackDetail({ course }: { course: TrackPageDTO }) {
       style={{ "--track-accent": meta.accent } as CSSProperties}
     >
       <div className="track-detail-shell">
-        <Link href="/" className="track-back-link">
-          <ArrowLeft aria-hidden="true" />
-          講座一覧へ戻る
-        </Link>
+        <LearningProgressProvider>
+          <Link href="/" className="track-back-link">
+            <ArrowLeft aria-hidden="true" />
+            講座一覧へ戻る
+          </Link>
 
-        <Card className="track-hero-card">
+          <Card className="track-hero-card">
           <div className="track-hero-copy">
             <CardHeader>
               <Badge variant="secondary">{meta.badge}</Badge>
@@ -103,53 +94,36 @@ export function TrackDetail({ course }: { course: TrackPageDTO }) {
                 目安{Math.max(1, Math.round(totalMinutes / 60))}時間
               </span>
             </div>
-            <div className="track-hero-progress">
-              <div>
-                <span>{completed}/{lessonCount}講義完了</span>
-                <strong>{Math.round(progress)}%</strong>
-              </div>
-              <Progress
-                value={progress}
-                aria-label={`${meta.name}の講義完了率`}
-                indicatorClassName="bg-[var(--track-accent)]"
-              />
-            </div>
-            {nextLesson ? (
-              <Button asChild>
-                <Link href={`/lesson/${nextLesson.id}`}>
-                  <Play aria-hidden="true" className="size-4 fill-current" />
-                  {completed > 0 ? "続きから学ぶ" : "最初から学ぶ"}
-                </Link>
-              </Button>
-            ) : null}
+            <TrackHeroProgress
+              lessonIds={lessonIds}
+              lessonCount={lessonCount}
+              trackName={meta.name}
+            />
           </CardFooter>
-        </Card>
+          </Card>
 
-        <Alert className="track-notice" role="note">
+          <Alert className="track-notice" role="note">
           <AlertTitle>{meta.name}を学ぶ前に</AlertTitle>
           <AlertDescription>
             図と会話で仕組みを確認したあと、同じ内容を自分で書きます。
             分からない講義は飛ばさず、各編の上から順に進めるのがおすすめです。
           </AlertDescription>
-        </Alert>
+          </Alert>
 
-        <div className="track-curriculum-layout">
+          <div className="track-curriculum-layout">
           <nav className="track-chapter-nav" aria-label={`${meta.name}の編一覧`}>
             <p>講座の編</p>
             <ol>
               {chapters.map((chapter) => {
-                const chapterLessons = chapter.lessons;
-                const chapterDone = chapterLessons.every(
-                  (lesson) => state.lessons[lesson.id],
+                const chapterLessonIds = chapter.lessons.map(
+                  (lesson) => lesson.id,
                 );
                 return (
                   <li key={chapter.id}>
                     <a href={`#${chapter.id}`}>
                       <span>{String(chapter.order).padStart(2, "0")}</span>
                       {chapter.title}
-                      {chapterDone ? (
-                        <Check aria-label="完了" className="size-4" />
-                      ) : null}
+                      <CompletionCheck lessonIds={chapterLessonIds} />
                     </a>
                   </li>
                 );
@@ -171,16 +145,13 @@ export function TrackDetail({ course }: { course: TrackPageDTO }) {
             <div className="track-chapter-list">
               {chapters.map((chapter, index) => {
                 const chapterLessons = chapter.lessons;
-                const chapterCompleted = chapterLessons.filter(
-                  (lesson) => state.lessons[lesson.id],
-                ).length;
+                const chapterLessonIds = chapterLessons.map(
+                  (lesson) => lesson.id,
+                );
                 const chapterMinutes = chapterLessons.reduce(
                   (sum, lesson) => sum + lesson.minutes,
                   0,
                 );
-                const firstOpen =
-                  chapterLessons.find((lesson) => !state.lessons[lesson.id]) ??
-                  chapterLessons[0];
                 return (
                   <Card
                     key={chapter.id}
@@ -195,12 +166,7 @@ export function TrackDetail({ course }: { course: TrackPageDTO }) {
                       <CardHeader>
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge>{chapter.levelLabel}</Badge>
-                          {chapterCompleted === chapterLessons.length ? (
-                            <Badge variant="secondary">
-                              <Check aria-hidden="true" className="size-3.5" />
-                              完了
-                            </Badge>
-                          ) : null}
+                          <ChapterCompletionBadge lessonIds={chapterLessonIds} />
                         </div>
                         <CardTitle>{chapter.title}</CardTitle>
                         <CardDescription>{chapter.summary}</CardDescription>
@@ -215,13 +181,9 @@ export function TrackDetail({ course }: { course: TrackPageDTO }) {
                           </span>
                         </div>
                       </CardHeader>
-                      {firstOpen ? (
+                      {chapterLessons[0] ? (
                         <CardFooter>
-                          <Button asChild variant="outline">
-                            <Link href={`/lesson/${firstOpen.id}`}>
-                              {chapterCompleted > 0 ? "続きから" : "この編を始める"}
-                            </Link>
-                          </Button>
+                          <ChapterStartButton lessonIds={chapterLessonIds} />
                         </CardFooter>
                       ) : null}
                     </div>
@@ -235,23 +197,24 @@ export function TrackDetail({ course }: { course: TrackPageDTO }) {
                         <AccordionItem value={chapter.id}>
                           <AccordionTrigger>
                             この編で学ぶこと
-                            <span>
-                              {chapterCompleted}/{chapterLessons.length}完了
-                            </span>
+                            <ChapterCompletionCount
+                              lessonIds={chapterLessonIds}
+                            />
                           </AccordionTrigger>
                           <AccordionContent>
                             <ol>
                               {chapterLessons.map((lesson, lessonIndex) => {
-                                const done = Boolean(state.lessons[lesson.id]);
                                 return (
                                   <li key={lesson.id}>
                                     <Link href={`/lesson/${lesson.id}`}>
                                       <span className="track-lesson-number">
-                                        {done ? (
-                                          <Check aria-label="完了" />
-                                        ) : (
-                                          String(lessonIndex + 1).padStart(2, "0")
-                                        )}
+                                        <LessonCompletionNumber
+                                          lessonId={lesson.id}
+                                          number={String(lessonIndex + 1).padStart(
+                                            2,
+                                            "0",
+                                          )}
+                                        />
                                       </span>
                                       <span>
                                         <strong>{lesson.title}</strong>
@@ -271,8 +234,9 @@ export function TrackDetail({ course }: { course: TrackPageDTO }) {
                 );
               })}
             </div>
-          </section>
-        </div>
+            </section>
+          </div>
+        </LearningProgressProvider>
       </div>
     </main>
   );
