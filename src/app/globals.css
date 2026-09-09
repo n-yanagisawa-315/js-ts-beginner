@@ -229,6 +229,7 @@ a[aria-disabled="true"] {
   position: relative;
   display: inline-flex;
   max-width: 100%;
+  margin-block: 0.16em;
   vertical-align: middle;
 }
 
