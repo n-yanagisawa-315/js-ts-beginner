@@ -174,12 +174,14 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
       })
       .finally(() => {
         window.clearTimeout(timeout);
+        if (activeRequest.current === controller) activeRequest.current = null;
         if (generation === requestGeneration.current) setLoadingBatch(false);
       });
     return () => {
       requestGeneration.current += 1;
       window.clearTimeout(timeout);
-      controller.abort();
+      activeRequest.current?.abort();
+      activeRequest.current = null;
     };
   }, [hydrated, lessons]);
 
@@ -215,6 +217,7 @@ export function ReviewSession({ course }: { course: ReviewPageDTO }) {
       );
     } finally {
       window.clearTimeout(timeout);
+      if (activeRequest.current === controller) activeRequest.current = null;
       if (generation === requestGeneration.current) setLoadingBatch(false);
     }
   }

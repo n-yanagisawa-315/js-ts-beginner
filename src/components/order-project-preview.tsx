@@ -100,7 +100,8 @@ export function OrderProjectPreview({
       });
       if (!response.ok) throw new Error("注文を追加できませんでした");
       const created = (await response.json()) as DemoOrder;
-      writeOrders([...orders, created]);
+      const latestOrders = parseStoredOrders(ordersSnapshot());
+      writeOrders([...latestOrders, created]);
       setCustomer("");
       setItem("");
       setTotal("");
