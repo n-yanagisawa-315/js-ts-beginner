@@ -684,7 +684,7 @@ console.log(true);`,
         starter: "// 引用符の有無で種類が分かれます\n",
         fileName: "script.js",
         steps: [
-          "囲みのない `3` の種類を調べる",
+          "`typeof` で囲みのない `3` の種類を調べる",
           '引用符で囲んだ `"3"` の種類を調べる',
           "調査結果を `console.log` で順番に表示する",
         ],
