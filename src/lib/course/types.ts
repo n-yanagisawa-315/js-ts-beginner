@@ -38,6 +38,7 @@ export type DiagramId =
   | "object"
   | "array"
   | "branch"
+  | "truthy"
   | "loop"
   | "for-loop"
   | "while-loop"
@@ -129,6 +130,7 @@ export type Slide = {
   codeCaption?: string;
   note?: string;
   talk?: TalkLine[];
+  storyTalk?: TalkLine[];
   objectiveId?: string;
   conceptIds?: string[];
   storyBeat?: StoryBeat;

@@ -93,6 +93,11 @@ const TOPIC_SOURCES: Partial<Record<DiagramId, CourseSource>> = {
     url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Indexed_collections",
     publisher: "MDN",
   },
+  truthy: {
+    title: "Falsy",
+    url: "https://developer.mozilla.org/en-US/docs/Glossary/Falsy",
+    publisher: "MDN",
+  },
   scope: {
     title: "Closures and lexical scoping",
     url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Closures",

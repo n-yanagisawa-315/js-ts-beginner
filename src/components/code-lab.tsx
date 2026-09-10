@@ -4,6 +4,11 @@ import dynamic from "next/dynamic";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { AnswerDialog } from "@/components/answer-dialog";
 import { CopyableText } from "@/components/copyable-text";
+import { exerciseSceneLabel } from "@/lib/course/client-dtos";
+import {
+  codeLearnerTypes,
+  inputTokenPieces,
+} from "@/lib/copyable-tokens";
 import {
   ConfidenceDialog,
   ConfidenceScale,
@@ -429,12 +434,7 @@ function CodeLabInner({
             </h1>
             {question.scenario ? (
               <p className="mt-3 border-l-2 border-studio pl-3 text-sm leading-6 text-mute">
-                {question.projectRole === "transfer"
-                  ? "別の場面へ応用: "
-                  : question.projectRole === "build"
-                    ? "注文画面を作る: "
-                    : "基礎練習: "}
-                {question.scenario}
+                {exerciseSceneLabel(question)}
               </p>
             ) : null}
           </header>
@@ -443,11 +443,7 @@ function CodeLabInner({
               <OrderProjectPreview compact />
             </div>
           ) : null}
-          <QuestionGuide
-            question={question}
-            fileName={fileName}
-            isShell={isShell}
-          />
+          <QuestionGuide question={question} isShell={isShell} />
           <div className="mt-auto flex flex-col gap-2 px-4 pb-4">
             {assistant}
             {hints.length > 0 ? (
@@ -815,20 +811,26 @@ function LabBranchLoading({ label }: { label: string }) {
 
 function QuestionGuide({
   question,
-  fileName,
   isShell,
 }: {
   question: Question;
-  fileName: string;
   isShell: boolean;
 }) {
   const allSteps = question.steps ?? [];
   const steps =
     question.scaffoldLevel === "independent"
-      ? []
+      ? allSteps
       : question.scaffoldLevel === "faded"
         ? allSteps.slice(0, 1)
         : allSteps;
+  const learnerCode = codeLearnerTypes(
+    question.starter ?? "",
+    [question.answer, question.code].filter(Boolean).join("\n"),
+  );
+  const copyValues = isShell
+    ? [question.answer, ...(question.aliases ?? [])]
+    : [];
+  const inputTokens = inputTokenPieces(learnerCode, copyValues);
 
   return (
     <section className="question-guide" aria-label="問題の進め方">
@@ -837,8 +839,8 @@ function QuestionGuide({
           ? "別の場面へ応用"
           : question.scaffoldLevel === "worked"
             ? "完成例を手がかりに再現する"
-          : question.scaffoldLevel === "independent"
-            ? "手順なしで思い出す"
+            : question.scaffoldLevel === "independent"
+            ? "演算の記号は自分で選ぶ"
             : question.scaffoldLevel === "faded"
               ? "最初の一歩だけ案内"
               : "手順を見ながら練習"}
@@ -850,37 +852,18 @@ function QuestionGuide({
         </div>
       ) : null}
 
-      <div className="question-goal">
-        <p className="question-material">
-          <span>{isShell ? "入力場所" : "用意済み"}</span>
-          <strong>{isShell ? "ターミナル" : fileName}</strong>
-          {question.starter ? (
-            <small>最初から入っているコードがあります</small>
-          ) : null}
-        </p>
-      </div>
-
       <div className="question-guide-block">
         <p className="question-guide-label">進め方</p>
-        <p className={`question-guide-copy${steps.length > 0 ? " mb-3" : ""}`}>
-          <span>入力に使う名前・値: </span>
-          <CopyableText
-            text={[
-              question.prompt,
-              question.lead,
-              question.starter,
-              question.code,
-              ...allSteps,
-            ]
-              .filter(Boolean)
-              .join("\n")}
-            code={question.answer}
-            copyValues={
-              isShell ? [question.answer, ...(question.aliases ?? [])] : undefined
-            }
-            tokensOnly
-          />
-        </p>
+        {inputTokens.length > 0 ? (
+          <p className={`question-guide-copy${steps.length > 0 ? " mb-3" : ""}`}>
+            <span>入力に使う名前・値: </span>
+            <CopyableText
+              code={learnerCode}
+              copyValues={isShell ? copyValues : undefined}
+              tokensOnly
+            />
+          </p>
+        ) : null}
         {steps.length > 0 ? (
           <ol className="question-steps">
             {steps.map((step, stepIndex) => (
@@ -889,12 +872,8 @@ function QuestionGuide({
                 <p>
                   <CopyableText
                     text={step}
-                    code={question.answer}
-                    copyValues={
-                      isShell
-                        ? [question.answer, ...(question.aliases ?? [])]
-                        : undefined
-                    }
+                    code={learnerCode}
+                    copyValues={isShell ? copyValues : undefined}
                   />
                 </p>
               </li>

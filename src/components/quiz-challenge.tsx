@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import type { Question } from "@/lib/course/types";
+import { exerciseSceneLabel } from "@/lib/course/client-dtos";
 
 export type QuizChallengeProps = {
   question: Question;
@@ -146,12 +147,7 @@ export function QuizChallenge({
         </p>
         {question.scenario ? (
           <p className="mt-3 max-w-2xl border-l-2 border-studio pl-3 text-sm leading-6 text-mute">
-            {question.projectRole === "transfer"
-              ? "別の場面へ応用: "
-              : question.projectRole === "build"
-                ? "注文画面を作る: "
-                : "基礎練習: "}
-            {question.scenario}
+            {exerciseSceneLabel(question)}
           </p>
         ) : null}
         <h1 className="mt-3 max-w-2xl font-serif text-3xl font-medium leading-snug">

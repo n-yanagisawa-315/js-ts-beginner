@@ -104,3 +104,21 @@ export type ReviewPageDTO = {
   version: 1;
   lessons: ReviewLessonDTO[];
 };
+
+export function exerciseSceneLabel(question: Pick<Question, "scenario" | "projectRole">) {
+  const scenario = question.scenario?.trim();
+  if (!scenario) return "";
+  if (question.projectRole === "transfer") {
+    return scenario.startsWith("別の場面")
+      ? scenario
+      : `別の場面へ応用: ${scenario}`;
+  }
+  if (question.projectRole === "build") {
+    return scenario.startsWith("注文")
+      ? scenario
+      : `注文画面を作る: ${scenario}`;
+  }
+  return scenario.startsWith("基礎練習")
+    ? scenario
+    : `基礎練習: ${scenario}`;
+}

@@ -7,6 +7,7 @@ import type {
   ScaffoldLevel,
   Slide,
   StoryBeat,
+  TalkLine,
   Track,
   TransferLevel,
 } from "./types";
@@ -325,15 +326,15 @@ function storyContextForSlide(
   const beat = storyBeat(index, slides.length);
   switch (beat) {
     case "problem":
-      return `${PROJECT_BY_TRACK[lesson.track]}の工程「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」を始めます。このスライドでは「${slide.title}」を使い、最初に確認する動きを一つに絞ります。`;
+      return `「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」。いまは「${slide.title}」。`;
     case "prediction":
-      return `最初の手がかり「${previous?.title ?? lesson.title}」を踏まえ、コードを動かす前に「${slide.title}」の結果を予想します。`;
+      return `「${previous?.title ?? lesson.title}」を踏まえ、「${slide.title}」の結果を予想する。`;
     case "trace":
-      return `「${previous?.title ?? lesson.title}」だけでは原因を説明し切れません。次に「${slide.title}」の値と実行位置を順番に追います。`;
+      return `「${previous?.title ?? lesson.title}」の次に、「${slide.title}」の値と実行位置を追う。`;
     case "resolution":
-      return `「${previous?.title ?? lesson.title}」まで追って原因が見えました。「${slide.title}」を判断基準にして修正します。`;
+      return `「${slide.title}」を判断基準にして、いまの問題を直す。`;
     case "transfer":
-      return `修正後の注文処理を別の入力でも確かめます。「${slide.title}」で同じ仕組みを使えるか判断します。`;
+      return `「${slide.title}」で、同じ仕組みを別の入力でも使えるか確かめる。`;
   }
 }
 
@@ -823,6 +824,31 @@ function transferQuestion(
   };
 }
 
+function storyTalkForLesson(
+  previous: Lesson,
+  lesson: Lesson,
+  firstSlide: Slide,
+): TalkLine[] {
+  return [
+    {
+      speaker: "beginner",
+      text: `前の講義で「${previous.summary}」まで見ました。次は何をしますか？`,
+    },
+    {
+      speaker: "engineer",
+      text: `その仕組みを使うと、次は「${lesson.title}」が必要です。${INCIDENT_BY_TRACK[lesson.track]}`,
+    },
+    {
+      speaker: "beginner",
+      text: "今回の作業は、どこから手を付けますか？",
+    },
+    {
+      speaker: "engineer",
+      text: `工程は「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」です。まずは「${firstSlide.title}」で、確認する動きを一つに絞ります。`,
+    },
+  ];
+}
+
 export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
   const lessons = source.map(applyLearningDesign);
   const lastByChapter = new Map<string, Lesson>();
@@ -844,14 +870,15 @@ export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
       .sort((a, b) => b.order - a.order)[0];
     if (!previous || !lesson.story) return lesson;
     const connectedIncident = `前の講義で「${previous.summary}」まで確認しました。その仕組みを使ったところ、次は「${lesson.title}」が必要になりました。${lesson.story.incident}`;
+    const firstTeaching = lesson.slides.findIndex((slide) => !isSummary(slide));
     return {
       ...lesson,
       story: { ...lesson.story, incident: connectedIncident },
       slides: lesson.slides.map((slide, index) =>
-        index === 0 && slide.storyContext
+        index === firstTeaching
           ? {
               ...slide,
-              storyContext: `${connectedIncident} ${slide.storyContext}`,
+              storyTalk: storyTalkForLesson(previous, lesson, slide),
             }
           : slide,
       ),

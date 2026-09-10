@@ -23,6 +23,7 @@
     "audit:learning-engine": "node --experimental-strip-types scripts/audit-learning-engine.mjs",
     "audit:learning-assistant": "node --experimental-strip-types scripts/audit-learning-assistant.mjs",
     "audit:learning-assistant:models": "node --experimental-strip-types scripts/compare-learning-assistant-models.mjs",
+    "audit:learning-assistant:models:round2": "MODEL_AUDIT_RUN_ID=round2 node --experimental-strip-types scripts/compare-learning-assistant-models.mjs",
     "audit:extensions": "node --experimental-strip-types scripts/audit-extensions.mjs",
     "audit:client-boundary": "node scripts/audit-client-course-boundary.mjs",
     "audit:client-bundles": "node scripts/audit-client-bundles.mjs",
@@ -64,8 +65,8 @@
     "lucide-react": "^1.43.0",
     "monaco-editor": "^0.56.0",
     "next": "16.3.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "tailwind-merge": "^3.6.0",
     "vaul": "^1.1.2"
   },
@@ -76,13 +77,13 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^26.5.0",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
+    "@types/node": "^26.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "agent-browser": "0.37.1",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   }
 }

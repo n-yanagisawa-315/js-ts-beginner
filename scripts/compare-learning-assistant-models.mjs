@@ -29,15 +29,16 @@ import { tsLessons } from "../src/lib/course/ts-lessons.ts";
 import { tsModern } from "../src/lib/course/ts-modern.ts";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const runId = process.env.MODEL_AUDIT_RUN_ID ?? "default";
 const outputPath = path.join(
   root,
   "artifacts",
-  "learning-assistant-model-comparison.json",
+  `learning-assistant-model-comparison-${runId}.json`,
 );
 const checkpointPath = path.join(
   root,
   "artifacts",
-  "learning-assistant-model-comparison.checkpoint.json",
+  `learning-assistant-model-comparison-${runId}.checkpoint.json`,
 );
 const webLlmPath = path.join(
   root,
@@ -49,20 +50,23 @@ const webLlmPath = path.join(
 );
 const port = Number(process.env.MODEL_AUDIT_PORT ?? 4178);
 
+const selectedModelIds = (process.env.MODEL_AUDIT_ONLY ?? "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 const models = [
-  { id: "Qwen3.5-0.8B-q4f16_1-MLC", source: "prebuilt" },
   { id: "Qwen3.5-2B-q4f16_1-MLC", source: "prebuilt" },
-  { id: "Qwen2.5-3B-Instruct-q4f16_1-MLC", source: "prebuilt" },
-  { id: "gemma-2-2b-jpn-it-q4f16_1-MLC", source: "prebuilt" },
-  {
-    id: "gemma-4-E2B-it-q4f16_1-MLC",
-    source: "custom",
-    model:
-      "https://huggingface.co/welcoma/gemma-4-E2B-it-q4f16_1-MLC",
-    modelLib:
-      "https://huggingface.co/welcoma/gemma-4-E2B-it-q4f16_1-MLC/resolve/main/libs/gemma-4-E2B-it-q4f16_1-MLC-webgpu.wasm",
-  },
-];
+  { id: "Qwen3-1.7B-q4f16_1-MLC", source: "prebuilt" },
+  { id: "Llama-3.2-3B-Instruct-q4f16_1-MLC", source: "prebuilt" },
+  { id: "Qwen3.5-4B-q4f16_1-MLC", source: "prebuilt" },
+].filter(
+  (model) =>
+    selectedModelIds.length === 0 || selectedModelIds.includes(model.id),
+);
+
+if (models.length === 0) {
+  throw new Error("比較対象モデルが空です。MODEL_AUDIT_ONLY を確認してください。");
+}
 
 const lessons = applyCourseLearningDesign([
   ...jsStart,
@@ -283,123 +287,106 @@ const html = String.raw`<!doctype html>
     const status = document.querySelector("#status");
     const progress = document.querySelector("#progress");
     const log = document.querySelector("#log");
-    const { models, cases, completedKeys } = await fetch("/cases").then((response) => response.json());
-    const completedSet = new Set(completedKeys);
-    const total = models.length * cases.length;
-    let completed = completedSet.size;
+    const heartbeat = setInterval(() => {
+      void fetch("/heartbeat", { method: "POST" }).catch(() => {});
+    }, 15000);
 
     function write(message) {
       status.textContent = message;
       log.textContent = message + "\n" + log.textContent.slice(0, 4000);
     }
 
-    for (const model of models) {
-      const remainingCases = cases.filter(
-        (testCase) => !completedSet.has(model.id + "::" + testCase.id),
+    try {
+      const { models, cases, completedKeys } = await fetch("/cases").then((response) => response.json());
+      const completedSet = new Set(completedKeys);
+      const total = models.length * cases.length;
+      let completed = completedSet.size;
+      progress.value = total === 0 ? 1 : completed / total;
+
+      const model = models.find((candidate) =>
+        cases.some((testCase) => !completedSet.has(candidate.id + "::" + testCase.id)),
       );
-      if (remainingCases.length === 0) {
-        write(model.id + " は保存済みのためスキップします。");
-        continue;
-      }
-      write(model.id + " を読み込んでいます。");
-      let engine;
-      try {
-        const customRecord = model.source === "custom"
-          ? {
-              model: model.model,
-              model_id: model.id,
-              model_lib: model.modelLib,
-              required_features: ["shader-f16"],
-            }
-          : null;
-        const appConfig = customRecord
-          ? {
-              ...prebuiltAppConfig,
-              model_list: [...prebuiltAppConfig.model_list, customRecord],
-            }
-          : prebuiltAppConfig;
-        engine = await CreateMLCEngine(model.id, {
-          appConfig,
+
+      if (!model) {
+        const environment = {
+          userAgent: navigator.userAgent,
+          gpu: navigator.gpu ? "WebGPU available" : "WebGPU unavailable",
+        };
+        const response = await fetch("/complete", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ environment }),
+        });
+        if (!response.ok) throw new Error(await response.text());
+        write("比較が完了しました。");
+        document.title = "完了: 学習アシスタント モデル比較";
+        clearInterval(heartbeat);
+      } else {
+        const remainingCases = cases.filter(
+          (testCase) => !completedSet.has(model.id + "::" + testCase.id),
+        );
+        write(model.id + " を読み込んでいます。残り " + remainingCases.length + " 問");
+        const engine = await CreateMLCEngine(model.id, {
+          appConfig: prebuiltAppConfig,
           initProgressCallback: (report) => {
             write(model.id + ": " + report.text);
           },
         });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        const failedResults = remainingCases.map((testCase) => ({
-          modelId: model.id,
-          caseId: testCase.id,
-          error: message,
-        }));
-        completed += failedResults.length;
-        await fetch("/progress", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            message: model.id + ": モデル読み込み失敗",
-            results: failedResults,
-          }),
-        });
-        continue;
-      }
 
-      let pendingResults = [];
-      for (const [index, testCase] of remainingCases.entries()) {
-        const startedAt = performance.now();
-        try {
-          const response = await engine.chat.completions.create({
-            messages: [
-              { role: "system", content: testCase.systemPrompt },
-              { role: "user", content: testCase.userPrompt },
-            ],
-            temperature: 0,
-            max_tokens: 96,
-            extra_body: { enable_thinking: false },
-          });
-          pendingResults.push({
-            modelId: model.id,
-            caseId: testCase.id,
-            output: response.choices[0]?.message?.content ?? "",
-            latencyMs: Math.round(performance.now() - startedAt),
-          });
-        } catch (error) {
-          pendingResults.push({
-            modelId: model.id,
-            caseId: testCase.id,
-            error: error instanceof Error ? error.message : String(error),
-            latencyMs: Math.round(performance.now() - startedAt),
-          });
+        let pendingResults = [];
+        for (const [index, testCase] of remainingCases.entries()) {
+          const startedAt = performance.now();
+          try {
+            const response = await engine.chat.completions.create({
+              messages: [
+                { role: "system", content: testCase.systemPrompt },
+                { role: "user", content: testCase.userPrompt },
+              ],
+              temperature: 0,
+              max_tokens: 96,
+              extra_body: { enable_thinking: false },
+            });
+            pendingResults.push({
+              modelId: model.id,
+              caseId: testCase.id,
+              output: response.choices[0]?.message?.content ?? "",
+              latencyMs: Math.round(performance.now() - startedAt),
+            });
+          } catch (error) {
+            pendingResults.push({
+              modelId: model.id,
+              caseId: testCase.id,
+              error: error instanceof Error ? error.message : String(error),
+              latencyMs: Math.round(performance.now() - startedAt),
+            });
+          }
+          completed += 1;
+          progress.value = completed / total;
+          if ((index + 1) % 5 === 0 || index + 1 === remainingCases.length) {
+            const message =
+              model.id + ": " + (index + 1) + "/" + remainingCases.length +
+              "（全体 " + completed + "/" + total + "）";
+            write(message);
+            await fetch("/progress", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ message, results: pendingResults }),
+            });
+            pendingResults = [];
+          }
         }
-        completed += 1;
-        progress.value = completed / total;
-        if ((index + 1) % 10 === 0 || index + 1 === remainingCases.length) {
-          const message =
-            model.id + ": " + (index + 1) + "/" + remainingCases.length +
-            "（全体 " + completed + "/" + total + "）";
-          write(message);
-          await fetch("/progress", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ message, results: pendingResults }),
-          });
-          pendingResults = [];
-        }
+
+        await engine.unload();
+        write(model.id + " が完了したので、次のモデルへ進みます。");
+        clearInterval(heartbeat);
+        location.reload();
       }
-      await engine.unload();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      write("エラー: " + message + " / 15秒後に再試行します");
+      clearInterval(heartbeat);
+      setTimeout(() => location.reload(), 15000);
     }
-
-    const environment = {
-      userAgent: navigator.userAgent,
-      gpu: navigator.gpu ? "WebGPU available" : "WebGPU unavailable",
-    };
-    const response = await fetch("/complete", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ environment }),
-    });
-    if (!response.ok) throw new Error(await response.text());
-    write("比較が完了しました。");
-    document.title = "完了: 学習アシスタント モデル比較";
   </script>
 </html>`;
 
@@ -450,6 +437,11 @@ const server = http.createServer(async (request, response) => {
         ),
       }),
     );
+    return;
+  }
+  if (request.method === "POST" && request.url === "/heartbeat") {
+    response.writeHead(204);
+    response.end();
     return;
   }
   if (request.method === "POST" && request.url === "/progress") {

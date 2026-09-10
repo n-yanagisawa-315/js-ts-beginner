@@ -64,6 +64,8 @@ const TERM_DEFINITIONS = [
   ["代入", "右側で決めた値を、左側の名前へ結び付ける操作"],
   ["宣言", "この名前をこれから使うとJavaScriptへ知らせること"],
   ["変数", "値をあとから読み書きするために付ける名前"],
+  ["falsy", "ifに入れるとオフ扱いになり、中の処理へ進まない値"],
+  ["truthy", "ifに入れるとオン扱いになり、中の処理へ進む値"],
 ] as const;
 
 function vocabularyLines(slide: Slide): TalkLine[] | undefined {
@@ -101,7 +103,21 @@ function vocabularyLines(slide: Slide): TalkLine[] | undefined {
     titleTerms.length > 0
       ? []
       : TERM_DEFINITIONS.filter(([term]) => {
-          if (["関数", "変数", "宣言", "評価", "代入", "再代入"].includes(term)) return false;
+          if (
+            [
+              "関数",
+              "変数",
+              "宣言",
+              "評価",
+              "代入",
+              "再代入",
+              "const",
+              "let",
+              "var",
+            ].includes(term)
+          ) {
+            return false;
+          }
           if (!slide.lead.includes(term)) return false;
           return ![
             `${term}は`,
@@ -331,6 +347,14 @@ function mechanismLines(slide: Slide): TalkLine[] | undefined {
   }
 }
 
+function withStoryTalk(
+  slide: Slide,
+  pages: ConversationPage[],
+): ConversationPage[] {
+  if (!slide.storyTalk?.length) return pages;
+  return [{ lines: slide.storyTalk, focus: "story" }, ...pages];
+}
+
 function pagesFromExplicitTalk(
   slide: Slide,
   lines: TalkLine[],
@@ -376,7 +400,7 @@ function pagesFromExplicitTalk(
     });
   }
 
-  return synchronizeConversationPages(slide, pages, listing);
+  return synchronizeConversationPages(slide, withStoryTalk(slide, pages), listing);
 }
 
 export function talkPages(
@@ -457,10 +481,14 @@ export function talkPages(
     });
   }
 
-  return synchronizeConversationPages(slide, [
-    ...(vocabulary ? [{ lines: vocabulary, focus: "vocabulary" as const }] : []),
-    ...pages,
-  ], listing);
+  return synchronizeConversationPages(
+    slide,
+    withStoryTalk(slide, [
+      ...(vocabulary ? [{ lines: vocabulary, focus: "vocabulary" as const }] : []),
+      ...pages,
+    ]),
+    listing,
+  );
 }
 
 export function talkLines(slide: Slide, listing: SlideListing): TalkLine[] {

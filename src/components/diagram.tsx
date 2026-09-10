@@ -249,6 +249,67 @@ function DiagramContent({ id }: { id: DiagramId }) {
           </div>
         </div>
       );
+    case "truthy":
+      return (
+        <div className="execution-model">
+          <div className="execution-note">
+            <strong>if (値) は true そのものかを見ない</strong>
+            <small>オフに見える決まった値だけが falsy。残りは truthy。</small>
+          </div>
+          <div className="truth-board">
+            <div className="figure-panel">
+              <p className="figure-k">falsy · オフ扱い（6つだけ）</p>
+              <div className="truth-list">
+                <p>
+                  <strong>false</strong>
+                  <span>スイッチそのものがオフ</span>
+                </p>
+                <p>
+                  <strong>0</strong>
+                  <span>個数がゼロ</span>
+                </p>
+                <p>
+                  <strong>{'""'}</strong>
+                  <span>空の札。文字が1個もない</span>
+                </p>
+                <p>
+                  <strong>null</strong>
+                  <span>意図して空にした印</span>
+                </p>
+                <p>
+                  <strong>undefined</strong>
+                  <span>まだ値を入れてない</span>
+                </p>
+                <p>
+                  <strong>NaN</strong>
+                  <span>数の計算が壊れた印</span>
+                </p>
+              </div>
+            </div>
+            <div className="figure-panel border-[#9be7b5]">
+              <p className="figure-k">truthy · オン扱い（まぎらわしい例）</p>
+              <div className="truth-list">
+                <p>
+                  <strong>{'"0"'}</strong>
+                  <span>ゼロという文字がある札</span>
+                </p>
+                <p>
+                  <strong>{'" "'}</strong>
+                  <span>空白も1文字ある</span>
+                </p>
+                <p>
+                  <strong>[]</strong>
+                  <span>中が空でも、列はある</span>
+                </p>
+                <p>
+                  <strong>{"{}"}</strong>
+                  <span>中が空でも、部屋はある</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
     case "loop":
       return (
         <Rail

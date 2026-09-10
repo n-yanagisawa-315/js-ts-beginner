@@ -138,7 +138,11 @@ export function SlideBoard({
       <div className="flex flex-col gap-4">
         <figure>
           <figcaption className="kicker mb-2">
-            {page?.focus === "point" ? "いま話している要点" : "図解"}
+            {page?.focus === "point"
+              ? "いま話している要点"
+              : page?.focus === "story"
+                ? "いまの作業"
+                : "図解"}
           </figcaption>
           <div className="diagram-board">
             <Diagram

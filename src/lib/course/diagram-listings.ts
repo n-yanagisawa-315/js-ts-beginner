@@ -89,6 +89,13 @@ if (n > 0) {
   console.log("それ以外");
 }`,
   },
+  truthy: {
+    label: "truthy.js",
+    code: `Boolean(0); // false 個数ゼロ
+Boolean("0"); // true 札に文字がある
+Boolean(""); // false 空の札
+Boolean([]); // true 列はある`,
+  },
   loop: {
     label: "loop.js",
     code: `for (let i = 0; i < 3; i++) {
