@@ -3,40 +3,44 @@ import { CodeHighlight } from "@/components/code-highlight";
 import type { Listing } from "@/lib/course/diagram-listings";
 import type { DiagramId } from "@/lib/course/types";
 
-function Cell({
+type NodeTone = "plain" | "main" | "accent" | "gone" | "negative";
+
+function FigureNode({
   label,
   value,
+  note,
   tone = "plain",
+  children,
 }: {
-  label: string;
-  value: string;
-  tone?: "plain" | "gone" | "mark";
+  label?: string;
+  value?: string;
+  note?: string;
+  tone?: NodeTone;
+  children?: ReactNode;
 }) {
   return (
     <div
-      className={`figure-cell ${
-        tone === "gone"
-          ? "text-[var(--cream-mute)] line-through"
-          : tone === "mark"
-            ? "border-[#d4b45a]"
-            : ""
+      className={`figure-node${
+        tone === "plain" ? "" : ` is-${tone}`
       }`}
     >
-      <p className="figure-k">{label}</p>
-      <p className="figure-v">{value}</p>
+      {label ? <p>{label}</p> : null}
+      {value ? <strong>{value}</strong> : null}
+      {note ? <small>{note}</small> : null}
+      {children}
     </div>
   );
 }
 
-function Arrow({ label }: { label: string }) {
+function FigureArrow({ label }: { label: string }) {
   return (
     <p className="figure-arrow">
-      <svg width="28" height="12" viewBox="0 0 28 12" aria-hidden="true">
+      <svg width="28" height="10" viewBox="0 0 28 10" aria-hidden="true">
         <path
-          d="M0 6h22M18 2l6 4-6 4"
+          d="M0 5h22M19 2l5 3-5 3"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.4"
+          strokeWidth="1.2"
         />
       </svg>
       <span>{label}</span>
@@ -44,32 +48,100 @@ function Arrow({ label }: { label: string }) {
   );
 }
 
-function Flow({ children }: { children: ReactNode }) {
+function FigureFlow({ children }: { children: ReactNode }) {
+  return <div className="figure-flow">{children}</div>;
+}
+
+function FigureContrast({
+  left,
+  right,
+  rightTone = "emphasis",
+}: {
+  left: { label: string; body: ReactNode };
+  right: { label: string; body: ReactNode };
+  rightTone?: "emphasis" | "negative";
+}) {
   return (
-    <div className="flex flex-wrap items-center gap-3 md:gap-4">{children}</div>
+    <div className="figure-contrast">
+      <div className="figure-contrast-side">
+        <p className="figure-contrast-label">{left.label}</p>
+        {left.body}
+      </div>
+      <div className={`figure-contrast-side is-${rightTone}`}>
+        <p className="figure-contrast-label">{right.label}</p>
+        {right.body}
+      </div>
+    </div>
   );
 }
 
-function Rail({
-  steps,
+function FigureNest({
+  label,
+  value,
+  note,
+  main = false,
+  children,
 }: {
-  steps: { title: string; note?: string }[];
+  label: string;
+  value?: string;
+  note?: string;
+  main?: boolean;
+  children?: ReactNode;
 }) {
   return (
-    <ol className="rail">
+    <div className={`figure-nest${main ? " is-main" : ""}`}>
+      <p className="figure-nest-title">{label}</p>
+      {value ? <p className="figure-nest-value">{value}</p> : null}
+      {note ? <p className="figure-nest-note">{note}</p> : null}
+      {children}
+    </div>
+  );
+}
+
+function FigureTree({
+  root,
+  items,
+}: {
+  root: { label: string; value: string };
+  items: Array<{ label: string; value: string; tone?: NodeTone }>;
+}) {
+  return (
+    <div className="figure-tree">
+      <FigureNode label={root.label} value={root.value} tone="main" />
+      <div className="figure-tree-children">
+        {items.map((child) => (
+          <FigureNode
+            key={`${child.label}-${child.value}`}
+            label={child.label}
+            value={child.value}
+            tone={child.tone ?? "plain"}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FigureRail({
+  steps,
+  mainIndex = 0,
+}: {
+  steps: Array<{ title: string; note?: string }>;
+  mainIndex?: number;
+}) {
+  return (
+    <ol className="figure-rail">
       {steps.map((step, index) => (
-        <li key={step.title} className="rail-step">
-          <span className="rail-dot" aria-hidden="true" />
-          <div>
-            <p className="font-mono text-[11px] text-[var(--cream-mute)]">
-              {String(index + 1).padStart(2, "0")}
-            </p>
-            <p className="mt-1 text-base">{step.title}</p>
-            {step.note ? (
-              <p className="mt-1 font-mono text-xs text-[var(--cream-mute)]">
-                {step.note}
-              </p>
-            ) : null}
+        <li
+          key={step.title}
+          className={`figure-rail-step${index === mainIndex ? " is-main" : ""}`}
+        >
+          <span className="figure-rail-index" aria-hidden="true">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <div className="figure-rail-copy">
+            <strong>{step.title}</strong>
+            {step.note ? <small>{step.note}</small> : null}
           </div>
         </li>
       ))}
@@ -77,23 +149,48 @@ function Rail({
   );
 }
 
-function Pair({
-  left,
-  right,
+function FigureNote({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="figure-note">
+      <strong>{title}</strong>
+      <small>{body}</small>
+    </div>
+  );
+}
+
+function FigureTrace({
+  rows,
+  label,
 }: {
-  left: { k: string; v: string };
-  right: { k: string; v: string };
+  label: string;
+  rows: Array<{ when: string; what: string; note: string }>;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div className="figure-panel">
-        <p className="figure-k">{left.k}</p>
-        <p className="mt-2 text-base">{left.v}</p>
-      </div>
-      <div className="figure-panel border-[#d4b45a]">
-        <p className="figure-k">{right.k}</p>
-        <p className="mt-2 text-base">{right.v}</p>
-      </div>
+    <div className="figure-trace" role="table" aria-label={label}>
+      {rows.map((row) => (
+        <p key={`${row.when}-${row.what}`} className="figure-trace-row" role="row">
+          <span role="cell">{row.when}</span>
+          <strong role="cell">{row.what}</strong>
+          <small role="cell">{row.note}</small>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function FigureList({
+  items,
+}: {
+  items: Array<{ code: string; note: string }>;
+}) {
+  return (
+    <div className="figure-list">
+      {items.map((item) => (
+        <p key={item.code}>
+          <strong>{item.code}</strong>
+          <span>{item.note}</span>
+        </p>
+      ))}
     </div>
   );
 }
@@ -102,217 +199,189 @@ function DiagramContent({ id }: { id: DiagramId }) {
   switch (id) {
     case "sequence":
       return (
-        <Rail
+        <FigureRail
+          mainIndex={0}
           steps={[
-            { title: "1行目を実行して終わる", note: "console.log(\"いち\")" },
-            { title: "2行目を実行して終わる", note: "console.log(\"に\")" },
+            { title: "1行目を実行して終わる", note: 'console.log("いち")' },
+            { title: "2行目を実行して終わる", note: 'console.log("に")' },
             { title: "3行目へ進む", note: "前が終わるまで始まらない" },
           ]}
         />
       );
     case "values":
       return (
-        <Flow>
-          <Cell label="number" value="3" tone="mark" />
-          <Cell label="string" value='"Aya"' />
-          <Cell label="boolean" value="true" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="number" value="3" tone="main" />
+          <FigureNode label="string" value={'"Aya"'} />
+          <FigureNode label="boolean" value="true" />
+        </FigureFlow>
       );
     case "label":
       return (
-        <Flow>
-          <Cell label="name" value='"Aya"' tone="mark" />
-          <Arrow label="名前が値を指す" />
-          <Cell label="age" value="20" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="name" value={'"Aya"'} tone="main" />
+          <FigureArrow label="名前が値を指す" />
+          <FigureNode label="age" value="20" />
+        </FigureFlow>
       );
     case "rewrite":
       return (
-        <Flow>
-          <Cell label="age" value="20" tone="gone" />
-          <Arrow label="付け替え" />
-          <Cell label="age" value="21" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="age" value="20" tone="gone" />
+          <FigureArrow label="付け替え" />
+          <FigureNode label="age" value="21" tone="main" />
+        </FigureFlow>
       );
     case "calc":
       return (
-        <Pair
-          left={{ k: "number + number", v: "1 + 2 → 3" }}
-          right={{ k: "string が混ざる", v: '1 + "2" → "12"' }}
+        <FigureContrast
+          left={{
+            label: "number + number",
+            body: <FigureNode value={'1 + 2 → 3'} />,
+          }}
+          right={{
+            label: "string が混ざる",
+            body: <FigureNode value={'1 + "2" → "12"'} tone="accent" />,
+          }}
         />
       );
     case "dynamic":
       return (
-        <Flow>
-          <Cell label="x いま number" value="1" />
-          <Arrow label="同じ名前" />
-          <Cell label="x いま string" value='"hello"' tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="x いま number" value="1" />
+          <FigureArrow label="同じ名前" />
+          <FigureNode label="x いま string" value={'"hello"'} tone="main" />
+        </FigureFlow>
       );
     case "fn-box":
       return (
-        <div className="function-scene">
-          <div className="function-call-node">
-            <p>呼び出し元</p>
-            <strong>関数名(引数)</strong>
-            <small>() を付けた瞬間に開始</small>
-          </div>
-          <Arrow label="値を渡す" />
-          <div className="function-frame">
-            <header>呼び出しごとに作る実行領域</header>
-            <ol>
-              <li>
-                <span>1</span>
-                <p><strong>仮引数へ代入</strong><small>渡した値に一時的な名前を付ける</small></p>
-              </li>
-              <li>
-                <span>2</span>
-                <p><strong>本体を上から実行</strong><small>局所変数はこの呼び出しだけのもの</small></p>
-              </li>
-              <li>
-                <span>3</span>
-                <p><strong>returnで終了</strong><small>後ろの行は実行せず呼び出し元へ戻る</small></p>
-              </li>
-            </ol>
-          </div>
-          <Arrow label="結果を返す" />
-          <div className="function-return-node">
-            <p>呼び出し式の値</p>
-            <strong>return の値</strong>
-            <small>returnが無ければ undefined</small>
-          </div>
+        <div className="figure-stack">
+          <FigureFlow>
+            <FigureNode
+              label="呼び出し元"
+              value="関数名(引数)"
+              note="() を付けた瞬間に開始"
+            />
+            <FigureArrow label="値を渡す" />
+            <FigureNode
+              label="実行領域"
+              value="呼び出しごとに新しく作る"
+              tone="main"
+              note="仮引数 → 本体 → return"
+            />
+            <FigureArrow label="結果を返す" />
+            <FigureNode
+              label="呼び出し式の値"
+              value="return の値"
+              note="returnが無ければ undefined"
+              tone="accent"
+            />
+          </FigureFlow>
         </div>
       );
     case "callback-flow":
       return (
-        <div className="function-scene">
-          <div className="function-call-node">
-            <p>1 · 渡す側</p>
-            <strong>関数を () なしで渡す</strong>
-            <small>この時点ではまだ実行されない</small>
-          </div>
-          <Arrow label="関数そのものを渡す" />
-          <div className="function-frame">
-            <header>2 · 受け取る側が制御する</header>
-            <ol>
-              <li>
-                <span>A</span>
-                <p><strong>関数を仮引数で受け取る</strong><small>どんな処理かを値として保持する</small></p>
-              </li>
-              <li>
-                <span>B</span>
-                <p><strong>時刻・回数・材料を決める</strong><small>イベントや各要素など、実行条件を管理する</small></p>
-              </li>
-              <li>
-                <span>C</span>
-                <p><strong>受け取った関数に () を付ける</strong><small>ここで初めてコールバックの本体が動く</small></p>
-              </li>
-            </ol>
-          </div>
-          <Arrow label="引数を渡して呼ぶ" />
-          <div className="function-return-node">
-            <p>3 · コールバック</p>
-            <strong>渡された材料で処理</strong>
-            <small>呼ぶ主導権は受け取る側にある</small>
-          </div>
+        <div className="figure-stack">
+          <FigureFlow>
+            <FigureNode
+              label="1 · 渡す側"
+              value="関数を () なしで渡す"
+              note="この時点ではまだ実行されない"
+            />
+            <FigureArrow label="関数そのものを渡す" />
+            <FigureNode
+              label="2 · 受け取る側"
+              value="いつ・何回・何を渡すかを決める"
+              tone="main"
+              note="ここで初めて () を付ける"
+            />
+            <FigureArrow label="引数を渡して呼ぶ" />
+            <FigureNode
+              label="3 · コールバック"
+              value="渡された材料で処理"
+              note="主導権は受け取る側"
+              tone="accent"
+            />
+          </FigureFlow>
         </div>
       );
     case "object":
       return (
-        <div className="figure-panel">
-          <p className="figure-k">user という1つの束</p>
-          <div className="mt-3">
-            <Flow>
-              <Cell label="name" value='"Aya"' />
-              <Cell label="age" value="20" />
-            </Flow>
-          </div>
-        </div>
+        <FigureNest label="user という1つの束" main>
+          <FigureFlow>
+            <FigureNode label="name" value={'"Aya"'} />
+            <FigureNode label="age" value="20" tone="accent" />
+          </FigureFlow>
+        </FigureNest>
       );
     case "array":
       return (
-        <Flow>
-          <Cell label="[0] 先頭" value="80" tone="mark" />
-          <Cell label="[1]" value="90" />
-          <Cell label="[2] 末尾" value="70" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="[0] 先頭" value="80" tone="main" />
+          <FigureNode label="[1]" value="90" />
+          <FigureNode label="[2] 末尾" value="70" />
+        </FigureFlow>
       );
     case "branch":
       return (
-        <div className="flex flex-col gap-3">
-          <div className="figure-panel">条件は true か false か</div>
-          <div className="ml-4 grid gap-3 sm:grid-cols-2">
-            <div className="figure-panel border-[#9be7b5]">true → if の中へ</div>
-            <div className="figure-panel text-[var(--cream-mute)]">
-              false → else へ
-            </div>
-          </div>
+        <div className="figure-stack">
+          <FigureNode label="条件" value="true か false か" tone="main" />
+          <FigureContrast
+            left={{
+              label: "false",
+              body: <FigureNode value="else へ" />,
+            }}
+            right={{
+              label: "true",
+              body: <FigureNode value="if の中へ" tone="main" />,
+            }}
+          />
         </div>
       );
     case "truthy":
       return (
-        <div className="execution-model">
-          <div className="execution-note">
-            <strong>if (値) は true そのものかを見ない</strong>
-            <small>オフに見える決まった値だけが falsy。残りは truthy。</small>
-          </div>
-          <div className="truth-board">
-            <div className="figure-panel">
-              <p className="figure-k">falsy · オフ扱い（6つだけ）</p>
-              <div className="truth-list">
-                <p>
-                  <strong>false</strong>
-                  <span>スイッチそのものがオフ</span>
-                </p>
-                <p>
-                  <strong>0</strong>
-                  <span>個数がゼロ</span>
-                </p>
-                <p>
-                  <strong>{'""'}</strong>
-                  <span>空の札。文字が1個もない</span>
-                </p>
-                <p>
-                  <strong>null</strong>
-                  <span>意図して空にした印</span>
-                </p>
-                <p>
-                  <strong>undefined</strong>
-                  <span>まだ値を入れてない</span>
-                </p>
-                <p>
-                  <strong>NaN</strong>
-                  <span>数の計算が壊れた印</span>
-                </p>
-              </div>
-            </div>
-            <div className="figure-panel border-[#9be7b5]">
-              <p className="figure-k">truthy · オン扱い（まぎらわしい例）</p>
-              <div className="truth-list">
-                <p>
-                  <strong>{'"0"'}</strong>
-                  <span>ゼロという文字がある札</span>
-                </p>
-                <p>
-                  <strong>{'" "'}</strong>
-                  <span>空白も1文字ある</span>
-                </p>
-                <p>
-                  <strong>[]</strong>
-                  <span>中が空でも、列はある</span>
-                </p>
-                <p>
-                  <strong>{"{}"}</strong>
-                  <span>中が空でも、部屋はある</span>
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="figure-stack">
+          <FigureNote
+            title="if (値) は true そのものかを見ない"
+            body="オフに見える決まった値だけが falsy。残りは truthy。"
+          />
+          <FigureContrast
+            rightTone="emphasis"
+            left={{
+              label: "falsy · オフ扱い（6つだけ）",
+              body: (
+                <FigureList
+                  items={[
+                    { code: "false", note: "スイッチそのものがオフ" },
+                    { code: "0", note: "個数がゼロ" },
+                    { code: '""', note: "空の札。文字が1個もない" },
+                    { code: "null", note: "意図して空にした印" },
+                    { code: "undefined", note: "まだ値を入れてない" },
+                    { code: "NaN", note: "数の計算が壊れた印" },
+                  ]}
+                />
+              ),
+            }}
+            right={{
+              label: "truthy · オン扱い（まぎらわしい例）",
+              body: (
+                <FigureList
+                  items={[
+                    { code: '"0"', note: "ゼロという文字がある札" },
+                    { code: '" "', note: "空白も1文字ある" },
+                    { code: "[]", note: "中が空でも、列はある" },
+                    { code: "{}", note: "中が空でも、部屋はある" },
+                  ]}
+                />
+              ),
+            }}
+          />
         </div>
       );
     case "loop":
       return (
-        <Rail
+        <FigureRail
+          mainIndex={2}
           steps={[
             { title: "始める", note: "i = 0" },
             { title: "条件を見る", note: "i < 3" },
@@ -323,241 +392,238 @@ function DiagramContent({ id }: { id: DiagramId }) {
       );
     case "for-loop":
       return (
-        <div className="execution-model">
-          <div className="execution-formula">
-            <span>初期化<br /><strong>i = 0</strong></span>
-            <b>→</b>
-            <span>条件<br /><strong>i &lt; 3</strong></span>
-            <b>→</b>
-            <span>本体<br /><strong>log(i)</strong></span>
-            <b>→</b>
-            <span>更新<br /><strong>i++</strong></span>
-          </div>
-          <div className="execution-trace" role="table" aria-label="for文の実行順">
-            <p role="row"><span role="cell">最初だけ</span><strong role="cell">i = 0</strong><small role="cell">カウンタを作る</small></p>
-            <p role="row"><span role="cell">1周目</span><strong role="cell">0 &lt; 3 → true</strong><small role="cell">0を表示 → iは1</small></p>
-            <p role="row"><span role="cell">2周目</span><strong role="cell">1 &lt; 3 → true</strong><small role="cell">1を表示 → iは2</small></p>
-            <p role="row"><span role="cell">3周目</span><strong role="cell">2 &lt; 3 → true</strong><small role="cell">2を表示 → iは3</small></p>
-            <p role="row"><span role="cell">終了判定</span><strong role="cell">3 &lt; 3 → false</strong><small role="cell">本体へ入らず次の行へ</small></p>
-          </div>
+        <div className="figure-stack">
+          <FigureFlow>
+            <FigureNode label="初期化" value="i = 0" />
+            <FigureArrow label="次へ" />
+            <FigureNode label="条件" value="i < 3" tone="main" />
+            <FigureArrow label="true" />
+            <FigureNode label="本体" value="log(i)" />
+            <FigureArrow label="更新" />
+            <FigureNode label="更新" value="i++" tone="accent" />
+          </FigureFlow>
+          <FigureTrace
+            label="for文の実行順"
+            rows={[
+              { when: "最初だけ", what: "i = 0", note: "カウンタを作る" },
+              { when: "1周目", what: "0 < 3 → true", note: "0を表示 → iは1" },
+              { when: "2周目", what: "1 < 3 → true", note: "1を表示 → iは2" },
+              { when: "3周目", what: "2 < 3 → true", note: "2を表示 → iは3" },
+              { when: "終了判定", what: "3 < 3 → false", note: "本体へ入らず次の行へ" },
+            ]}
+          />
         </div>
       );
     case "while-loop":
       return (
-        <div className="execution-model">
-          <div className="execution-formula">
-            <span>条件を評価<br /><strong>fuel &gt; 0</strong></span>
-            <b>→</b>
-            <span>trueなら本体<br /><strong>log(fuel)</strong></span>
-            <b>→</b>
-            <span>状態を変更<br /><strong>fuel--</strong></span>
-            <b>↩</b>
-          </div>
-          <div className="execution-trace" role="table" aria-label="while文の実行順">
-            <p role="row"><span role="cell">fuel = 3</span><strong role="cell">3 &gt; 0 → true</strong><small role="cell">3を表示、2へ更新</small></p>
-            <p role="row"><span role="cell">fuel = 2</span><strong role="cell">2 &gt; 0 → true</strong><small role="cell">2を表示、1へ更新</small></p>
-            <p role="row"><span role="cell">fuel = 1</span><strong role="cell">1 &gt; 0 → true</strong><small role="cell">1を表示、0へ更新</small></p>
-            <p role="row"><span role="cell">fuel = 0</span><strong role="cell">0 &gt; 0 → false</strong><small role="cell">本体へ入らず終了</small></p>
-          </div>
-          <div className="execution-note">
-            <strong>条件は自動で変化しない</strong>
-            <small>本体で条件に関係する状態を変えないと、同じtrueを繰り返す。</small>
-          </div>
+        <div className="figure-stack">
+          <FigureFlow>
+            <FigureNode label="条件" value="fuel > 0" tone="main" />
+            <FigureArrow label="true" />
+            <FigureNode label="本体" value="log(fuel)" />
+            <FigureArrow label="更新して戻る" />
+            <FigureNode label="状態" value="fuel--" tone="accent" />
+          </FigureFlow>
+          <FigureTrace
+            label="while文の実行順"
+            rows={[
+              { when: "fuel = 3", what: "3 > 0 → true", note: "3を表示、2へ更新" },
+              { when: "fuel = 2", what: "2 > 0 → true", note: "2を表示、1へ更新" },
+              { when: "fuel = 1", what: "1 > 0 → true", note: "1を表示、0へ更新" },
+              { when: "fuel = 0", what: "0 > 0 → false", note: "本体へ入らず終了" },
+            ]}
+          />
+          <FigureNote
+            title="条件は自動で変化しない"
+            body="本体で条件に関係する状態を変えないと、同じ true を繰り返す。"
+          />
         </div>
       );
     case "loop-control":
       return (
-        <div className="execution-model">
-          <div className="execution-trace" role="table" aria-label="ループ制御後の移動先">
-            <p role="row"><span role="cell">通常</span><strong role="cell">本体の末尾まで実行</strong><small role="cell">更新 → 次の条件</small></p>
-            <p role="row"><span role="cell">continue</span><strong role="cell">今の周の残りを飛ばす</strong><small role="cell">更新 → 次の条件</small></p>
-            <p role="row"><span role="cell">break</span><strong role="cell">ループ全体を終了</strong><small role="cell">ループの次の行</small></p>
-          </div>
-          <div className="execution-note">
-            <strong>一番内側のループだけに作用</strong>
-            <small>入れ子の外側まで自動で終了するわけではない。</small>
-          </div>
+        <div className="figure-stack">
+          <FigureTrace
+            label="ループ制御後の移動先"
+            rows={[
+              { when: "通常", what: "本体の末尾まで実行", note: "更新 → 次の条件" },
+              { when: "continue", what: "今の周の残りを飛ばす", note: "更新 → 次の条件" },
+              { when: "break", what: "ループ全体を終了", note: "ループの次の行" },
+            ]}
+          />
+          <FigureNote
+            title="一番内側のループだけに作用"
+            body="入れ子の外側まで自動で終了するわけではない。"
+          />
         </div>
       );
     case "for-of-loop":
       return (
-        <div className="execution-model">
-          <div className="foreach-source">
-            <span><small>次の値</small><strong>&quot;A&quot;</strong></span>
-            <span><small>次の値</small><strong>&quot;B&quot;</strong></span>
-          </div>
-          <Arrow label="iteratorから順に受け取る" />
-          <div className="function-frame">
-            <header>値を受け取るたびに本体を実行</header>
-            <ol>
-              <li><span>1</span><p><strong>value = &quot;A&quot;</strong><small>本体を実行して次の値を要求</small></p></li>
-              <li><span>2</span><p><strong>value = &quot;B&quot;</strong><small>値が尽きるかbreakで終了</small></p></li>
-            </ol>
-          </div>
-          <div className="execution-note">
-            <strong>forEachとの違い</strong>
-            <small>コールバックではなくループ文なので、break・continue・awaitを使える。</small>
-          </div>
+        <div className="figure-stack">
+          <FigureFlow>
+            <FigureNode label="次の値" value={'"A"'} />
+            <FigureNode label="次の値" value={'"B"'} tone="accent" />
+            <FigureArrow label="順に受け取る" />
+            <FigureNode
+              label="本体"
+              value="value を受け取るたびに実行"
+              tone="main"
+              note="尽きるか break で終了"
+            />
+          </FigureFlow>
+          <FigureNote
+            title="forEachとの違い"
+            body="コールバックではなくループ文なので、break・continue・awaitを使える。"
+          />
         </div>
       );
     case "foreach-loop":
       return (
-        <div className="execution-model">
-          <div className="foreach-source">
-            <span><small>[0]</small><strong>&quot;A&quot;</strong></span>
-            <span><small>[1]</small><strong>&quot;B&quot;</strong></span>
-          </div>
-          <Arrow label="forEach側が先頭から1個ずつ呼ぶ" />
-          <div className="function-frame">
-            <header>要素ごとに新しいコールバック呼び出し</header>
-            <ol>
-              <li><span>1</span><p><strong>callback(&quot;A&quot;, 0, xs)</strong><small>value・index・arrayへ順番に入る</small></p></li>
-              <li><span>2</span><p><strong>callback(&quot;B&quot;, 1, xs)</strong><small>前の呼び出しが終わってから次を呼ぶ</small></p></li>
-            </ol>
-          </div>
-          <div className="execution-note">
-            <strong>コールバックのreturn値は捨てる</strong>
-            <small>forEach全体はundefined。breakは使えず、配列が空なら0回。</small>
-          </div>
+        <div className="figure-stack">
+          <FigureFlow>
+            <FigureNode label="[0]" value={'"A"'} />
+            <FigureNode label="[1]" value={'"B"'} tone="accent" />
+            <FigureArrow label="先頭から1個ずつ呼ぶ" />
+            <FigureNode
+              label="コールバック"
+              value={'callback(value, index, array)'}
+              tone="main"
+              note="前が終わってから次を呼ぶ"
+            />
+          </FigureFlow>
+          <FigureNote
+            title="コールバックの return 値は捨てる"
+            body="forEach全体は undefined。breakは使えず、配列が空なら0回。"
+          />
         </div>
       );
     case "scope":
       return (
-        <div className="scope-scene">
-          <div className="scope-room is-outer">
-            <p>外側のスコープ</p>
-            <strong>outer = 1</strong>
-            <div className="scope-room is-call">
-              <p>関数を呼ぶたびに作られるスコープ</p>
-              <strong>引数・局所変数</strong>
-              <small>内側から外側の名前は探せる</small>
-            </div>
-          </div>
-          <div className="scope-lookup">
-            <span>名前を探す順序</span>
-            <p>現在地 → 1つ外側 → さらに外側</p>
-            <small>外側から内側へは見えない。呼び出し終了後、局所領域は通常破棄される。</small>
-          </div>
+        <div className="figure-stack">
+          <FigureNest label="外側のスコープ" value="outer = 1" main>
+            <FigureNest
+              label="関数を呼ぶたびに作られるスコープ"
+              value="引数・局所変数"
+              note="内側から外側の名前は探せる"
+            />
+          </FigureNest>
+          <FigureNote
+            title="名前を探す順序"
+            body="現在地 → 1つ外側 → さらに外側。外側から内側へは見えない。"
+          />
         </div>
       );
     case "var-hoist":
       return (
-        <div className="execution-model">
-          <div className="function-frame">
-            <header>関数の実行領域を準備する段階</header>
-            <ol>
-              <li><span>1</span><p><strong>var value の名前を先に登録</strong><small>値はまだ代入されず undefined</small></p></li>
-              <li><span>2</span><p><strong>ifの波括弧は新しいvar領域を作らない</strong><small>関数全体で同じvalueを共有</small></p></li>
-              <li><span>3</span><p><strong>代入行で value = 1</strong><small>宣言文全体が上へ移動するわけではない</small></p></li>
-            </ol>
-          </div>
-          <div className="execution-trace" role="table" aria-label="varの値の変化">
-            <p role="row"><span role="cell">関数開始</span><strong role="cell">value → undefined</strong><small role="cell">名前だけ存在</small></p>
-            <p role="row"><span role="cell">代入後</span><strong role="cell">value → 1</strong><small role="cell">同じ束縛の値が変わる</small></p>
-            <p role="row"><span role="cell">関数終了</span><strong role="cell">領域を破棄</strong><small role="cell">外からは見えない</small></p>
-          </div>
+        <div className="figure-stack">
+          <FigureRail
+            mainIndex={0}
+            steps={[
+              {
+                title: "var value の名前を先に登録",
+                note: "値はまだ代入されず undefined",
+              },
+              {
+                title: "ifの波括弧は新しいvar領域を作らない",
+                note: "関数全体で同じ value を共有",
+              },
+              {
+                title: "代入行で value = 1",
+                note: "宣言文全体が上へ移動するわけではない",
+              },
+            ]}
+          />
+          <FigureTrace
+            label="varの値の変化"
+            rows={[
+              { when: "関数開始", what: "value → undefined", note: "名前だけ存在" },
+              { when: "代入後", what: "value → 1", note: "同じ束縛の値が変わる" },
+              { when: "関数終了", what: "領域を破棄", note: "外からは見えない" },
+            ]}
+          />
         </div>
       );
     case "ref":
       return (
-        <div className="flex flex-wrap items-start gap-4">
-          <Flow>
-            <Cell label="a" value="同じ束へ" />
-            <Cell label="b" value="同じ束へ" />
-          </Flow>
-          <Arrow label="指す先は1つ" />
-          <div className="figure-panel border-[#d4b45a]">
-            <p className="figure-k">オブジェクト</p>
-            <p className="mt-1 font-mono text-lg">n: 5</p>
-          </div>
-        </div>
+        <FigureFlow>
+          <FigureNode label="a" value="同じ束へ" />
+          <FigureNode label="b" value="同じ束へ" />
+          <FigureArrow label="指す先は1つ" />
+          <FigureNode label="オブジェクト" value="n: 5" tone="main" />
+        </FigureFlow>
       );
     case "spread":
       return (
-        <Flow>
-          <div className="figure-panel font-mono">{`{ name, age }`}</div>
-          <Arrow label="ほどく / 広げる" />
-          <div className="figure-panel border-[#d4b45a]">name と age が並ぶ</div>
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="{ name, age }" />
+          <FigureArrow label="ほどく / 広げる" />
+          <FigureNode value="name と age が並ぶ" tone="main" />
+        </FigureFlow>
       );
     case "map":
       return (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {["[1, 2, 3]", "× 2 を各要素へ", "[2, 4, 6] 新しい列"].map(
-            (text, index) => (
-              <div
-                key={text}
-                className={`figure-panel text-center ${
-                  index === 2 ? "border-[#d4b45a]" : ""
-                }`}
-              >
-                {text}
-              </div>
-            ),
-          )}
-        </div>
+        <FigureFlow>
+          <FigureNode value="[1, 2, 3]" />
+          <FigureArrow label="× 2 を各要素へ" />
+          <FigureNode value="[2, 4, 6] 新しい列" tone="main" />
+        </FigureFlow>
       );
     case "closure":
       return (
-        <div className="scope-scene">
-          <div className="function-call-node">
-            <p>1 · 外側の関数を呼ぶ</p>
-            <strong>makeCounter()</strong>
-            <small>countを置く実行領域が作られる</small>
-          </div>
-          <Arrow label="内側の関数をreturn" />
-          <div className="scope-room is-call">
-            <p>2 · 返された関数 + 生まれた環境</p>
-            <strong>関数 → count = 0</strong>
-            <small>関数がcountを参照するため、外側の呼び出し終了後も環境が残る</small>
-          </div>
-          <Arrow label="あとで呼ぶ" />
-          <div className="function-return-node">
-            <p>3 · 同じ環境を再利用</p>
-            <strong>count: 0 → 1 → 2</strong>
-            <small>別のcounterを作れば、別のcountを持つ</small>
-          </div>
-        </div>
+        <FigureFlow>
+          <FigureNode
+            label="1 · 外側の関数を呼ぶ"
+            value="makeCounter()"
+            note="countを置く実行領域が作られる"
+          />
+          <FigureArrow label="内側の関数をreturn" />
+          <FigureNode
+            label="2 · 返された関数 + 環境"
+            value="関数 → count = 0"
+            tone="main"
+            note="外側の呼び出し終了後も環境が残る"
+          />
+          <FigureArrow label="あとで呼ぶ" />
+          <FigureNode
+            label="3 · 同じ環境を再利用"
+            value="count: 0 → 1 → 2"
+            tone="accent"
+            note="別のcounterなら別のcount"
+          />
+        </FigureFlow>
       );
     case "this-call":
       return (
-        <Pair
-          left={{ k: "user.hello()", v: "this は user" }}
-          right={{ k: "取り外して f()", v: "ドットの左が無い" }}
+        <FigureContrast
+          left={{
+            label: "user.hello()",
+            body: <FigureNode value="this は user" />,
+          }}
+          right={{
+            label: "取り外して f()",
+            body: <FigureNode value="ドットの左が無い" tone="accent" />,
+          }}
         />
       );
     case "class-instance":
       return (
-        <Flow>
-          <div className="figure-panel">
-            class User
-            <p className="mt-1 text-sm text-[var(--cream-mute)]">
-              設計図 / prototype
-            </p>
-          </div>
-          <Arrow label="new" />
-          <Cell label="個体 a" value='name: "Aya"' tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="設計図" value="class User" note="prototype" />
+          <FigureArrow label="new" />
+          <FigureNode label="個体 a" value={'name: "Aya"'} tone="main" />
+        </FigureFlow>
       );
     case "promise":
       return (
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {["pending 待ち", "fulfilled 成功", "rejected 失敗"].map(
-            (step, index) => (
-              <li
-                key={step}
-                className={`figure-panel ${index === 1 ? "border-[#d4b45a]" : ""}`}
-              >
-                <p className="figure-k">{String(index + 1).padStart(2, "0")}</p>
-                <p className="mt-1">{step}</p>
-              </li>
-            ),
-          )}
-        </ol>
+        <FigureFlow>
+          <FigureNode label="01" value="pending 待ち" />
+          <FigureNode label="02" value="fulfilled 成功" tone="main" />
+          <FigureNode label="03" value="rejected 失敗" tone="negative" />
+        </FigureFlow>
       );
     case "async-await":
       return (
-        <Rail
+        <FigureRail
+          mainIndex={1}
           steps={[
             { title: "await まで同期で走る" },
             { title: "Promise が決まるまでこの関数は止まる" },
@@ -567,141 +633,152 @@ function DiagramContent({ id }: { id: DiagramId }) {
       );
     case "event-loop":
       return (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="figure-panel border-[#d4b45a]">
-            <p className="figure-k">いま</p>
-            <p className="mt-1">同期（スタック）</p>
-          </div>
-          <div className="figure-panel">
-            <p className="figure-k">そのあと全部</p>
-            <p className="mt-1">マイクロ（then）</p>
-          </div>
-          <div className="figure-panel">
-            <p className="figure-k">さらにあと</p>
-            <p className="mt-1">マクロ（timeout）</p>
-          </div>
-        </div>
+        <FigureFlow>
+          <FigureNode label="いま" value="同期（スタック）" tone="main" />
+          <FigureNode label="そのあと全部" value="マイクロ（then）" />
+          <FigureNode label="さらにあと" value="マクロ（timeout）" />
+        </FigureFlow>
       );
     case "modules":
       return (
-        <Flow>
-          <div className="figure-panel border-[#d4b45a]">
-            math.js
-            <p className="mt-1 font-mono text-sm">export add</p>
-          </div>
-          <Arrow label="import" />
-          <div className="figure-panel">app.js</div>
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="math.js" value="export add" tone="main" />
+          <FigureArrow label="import" />
+          <FigureNode value="app.js" />
+        </FigureFlow>
       );
     case "contract":
       return (
-        <Pair
-          left={{ k: "約束", v: "age: number" }}
-          right={{ k: "検査", v: "二十 は number ではない" }}
+        <FigureContrast
+          left={{
+            label: "約束",
+            body: <FigureNode value="age: number" />,
+          }}
+          right={{
+            label: "検査",
+            body: <FigureNode value="二十 は number ではない" tone="accent" />,
+          }}
         />
       );
     case "annotate":
       return (
-        <p className="font-mono text-lg leading-9">
-          <span className="text-[var(--cream-mute)]">let</span> n
-          <span className="text-[#7ec8d4]">: number</span> = 1;
-        </p>
+        <FigureNode
+          label="型注釈"
+          value="let n: number = 1"
+          note="名前の後ろに約束を書く"
+          tone="main"
+        />
       );
     case "shape":
       return (
-        <div className="figure-panel border-[#7ec8d4] font-mono">
-          <p className="text-lg">User</p>
-          <p className="mt-2 text-[var(--cream-mute)]">name: string</p>
-          <p className="text-[var(--cream-mute)]">age: number</p>
-        </div>
+        <FigureNest label="User" main>
+          <FigureTree
+            root={{ label: "形", value: "オブジェクト全体" }}
+            items={[
+              { label: "name", value: "string" },
+              { label: "age", value: "number", tone: "accent" },
+            ]}
+          />
+        </FigureNest>
       );
     case "union":
       return (
-        <Flow>
-          <span className="figure-cell font-mono">string</span>
-          <span className="text-[var(--cream-mute)]">または</span>
-          <span className="figure-cell border-[#7ec8d4] font-mono">number</span>
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="string" />
+          <FigureArrow label="または" />
+          <FigureNode value="number" tone="main" />
+        </FigureFlow>
       );
     case "fn-type":
       return (
-        <div className="function-scene">
-          <div className="function-call-node">
-            <p>入力側の契約</p>
-            <strong>(a: number, b: number)</strong>
-            <small>個数・順番・それぞれの型を検査</small>
-          </div>
-          <Arrow label="呼び出せる関数の形" />
-          <div className="function-frame">
-            <header>実装も呼び出しも同じ契約を見る</header>
-            <ol>
-              <li>
-                <span>1</span>
-                <p><strong>実装を検査</strong><small>引数を別の型として扱っていないか</small></p>
-              </li>
-              <li>
-                <span>2</span>
-                <p><strong>呼び出しを検査</strong><small>契約どおりの値を渡しているか</small></p>
-              </li>
-            </ol>
-          </div>
-          <Arrow label="実行後に返す" />
-          <div className="function-return-node">
-            <p>出力側の契約</p>
-            <strong>戻り値: number</strong>
-            <small>returnする値と、利用側の型がつながる</small>
-          </div>
-        </div>
+        <FigureFlow>
+          <FigureNode
+            label="入力側の契約"
+            value="(a: number, b: number)"
+            note="個数・順番・型を検査"
+          />
+          <FigureArrow label="関数の形" />
+          <FigureNode
+            label="検査の対象"
+            value="実装も呼び出しも同じ契約"
+            tone="main"
+          />
+          <FigureArrow label="返す" />
+          <FigureNode
+            label="出力側の契約"
+            value="戻り値: number"
+            tone="accent"
+          />
+        </FigureFlow>
       );
     case "narrow":
       return (
-        <Pair
-          left={{ k: "if の前", v: "string | number" }}
-          right={{ k: 'typeof === "string" の中', v: "string" }}
+        <FigureContrast
+          left={{
+            label: "if の前",
+            body: <FigureNode value="string | number" />,
+          }}
+          right={{
+            label: 'typeof === "string" の中',
+            body: <FigureNode value="string" tone="main" />,
+          }}
         />
       );
     case "unknown":
       return (
-        <Pair
-          left={{ k: "any", v: "何でも通る" }}
-          right={{ k: "unknown", v: "絞るまで触れない" }}
+        <FigureContrast
+          rightTone="emphasis"
+          left={{
+            label: "any",
+            body: <FigureNode value="何でも通る" tone="negative" />,
+          }}
+          right={{
+            label: "unknown",
+            body: <FigureNode value="絞るまで触れない" tone="main" />,
+          }}
         />
       );
     case "generic":
       return (
-        <Flow>
-          <div className="figure-panel font-mono">first&lt;T&gt;</div>
-          <Arrow label="T が埋まる" />
-          <Cell label="T" value="number" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="first<T>" />
+          <FigureArrow label="T が埋まる" />
+          <FigureNode label="T" value="number" tone="main" />
+        </FigureFlow>
       );
     case "utility":
       return (
-        <Flow>
-          <div className="figure-panel">User</div>
-          <Arrow label="Partial" />
-          <div className="figure-panel border-[#7ec8d4]">全部 ?</div>
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="User" />
+          <FigureArrow label="Partial" />
+          <FigureNode value="全部 ?" tone="main" />
+        </FigureFlow>
       );
     case "conditional":
       return (
-        <p className="font-mono text-base leading-8">
-          T extends U ? A : B
-          <span className="mt-2 block font-sans text-sm text-[var(--cream-mute)]">
-            型の if。合うなら A、否则 B
-          </span>
-        </p>
+        <FigureNode
+          label="型の if"
+          value="T extends U ? A : B"
+          note="合うなら A、そうでなければ B"
+          tone="main"
+        />
       );
     case "node-vs-browser":
       return (
-        <Pair
-          left={{ k: "ブラウザ", v: "window / DOM / CSS" }}
-          right={{ k: "Node.js", v: "ファイル / プロセス / ネット" }}
+        <FigureContrast
+          left={{
+            label: "ブラウザ",
+            body: <FigureNode value="window / DOM / CSS" />,
+          }}
+          right={{
+            label: "Node.js",
+            body: <FigureNode value="ファイル / プロセス / ネット" tone="main" />,
+          }}
         />
       );
     case "node-cli":
       return (
-        <Rail
+        <FigureRail
           steps={[
             { title: "node で REPL", note: "対話で試す" },
             { title: "node app.js でファイル" },
@@ -711,87 +788,100 @@ function DiagramContent({ id }: { id: DiagramId }) {
       );
     case "node-cjs-esm":
       return (
-        <Pair
-          left={{ k: "require", v: "module.exports / __dirname" }}
-          right={{ k: "import", v: "export / import.meta.url" }}
+        <FigureContrast
+          left={{
+            label: "require",
+            body: <FigureNode value="module.exports / __dirname" />,
+          }}
+          right={{
+            label: "import",
+            body: <FigureNode value="export / import.meta.url" tone="main" />,
+          }}
         />
       );
     case "node-process":
       return (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Cell label="argv" value="起動の言葉" tone="mark" />
-          <Cell label="env" value="環境の辞書" />
-          <Cell label="cwd" value="作業フォルダ" />
-        </div>
+        <FigureFlow>
+          <FigureNode label="argv" value="起動の言葉" tone="main" />
+          <FigureNode label="env" value="環境の辞書" />
+          <FigureNode label="cwd" value="作業フォルダ" />
+        </FigureFlow>
       );
     case "node-fs":
       return (
-        <Flow>
-          <div className="figure-panel">ディスク</div>
-          <Arrow label="readFile / writeFile" />
-          <div className="figure-panel border-[#9be7b5]">文字列か Buffer</div>
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="ディスク" />
+          <FigureArrow label="readFile / writeFile" />
+          <FigureNode value="文字列か Buffer" tone="main" />
+        </FigureFlow>
       );
     case "node-path":
       return (
-        <Flow>
-          <span className="figure-cell">dir</span>
-          <span className="figure-cell">file.txt</span>
-          <Arrow label="path.join" />
-          <span className="figure-cell border-[#9be7b5]">正しい区切り</span>
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="dir" />
+          <FigureNode value="file.txt" />
+          <FigureArrow label="path.join" />
+          <FigureNode value="正しい区切り" tone="main" />
+        </FigureFlow>
       );
     case "node-http":
       return (
-        <Flow>
-          <div className="figure-panel">req</div>
-          <Arrow label="ハンドラ" />
-          <div className="figure-panel border-[#9be7b5]">res.end</div>
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="req" />
+          <FigureArrow label="ハンドラ" />
+          <FigureNode value="res.end" tone="main" />
+        </FigureFlow>
       );
     case "node-npm":
       return (
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {["package.json 宣言", "lock が再現", "node_modules 実体"].map(
-            (step, index) => (
-              <li key={step} className="figure-panel">
-                <p className="figure-k">{String(index + 1).padStart(2, "0")}</p>
-                <p className="mt-1">{step}</p>
-              </li>
-            ),
-          )}
-        </ol>
+        <FigureRail
+          steps={[
+            { title: "package.json 宣言" },
+            { title: "lock が再現" },
+            { title: "node_modules 実体" },
+          ]}
+        />
       );
     case "node-stream":
       return (
-        <Flow>
-          {["chunk", "chunk", "chunk"].map((chunk, index) => (
-            <div key={`${chunk}-${index}`} className="figure-cell border-[#9be7b5]">
-              {chunk}
-            </div>
-          ))}
-          <span className="text-sm text-[var(--cream-mute)]">
-            全部を一度に載せない
-          </span>
-        </Flow>
+        <FigureFlow>
+          <FigureNode value="chunk" tone="accent" />
+          <FigureNode value="chunk" tone="accent" />
+          <FigureNode value="chunk" tone="main" />
+          <FigureArrow label="全部を一度に載せない" />
+        </FigureFlow>
       );
     case "node-libuv":
       return (
-        <Pair
-          left={{ k: "JS スレッド", v: "依頼して次の行へ" }}
-          right={{ k: "libuv / OS", v: "I/O が裏で進む" }}
+        <FigureContrast
+          left={{
+            label: "JS スレッド",
+            body: <FigureNode value="依頼して次の行へ" />,
+          }}
+          right={{
+            label: "libuv / OS",
+            body: <FigureNode value="I/O が裏で進む" tone="main" />,
+          }}
         />
       );
     case "node-error":
       return (
-        <Pair
-          left={{ k: "業務の失敗", v: "応答や非0" }}
-          right={{ k: "未捕捉", v: "プロセス終了" }}
+        <FigureContrast
+          left={{
+            label: "業務の失敗",
+            body: <FigureNode value="応答や非0" />,
+          }}
+          right={{
+            label: "未捕捉",
+            body: <FigureNode value="プロセス終了" tone="negative" />,
+          }}
+          rightTone="negative"
         />
       );
     case "node-prod":
       return (
-        <Rail
+        <FigureRail
+          mainIndex={1}
           steps={[
             { title: "SIGTERM を受ける" },
             { title: "listen を止めて新規を断る" },
@@ -801,33 +891,33 @@ function DiagramContent({ id }: { id: DiagramId }) {
       );
     case "dom-tree":
       return (
-        <Rail
-          steps={[
-            { title: "document", note: "ページ全体の入口" },
-            { title: "main", note: "注文管理のまとまり" },
-            { title: "#order-list", note: "注文行を置く場所" },
+        <FigureTree
+          root={{ label: "document", value: "ページ全体の入口" }}
+          items={[
+            { label: "main", value: "注文管理のまとまり" },
+            { label: "#order-list", value: "注文行を置く場所", tone: "accent" },
           ]}
         />
       );
     case "dom-query":
       return (
-        <Flow>
-          <Cell label="CSS セレクター" value='"#order-count"' />
-          <Arrow label="querySelector" />
-          <Cell label="見つかった要素" value="<span>" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="CSS セレクター" value='"#order-count"' />
+          <FigureArrow label="querySelector" />
+          <FigureNode label="見つかった要素" value="<span>" tone="main" />
+        </FigureFlow>
       );
     case "dom-update":
       return (
-        <Flow>
-          <Cell label="変更前" value="注文 0件" tone="gone" />
-          <Arrow label="textContent" />
-          <Cell label="変更後" value="注文 3件" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="変更前" value="注文 0件" tone="gone" />
+          <FigureArrow label="textContent" />
+          <FigureNode label="変更後" value="注文 3件" tone="main" />
+        </FigureFlow>
       );
     case "dom-create":
       return (
-        <Rail
+        <FigureRail
           steps={[
             { title: "createElement", note: "空の li を作る" },
             { title: "textContent", note: "注文内容を入れる" },
@@ -837,15 +927,16 @@ function DiagramContent({ id }: { id: DiagramId }) {
       );
     case "dom-event":
       return (
-        <Flow>
-          <Cell label="利用者" value="クリック" />
-          <Arrow label="event" />
-          <Cell label="listener" value="支払状態を更新" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="利用者" value="クリック" />
+          <FigureArrow label="event" />
+          <FigureNode label="listener" value="支払状態を更新" tone="main" />
+        </FigureFlow>
       );
     case "dom-form":
       return (
-        <Rail
+        <FigureRail
+          mainIndex={1}
           steps={[
             { title: "submit を受け取る" },
             { title: "preventDefault で再読込を止める" },
@@ -855,23 +946,24 @@ function DiagramContent({ id }: { id: DiagramId }) {
       );
     case "dom-render":
       return (
-        <Flow>
-          <Cell label="state" value="orders + filter" />
-          <Arrow label="render" />
-          <Cell label="DOM" value="表示する注文だけ" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="state" value="orders + filter" />
+          <FigureArrow label="render" />
+          <FigureNode label="DOM" value="表示する注文だけ" tone="main" />
+        </FigureFlow>
       );
     case "dom-storage":
       return (
-        <Flow>
-          <Cell label="配列" value="orders" />
-          <Arrow label="JSON.stringify" />
-          <Cell label="localStorage" value="文字列で保存" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="配列" value="orders" />
+          <FigureArrow label="JSON.stringify" />
+          <FigureNode label="localStorage" value="文字列で保存" tone="main" />
+        </FigureFlow>
       );
     case "dom-fetch":
       return (
-        <Rail
+        <FigureRail
+          mainIndex={1}
           steps={[
             { title: "読込中を表示" },
             { title: "fetch で注文APIへ依頼" },
@@ -881,70 +973,147 @@ function DiagramContent({ id }: { id: DiagramId }) {
       );
     case "sql-table":
       return (
-        <Flow>
-          <Cell label="表" value="orders" />
-          <Arrow label="SELECT" />
-          <Cell label="結果" value="必要な列と行" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="表" value="orders" />
+          <FigureArrow label="SELECT" />
+          <FigureNode label="結果" value="必要な列と行" tone="main" />
+        </FigureFlow>
       );
     case "sql-filter":
       return (
-        <Flow>
-          <Cell label="全注文" value="5行" />
-          <Arrow label="WHERE" />
-          <Cell label="対象" value="条件に合う行" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="全注文" value="5行" />
+          <FigureArrow label="WHERE" />
+          <FigureNode label="対象" value="条件に合う行" tone="main" />
+        </FigureFlow>
       );
     case "sql-sort":
-      return <Rail steps={[{ title: "WHEREで絞る" }, { title: "ORDER BYで並べる" }, { title: "LIMITで件数を決める" }]} />;
+      return (
+        <FigureRail
+          steps={[
+            { title: "WHEREで絞る" },
+            { title: "ORDER BYで並べる" },
+            { title: "LIMITで件数を決める" },
+          ]}
+        />
+      );
     case "sql-group":
-      return <Rail steps={[{ title: "同じ値でグループ化" }, { title: "COUNT・SUMで集計" }, { title: "1グループを1行で返す" }]} />;
+      return (
+        <FigureRail
+          steps={[
+            { title: "同じ値でグループ化" },
+            { title: "COUNT・SUMで集計" },
+            { title: "1グループを1行で返す" },
+          ]}
+        />
+      );
     case "sql-join":
       return (
-        <Flow>
-          <Cell label="orders" value="customer_id" />
-          <Arrow label="JOIN ON id" />
-          <Cell label="customers" value="name" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="orders" value="customer_id" />
+          <FigureArrow label="JOIN ON id" />
+          <FigureNode label="customers" value="name" tone="main" />
+        </FigureFlow>
       );
     case "sql-write":
-      return <Rail steps={[{ title: "WHEREで対象確認" }, { title: "INSERT・UPDATE・DELETE" }, { title: "SELECTで結果確認" }]} />;
+      return (
+        <FigureRail
+          mainIndex={1}
+          steps={[
+            { title: "WHEREで対象確認" },
+            { title: "INSERT・UPDATE・DELETE" },
+            { title: "SELECTで結果確認" },
+          ]}
+        />
+      );
     case "sql-transaction":
-      return <Rail steps={[{ title: "BEGIN" }, { title: "複数の更新" }, { title: "COMMIT または ROLLBACK" }]} />;
+      return (
+        <FigureRail
+          mainIndex={1}
+          steps={[
+            { title: "BEGIN" },
+            { title: "複数の更新" },
+            { title: "COMMIT または ROLLBACK" },
+          ]}
+        />
+      );
     case "git-repository":
       return (
-        <Flow>
-          <Cell label="作業場所" value="ファイル" />
-          <Arrow label="git init" />
-          <Cell label="repository" value="履歴を保存" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="作業場所" value="ファイル" />
+          <FigureArrow label="git init" />
+          <FigureNode label="repository" value="履歴を保存" tone="main" />
+        </FigureFlow>
       );
     case "git-staging":
-      return <Rail steps={[{ title: "working tree" }, { title: "git add → stage" }, { title: "git commit → 履歴" }]} />;
+      return (
+        <FigureRail
+          mainIndex={1}
+          steps={[
+            { title: "working tree" },
+            { title: "git add → stage" },
+            { title: "git commit → 履歴" },
+          ]}
+        />
+      );
     case "git-history":
-      return <Rail steps={[{ title: "commit C" }, { title: "commit B" }, { title: "commit A" }]} />;
+      return (
+        <FigureRail
+          steps={[
+            { title: "commit C" },
+            { title: "commit B" },
+            { title: "commit A" },
+          ]}
+        />
+      );
     case "git-branch":
       return (
-        <Flow>
-          <Cell label="main" value="安定版" />
-          <Arrow label="switch -c" />
-          <Cell label="feature" value="機能開発" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="main" value="安定版" />
+          <FigureArrow label="switch -c" />
+          <FigureNode label="feature" value="機能開発" tone="main" />
+        </FigureFlow>
       );
     case "git-remote":
       return (
-        <Flow>
-          <Cell label="local" value="手元の履歴" />
-          <Arrow label="push / pull" />
-          <Cell label="origin" value="共有する履歴" tone="mark" />
-        </Flow>
+        <FigureFlow>
+          <FigureNode label="local" value="手元の履歴" />
+          <FigureArrow label="push / pull" />
+          <FigureNode label="origin" value="共有する履歴" tone="main" />
+        </FigureFlow>
       );
     case "git-pr":
-      return <Rail steps={[{ title: "branchをpush" }, { title: "Pull Request作成" }, { title: "レビュー後merge" }]} />;
+      return (
+        <FigureRail
+          steps={[
+            { title: "branchをpush" },
+            { title: "Pull Request作成" },
+            { title: "レビュー後merge" },
+          ]}
+        />
+      );
     case "git-conflict":
-      return <Rail steps={[{ title: "両方の変更を読む" }, { title: "残す内容を編集" }, { title: "addして解決を記録" }]} />;
+      return (
+        <FigureRail
+          mainIndex={1}
+          steps={[
+            { title: "両方の変更を読む" },
+            { title: "残す内容を編集" },
+            { title: "addして解決を記録" },
+          ]}
+        />
+      );
     case "git-actions":
-      return <Rail steps={[{ title: "push / PR" }, { title: "Actionsで検査" }, { title: "保護ルールを満たしてmerge" }]} />;
+      return (
+        <FigureRail
+          mainIndex={1}
+          steps={[
+            { title: "push / PR" },
+            { title: "Actionsで検査" },
+            { title: "保護ルールを満たしてmerge" },
+          ]}
+        />
+      );
     default:
       return null;
   }
@@ -971,7 +1140,10 @@ export function Diagram({
   const activeLineSet = new Set(activeCodeLines ?? []);
   return (
     <div className="diagram-visual" data-step={activeStep}>
-      <section className="diagram-code-window" aria-label={`${listing.label}のコード`}>
+      <section
+        className="diagram-code-window"
+        aria-label={`${listing.label}のコード`}
+      >
         <header className="diagram-window-bar">
           <span className="diagram-window-tab">
             <span className="diagram-file-dot" aria-hidden="true" />
