@@ -21,12 +21,22 @@ function haystack(slide: Slide): string {
   );
 }
 
-function shortLabel(text: string, max = 32): string {
+function shortLabel(text: string, max = 56): string {
   const cleaned = text
     .replace(/[`*_]/g, "")
     .replace(/\s+/g, " ")
     .trim();
   if (cleaned.length <= max) return cleaned;
+  const cut = cleaned.slice(0, max);
+  const punct = Math.max(
+    cut.lastIndexOf("。"),
+    cut.lastIndexOf("、"),
+    cut.lastIndexOf("！"),
+    cut.lastIndexOf("？"),
+  );
+  if (punct >= Math.floor(max * 0.45)) {
+    return cleaned.slice(0, punct + 1);
+  }
   return `${cleaned.slice(0, max - 1)}…`;
 }
 
