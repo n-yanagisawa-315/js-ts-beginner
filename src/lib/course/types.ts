@@ -121,11 +121,15 @@ export type StoryBeat = "problem" | "prediction" | "trace" | "resolution" | "tra
 
 export type SlideLayoutKind = "explain" | "talk" | "hero";
 
+export type SlideCalloutStyle = "brace" | "wave" | "circle" | "dash";
+
 export type SlideCallout = {
   label: string;
   line?: number;
   token?: string;
   target?: "code" | "console";
+  /** 注釈の見た目。省略時は token / target から推定 */
+  style?: SlideCalloutStyle;
 };
 
 export type Slide = {

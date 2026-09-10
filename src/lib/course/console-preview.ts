@@ -1,6 +1,7 @@
 /**
  * console.log の引数がリテラルまたは単純な加減算だけなら、静的に出力を推定する。
  * 変数・関数呼び出し・複雑な式は推定しない。
+ * ただし `console.log(...); // 表示結果` の行末コメントは採用する。
  */
 
 function unquote(raw: string): string | undefined {
@@ -98,34 +99,58 @@ function extractLogArg(line: string): string | undefined {
   return inner;
 }
 
+function trailingCommentResult(line: string): string | undefined {
+  const match = line.match(/\/\/\s*(?:=>\s*)?(.+)$/);
+  if (!match) return undefined;
+  let raw = match[1]!.trim();
+  const quoted = raw.match(/^(["'`])([^"'`]*)\1/);
+  if (quoted) return quoted[2];
+  raw = raw.split(/[。／]/)[0]!.trim();
+  if (/^-?\d+(?:\.\d+)?$/.test(raw)) return raw;
+  if (/^(?:true|false|null|undefined|NaN|Infinity)$/.test(raw)) return raw;
+  // 「表示は A」のような説明は除外し、短い結果語だけ拾う
+  if (/^(?:表示|出力|結果)/.test(raw)) return undefined;
+  if (raw.length > 0 && raw.length <= 28 && !/\s{2,}/.test(raw)) {
+    return raw.replace(/^["']|["']$/g, "");
+  }
+  return undefined;
+}
+
 export function previewConsoleOutput(code: string): string[] | undefined {
   const lines = code.split("\n");
   const outputs: string[] = [];
   let sawLog = false;
 
   for (const line of lines) {
+    const trimmed = line.trim();
+    if (
+      !trimmed ||
+      trimmed.startsWith("//") ||
+      trimmed.startsWith("/*") ||
+      trimmed.startsWith("*") ||
+      trimmed.endsWith("*/")
+    ) {
+      continue;
+    }
+    // 宣言行は飛ばす（あとの console.log のコメント結果を優先）
+    if (/^(?:const|let|var)\b/.test(trimmed)) continue;
+
     const arg = extractLogArg(line);
     if (arg === undefined) {
-      const trimmed = line.trim();
       if (
-        trimmed &&
-        !trimmed.startsWith("//") &&
-        !trimmed.startsWith("/*") &&
-        !trimmed.startsWith("*") &&
-        !trimmed.endsWith("*/")
+        /^(?:function|class|if|for|while|return|import|export|type|interface)\b/.test(
+          trimmed,
+        )
       ) {
-        // 実行可能な非 log 行があると推定を諦める（順序・副作用が読めない）
-        if (/^(?:const|let|var|function|class|if|for|while|return|import|export)\b/.test(trimmed)) {
-          return undefined;
-        }
-        if (!/^console\.log\b/.test(trimmed) && /[;=({]/.test(trimmed)) {
-          return undefined;
-        }
+        return undefined;
+      }
+      if (!/^console\.log\b/.test(trimmed) && /[;=({]/.test(trimmed)) {
+        return undefined;
       }
       continue;
     }
     sawLog = true;
-    const value = evalSimpleExpr(arg);
+    const value = evalSimpleExpr(arg) ?? trailingCommentResult(line);
     if (value === undefined) return undefined;
     outputs.push(value);
   }

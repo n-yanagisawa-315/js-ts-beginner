@@ -1,8 +1,8 @@
-import { Diagram } from "@/components/diagram";
 import { TalkAvatar } from "@/components/talk-avatar";
 import {
   SlideCodePanel,
   SlideConsolePanel,
+  SlidePanelFlowArrow,
 } from "@/components/slide-panels";
 import { resolveConsoleOutput } from "@/lib/course/console-preview";
 import {
@@ -105,38 +105,27 @@ function ExplainVisual({
 }) {
   if (!listing) return null;
 
+  // 全スライドを参考サイト寄りに：コード窓（＋可能ならコンソール）を基本表示
   if (consoleLines && consoleLines.length > 0) {
     return (
-      <div className="slide-dual-panels">
+      <div className="slide-dual-panels has-flow">
         <SlideCodePanel
           label={listing.label}
           code={listing.code}
           callouts={slide.callouts}
         />
+        <SlidePanelFlowArrow />
         <SlideConsolePanel lines={consoleLines} callouts={slide.callouts} />
       </div>
     );
   }
 
-  if (slide.callouts && slide.callouts.length > 0) {
-    return (
-      <div className="slide-dual-panels is-single">
-        <SlideCodePanel
-          label={listing.label}
-          code={listing.code}
-          callouts={slide.callouts}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="slide-diagram-embed diagram-board">
-      <Diagram
-        id={slide.diagram}
-        listing={listing}
-        title={slide.title}
-        points={slide.points}
+    <div className="slide-dual-panels is-single">
+      <SlideCodePanel
+        label={listing.label}
+        code={listing.code}
+        callouts={slide.callouts}
       />
     </div>
   );
