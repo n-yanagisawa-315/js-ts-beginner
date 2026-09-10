@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useSyncExternalStore,
@@ -46,6 +47,7 @@ import type {
 } from "@/lib/course/client-dtos";
 import type { Lesson } from "@/lib/course/types";
 import {
+  isSummarySlide,
   nextSlideIndex,
   questionForSlide,
   talkPages,
@@ -63,6 +65,8 @@ import {
 import {
   getLatestExitRecallSnapshot,
   getServerLatestExitRecallSnapshot,
+  questionProgressKey,
+  readLearningState,
   recordQuestionAssistance,
   recordQuestionAttempt,
   recordSelfExplanation,
@@ -70,6 +74,11 @@ import {
   subscribeLearningState,
   writeProgress,
 } from "@/lib/progress";
+import {
+  readLessonResume,
+  writeLessonResume,
+  type LessonResumePhase,
+} from "@/lib/lesson-resume";
 
 const loadCodeLab = () => import("@/components/code-lab");
 const loadQuizChallenge = () => import("@/components/quiz-challenge");
@@ -88,10 +97,173 @@ const QuizChallenge = dynamic<QuizChallengeProps>(
   },
 );
 
-type Phase = "predict" | "slides" | "quiz" | "exit" | "done";
+type Phase = LessonResumePhase;
+
+const subscribeToNothing = () => () => {};
+
+type StudioBootstrap = {
+  phase: Phase;
+  slide: number;
+  conversationPage: number;
+  prediction: string;
+  exitRecall: string;
+  attempted: number[];
+  correctCount: number;
+  drafts: Record<number, string>;
+  typed: string;
+};
+
+function progressForLesson(lesson: LessonPageDTO["lesson"]): {
+  attempted: Set<number>;
+  correctCount: number;
+  hasPrequestion: boolean;
+  hasExitRecall: boolean;
+  completed: boolean;
+} {
+  const state = readLearningState();
+  const attempted = new Set<number>();
+  let correctCount = 0;
+  for (const { index } of teachingSlideEntries(lesson as Lesson)) {
+    const question = questionForSlide(lesson as Lesson, index);
+    if (!question) continue;
+    const progress =
+      state.questions[questionProgressKey(lesson.id, question.id)];
+    if (!progress || progress.attempts <= 0) continue;
+    attempted.add(index);
+    if (
+      progress.attemptHistory.some(
+        (event) =>
+          event.correct &&
+          (event.context === "lesson" || event.context === "transfer"),
+      )
+    ) {
+      correctCount += 1;
+    }
+  }
+  const hasPrequestion = state.lessonEvents.some(
+    (event) => event.lessonId === lesson.id && event.context === "prequestion",
+  );
+  const hasExitRecall = state.lessonEvents.some(
+    (event) => event.lessonId === lesson.id && event.context === "exit-recall",
+  );
+  const lessonScore = state.lessons[lesson.id];
+  return {
+    attempted,
+    correctCount,
+    hasPrequestion,
+    hasExitRecall,
+    completed: Boolean(lessonScore && lessonScore.total > 0 && hasExitRecall),
+  };
+}
+
+function defaultStudioBootstrap(): StudioBootstrap {
+  return {
+    phase: "predict",
+    slide: 0,
+    conversationPage: 0,
+    prediction: "",
+    exitRecall: "",
+    attempted: [],
+    correctCount: 0,
+    drafts: {},
+    typed: "",
+  };
+}
+
+function resolveStudioBootstrap(lesson: LessonPageDTO["lesson"]): StudioBootstrap {
+  if (typeof window === "undefined") return defaultStudioBootstrap();
+
+  const progress = progressForLesson(lesson);
+  const resume = readLessonResume(lesson.id);
+  const latestExit = getLatestExitRecallSnapshot(lesson.id);
+  const maxSlide = Math.max(lesson.slides.length - 1, 0);
+  const mergedAttempted = new Set(progress.attempted);
+  if (resume) {
+    for (const index of resume.attemptedSlides) mergedAttempted.add(index);
+  }
+  const attempted = [...mergedAttempted].sort((a, b) => a - b);
+
+  if (progress.completed || resume?.phase === "done") {
+    return {
+      phase: "done",
+      slide: maxSlide,
+      conversationPage: 0,
+      prediction: resume?.prediction ?? "",
+      exitRecall: resume?.exitRecall ?? latestExit,
+      attempted,
+      correctCount: Math.max(resume?.correctCount ?? 0, progress.correctCount),
+      drafts: resume?.drafts ?? {},
+      typed: "",
+    };
+  }
+
+  if (resume) {
+    const nextSlide = Math.min(resume.slide, maxSlide);
+    const current = lesson.slides[nextSlide];
+    const pageCount = current
+      ? talkPages(current, current.listings[0]).length
+      : 1;
+    const nextPhase =
+      resume.phase === "predict" && progress.hasPrequestion
+        ? "slides"
+        : resume.phase;
+    const target =
+      nextPhase === "quiz"
+        ? questionForSlide(lesson as Lesson, nextSlide)
+        : undefined;
+    return {
+      phase: nextPhase,
+      slide: nextSlide,
+      conversationPage: Math.min(
+        resume.conversationPage,
+        Math.max(pageCount - 1, 0),
+      ),
+      prediction: resume.prediction,
+      exitRecall: resume.exitRecall,
+      attempted,
+      correctCount: Math.max(resume.correctCount, progress.correctCount),
+      drafts: resume.drafts,
+      typed:
+        target?.kind === "code" || target?.kind === "shell"
+          ? (resume.drafts[nextSlide] ?? target.starter ?? "")
+          : "",
+    };
+  }
+
+  if (progress.hasExitRecall) {
+    return {
+      ...defaultStudioBootstrap(),
+      phase: "exit",
+      exitRecall: latestExit,
+      attempted,
+      correctCount: progress.correctCount,
+    };
+  }
+
+  if (progress.hasPrequestion) {
+    const firstOpen = teachingSlideEntries(lesson as Lesson).find(
+      (entry) => !mergedAttempted.has(entry.index),
+    );
+    return {
+      ...defaultStudioBootstrap(),
+      phase: "slides",
+      slide: firstOpen?.index ?? maxSlide,
+      attempted,
+      correctCount: progress.correctCount,
+    };
+  }
+
+  return defaultStudioBootstrap();
+}
 
 export function LessonStudio({ course }: { course: LessonPageDTO }) {
   const { lesson, navigation, prequestion, predictionOptions } = course;
+  const hydrated = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+  const [ready, setReady] = useState(false);
   const [phase, setPhase] = useState<Phase>("predict");
   const [slide, setSlide] = useState(0);
   const [conversationPage, setConversationPage] = useState(0);
@@ -101,7 +273,9 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
   const [checked, setChecked] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [awarded, setAwarded] = useState(false);
-  const [attempted, setAttempted] = useState<ReadonlySet<number>>(new Set());
+  const [attempted, setAttempted] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
   const [failReason, setFailReason] = useState<string | null>(null);
   const [failTick, setFailTick] = useState(0);
   const [confidence, setConfidence] = useState<number | null>(null);
@@ -123,6 +297,58 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     getPreviousExitRecall,
     getServerLatestExitRecallSnapshot,
   );
+
+  // Hydrate resume once on the client during render (not in an effect).
+  // Lesson changes remount via key={lesson.id} on the page.
+  if (hydrated && !ready) {
+    const bootstrap = resolveStudioBootstrap(lesson);
+    setPhase(bootstrap.phase);
+    setSlide(bootstrap.slide);
+    setConversationPage(bootstrap.conversationPage);
+    setPrediction(bootstrap.prediction);
+    setExitRecall(bootstrap.exitRecall);
+    setAttempted(new Set(bootstrap.attempted));
+    setCorrectCount(bootstrap.correctCount);
+    setDrafts(bootstrap.drafts);
+    setTyped(bootstrap.typed);
+    setChoice(null);
+    setChecked(false);
+    setAwarded(false);
+    setFailReason(null);
+    setConfidence(null);
+    setHintLevel(0);
+    setAnswerViewed(false);
+    setMaterialReviewed(false);
+    setAttemptNumber(0);
+    setReflection("");
+    setAssistantRuntimeState("");
+    setReady(true);
+  }
+
+  useLayoutEffect(() => {
+    if (!ready) return;
+    writeLessonResume(lesson.id, {
+      phase,
+      slide,
+      conversationPage,
+      prediction,
+      exitRecall,
+      attemptedSlides: [...attempted],
+      correctCount,
+      drafts,
+    });
+  }, [
+    attempted,
+    conversationPage,
+    correctCount,
+    drafts,
+    exitRecall,
+    lesson.id,
+    phase,
+    prediction,
+    ready,
+    slide,
+  ]);
 
   const question = useMemo(
     () => questionForSlide(lesson, slide),
@@ -199,8 +425,12 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     phase,
     question,
   ]);
+  const nextIsSummary =
+    nextIndex !== undefined && isSummarySlide(lesson.slides[nextIndex]!);
   const nextQuizLabel =
-    nextIndex === undefined && allQuizzesDone ? "結果を見る" : "次のスライド";
+    allQuizzesDone && (nextIndex === undefined || nextIsSummary)
+      ? "結果を見る"
+      : "次のスライド";
   const assistantQuestion = phase === "quiz" ? question : undefined;
   const assistantPage = conversationPages[
     Math.min(conversationPage, Math.max(conversationPages.length - 1, 0))
@@ -353,12 +583,20 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     setAttemptStartedAt(Date.now());
     if (!correct) {
       setAttempted((current) => new Set(current).add(slide));
+      const runtimeError =
+        evidence?.runtime === "js" ? evidence.result.error : undefined;
+      const loopError =
+        runtimeError?.includes("タイムアウト") ||
+        runtimeError?.includes("表示が多すぎて");
       setFailReason(
-        question.kind === "choice" && choice
-          ? (question.feedbackByAnswer?.[choice] ?? question.explain)
-          : question.kind === "sql" || question.kind === "git"
-            ? [gradeResult.feedback, ...gradeResult.diagnostics].join("\n")
-            : feedbackForIncorrectAnswer(question, currentAnswer),
+        loopError
+          ? (runtimeError ??
+              "実行がタイムアウトしました。while の中で i を増やす処理があるか確認してください。")
+          : question.kind === "choice" && choice
+            ? (question.feedbackByAnswer?.[choice] ?? question.explain)
+            : question.kind === "sql" || question.kind === "git"
+              ? [gradeResult.feedback, ...gradeResult.diagnostics].join("\n")
+              : feedbackForIncorrectAnswer(question, currentAnswer),
       );
       setFailTick((n) => n + 1);
       return;
@@ -418,7 +656,12 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
         response: reflection,
       });
     }
-    if (nextIndex === undefined) {
+    const hasOpenQuiz = teaching.some(
+      (entry) => entry.index !== slide && !attempted.has(entry.index),
+    );
+    const nextIsSummary =
+      nextIndex !== undefined && isSummarySlide(lesson.slides[nextIndex]!);
+    if (nextIndex === undefined || (!hasOpenQuiz && nextIsSummary)) {
       finishQuiz();
       return;
     }
@@ -475,6 +718,21 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
             0,
           )
         : 0,
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-full flex-1 flex-col">
+        <LearningFlowHeader
+          lesson={lesson}
+          navigation={navigation}
+          stage="続きを開いています"
+          current={1}
+          total={Math.max(teachingSlideEntries(lesson).length, 1)}
+        />
+        <ExerciseLoading variant="quiz" />
+      </div>
     );
   }
 

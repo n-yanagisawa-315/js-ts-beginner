@@ -179,7 +179,10 @@ export async function gradeCodeByBehavior(
     evidence?.runtime === "js" && evidence.source === raw
       ? evidence.result
       : await runStudentJs(raw);
-  if (studentResult.error || !sameOutput(studentResult.logs, output)) return false;
+  if (studentResult.error) {
+    return false;
+  }
+  if (!sameOutput(studentResult.logs, output)) return false;
 
   const probes = numericProbeSource(question.answer);
   if (!probes) return true;

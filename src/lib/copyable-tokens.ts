@@ -24,8 +24,6 @@ const SYNTAX_KEYWORDS = new Set([
   "while",
   "switch",
   "case",
-  "break",
-  "continue",
   "function",
   "class",
   "new",
@@ -35,6 +33,9 @@ const SYNTAX_KEYWORDS = new Set([
   "export",
   "from",
 ]);
+
+/** これからエディタへ書く対象になる制御語。構文キーワードでもチップに出す。 */
+const WRITABLE_STATEMENT_KEYWORDS = new Set(["break", "continue"]);
 
 const VALUE_KEYWORDS = new Set(["true", "false", "null", "undefined"]);
 
@@ -207,7 +208,12 @@ function tokensFromCode(code: string, appearanceOrder = false): CopyToken[] {
   )) {
     const value = match[0];
     const index = match.index ?? 0;
-    if (SYNTAX_KEYWORDS.has(value) || VALUE_KEYWORDS.has(value)) continue;
+    if (
+      (SYNTAX_KEYWORDS.has(value) && !WRITABLE_STATEMENT_KEYWORDS.has(value)) ||
+      VALUE_KEYWORDS.has(value)
+    ) {
+      continue;
+    }
     if (isProseContext(unquoted, index, value.length)) continue;
     add({ match: value, value, display: value, identifier: true }, index);
   }

@@ -4,7 +4,8 @@ import type {
 } from "@mlc-ai/web-llm";
 import type { Question } from "@/lib/course/types";
 
-const MODEL_ID = "Qwen3.5-2B-q4f16_1-MLC";
+const MODEL_ID = "Qwen3.5-4B-q4f16_1-MLC";
+export const LOCAL_ASSISTANT_MODEL_ID = MODEL_ID;
 
 export const FIRST_STEP_QUESTION =
   "正解を言わず、最初の一歩だけヒントをください";
@@ -116,6 +117,7 @@ export async function askLocalAssistant(
       messages: [{ role: "system", content: systemPrompt }, ...requestMessages],
       temperature: 0.2,
       max_tokens: 260,
+      extra_body: { enable_thinking: false },
     });
 
     const content = completion.choices[0]?.message.content;
@@ -123,13 +125,7 @@ export async function askLocalAssistant(
       const allowCode = /コード|プログラム|実装|書き方|記述/.test(
         latestUserMessage?.content ?? "",
       );
-      const cleaned = sanitizeAssistantOutput(content, allowCode, outputOptions);
-      if (cleaned) {
-        return isUnreliableAssistantOutput(cleaned) ||
-          containsRestrictedAnswer(cleaned, outputOptions.restrictedAnswer)
-          ? outputOptions.fallback || "教材の要点をもう一度確認してみましょう。"
-          : cleaned;
-      }
+      return guardAssistantOutput(content, allowCode, outputOptions);
     }
     throw new Error(
       "回答を生成できませんでした。質問を短くして、もう一度試してください。",
@@ -137,6 +133,37 @@ export async function askLocalAssistant(
   } finally {
     if (activeGenerationOwner === owner) activeGenerationOwner = null;
   }
+}
+
+export function guardAssistantOutput(
+  content: string,
+  allowCode = false,
+  outputOptions: {
+    allowAnswer?: boolean;
+    preferHint?: boolean;
+    fallback?: string;
+    restrictedAnswer?: string;
+  } = {},
+) {
+  const cleaned = sanitizeAssistantOutput(content, allowCode, outputOptions);
+  const fallback =
+    outputOptions.fallback || "教材の要点をもう一度読み直してみましょう。";
+  if (!cleaned) return fallback;
+  if (isUnreliableAssistantOutput(cleaned)) return fallback;
+  if (!outputOptions.allowAnswer && outputOptions.restrictedAnswer) {
+    const rawForLeakCheck = content
+      .replace(/<think\b[^>]*>[\s\S]*?<\/think>/gi, "")
+      .replace(/<think\b[^>]*>[\s\S]*$/gi, "")
+      .replace(/<\/?think\b[^>]*>/gi, "")
+      .trim();
+    if (
+      containsRestrictedAnswer(rawForLeakCheck, outputOptions.restrictedAnswer) ||
+      containsRestrictedAnswer(cleaned, outputOptions.restrictedAnswer)
+    ) {
+      return fallback;
+    }
+  }
+  return cleaned;
 }
 
 export function sanitizeAssistantOutput(
@@ -176,6 +203,15 @@ export function sanitizeAssistantOutput(
       /(?:^|\n)\s*(?:#{1,6}\s*)?(?:\*\*)?(?:正解|答え|回答)\s*(?:は|[:：])[\s\S]*$/i,
       "",
     );
+    cleaned = cleaned
+      .split(/(?<=[。！？\n])/)
+      .filter(
+        (sentence) =>
+          !/(?:が|を)?正解です|正しい(?:選択|答え|回答)|答えは|回答は|完成コード/.test(
+            sentence,
+          ),
+      )
+      .join("");
   }
 
   if (preferHint) {
@@ -280,7 +316,7 @@ export function trustedAssistantAnswer(
   if (question === FAMILIAR_EXAMPLE_QUESTION) {
     if (grounding.unanswered) {
       return safeTrustedAnswer(
-        "料理の手順のように、材料（最初の値）→操作→できあがり（表示結果）の順で考えてみましょう。今は最初の材料が何かだけ確認してください。",
+        "料理の手順のように、材料（最初の値）→操作→できあがり（表示結果）の順で考えてみましょう。今は最初の材料が何かだけ見てください。",
         grounding,
       );
     }
@@ -295,10 +331,16 @@ function safeTrustedAnswer(
   grounding: AssistantGrounding,
 ): string {
   const restricted = grounding.restrictedAnswer?.trim();
-  if (!grounding.unanswered || !restricted || restricted.length < 2) {
+  if (!grounding.unanswered || !restricted) {
     return content;
   }
-  return content.replaceAll(restricted, "その部分");
+  const fallback =
+    "問題文を「最初の状態」「行う操作」「確かめる結果」の順に分け、まず最初の状態だけ見てみましょう。";
+  const candidate =
+    normalizeRestrictedText(restricted).length >= 2
+      ? redactRestrictedAnswer(content, restricted)
+      : content;
+  return containsRestrictedAnswer(candidate, restricted) ? fallback : candidate;
 }
 
 export function containsRestrictedAnswer(
@@ -307,25 +349,52 @@ export function containsRestrictedAnswer(
 ): boolean {
   const answer = restrictedAnswer?.trim();
   if (!answer) return false;
-  const escaped = answer.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (
+    /(?:が|を)?正解です|正しい(?:選択|答え|回答)|答えは|回答は|完成コード/.test(
+      content,
+    )
+  ) {
+    return true;
+  }
+  const escaped = escapeRegExp(answer);
   if (
     new RegExp(
-      `(?:正解|答え|回答)\\s*(?:は|[:：])?\\s*[「『\\x60]?${escaped}`,
+      `(?:正解|答え|回答)\\s*(?:は|[:：])?\\s*[「『\`']?${escaped}`,
       "i",
     ).test(content)
   ) {
     return true;
   }
-  const normalize = (value: string) =>
-    value.toLowerCase().replace(/[\s`'"*_#;:：。、，,()[\]{}]/g, "");
-  const normalizedAnswer = normalize(answer);
+  if (
+    new RegExp(
+      `[「『\`']${escaped}[」』\`']\\s*(?:が|を)?(?:正解|正しい)`,
+      "i",
+    ).test(content)
+  ) {
+    return true;
+  }
+  const normalizedAnswer = normalizeRestrictedText(answer);
   if (normalizedAnswer.length >= 2) {
-    return normalize(content).includes(normalizedAnswer);
+    return normalizeRestrictedText(content).includes(normalizedAnswer);
   }
   return new RegExp(
-    `(?:^|[「『\\s:：])${escaped}(?:[」』\\s。！？]|です|になります|$)`,
+    `(?:^|[「『\\s:：\`'])${escaped}(?:[」』\\s。！？]|です|になります|$)`,
     "i",
   ).test(content);
+}
+
+function redactRestrictedAnswer(content: string, answer: string): string {
+  const escaped = escapeRegExp(answer.trim());
+  if (!escaped) return content;
+  return content.replace(new RegExp(escaped, "gi"), "その部分");
+}
+
+function normalizeRestrictedText(value: string): string {
+  return value.toLowerCase().replace(/[\s`'"*_#;:：。、，,()[\]{}]/g, "");
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function groundedSummary(grounding: AssistantGrounding): string {

@@ -5,9 +5,11 @@ import {
   assistantQuestionDetails,
   FAMILIAR_EXAMPLE_QUESTION,
   FIRST_STEP_QUESTION,
+  LOCAL_ASSISTANT_MODEL_ID,
   SIMPLE_EXPLANATION_QUESTION,
   containsRestrictedAnswer,
   firstStepForQuestion,
+  guardAssistantOutput,
   isUnreliableAssistantOutput,
   sanitizeAssistantOutput,
   trustedAssistantAnswer,
@@ -173,6 +175,11 @@ for (const lesson of lessons) {
 
 assert.equal(questionCount, 372, "全設問を監査できていません");
 assert.equal(
+  LOCAL_ASSISTANT_MODEL_ID,
+  "Qwen3.5-4B-q4f16_1-MLC",
+  "学習アシスタントのモデルが Qwen3.5-4B ではありません",
+);
+assert.equal(
   isUnreliableAssistantOutput("10 % 3 は Infinity です。"),
   true,
   "誤った数式を見逃しています",
@@ -215,6 +222,54 @@ assert.equal(
   containsRestrictedAnswer("最初に行う操作を考えます。", "行"),
   false,
   "1文字の正答を通常の文から誤検出しています",
+);
+assert.match(
+  guardAssistantOutput(
+    "「種類を確認するまで操作を許さない」が正解です。",
+    false,
+    {
+      restrictedAnswer: "種類を確認するまで操作を許さない",
+      fallback: "安全なヒント",
+    },
+  ),
+  /安全なヒント/,
+  "選択肢の正解言い切りを遮断できません",
+);
+assert.match(
+  guardAssistantOutput(
+    "ターミナルで「node -v」と打つと、現在使われているバージョンがわかります。",
+    false,
+    {
+      restrictedAnswer: "node -v",
+      fallback: "安全なヒント",
+    },
+  ),
+  /安全なヒント/,
+  "短いコマンド正答の漏えいを遮断できません",
+);
+assert.match(
+  guardAssistantOutput(
+    "WHEREは「行」を絞り込むのに使います。",
+    false,
+    {
+      restrictedAnswer: "行",
+      fallback: "安全なヒント",
+    },
+  ),
+  /安全なヒント/,
+  "1文字正答の漏えいを遮断できません",
+);
+assert.doesNotMatch(
+  guardAssistantOutput(
+    "まずは、条件で絞り込む対象が何かを確認しましょう。",
+    false,
+    {
+      restrictedAnswer: "行",
+      fallback: "安全なヒント",
+    },
+  ),
+  /安全なヒント/,
+  "漏えいのないヒントまで遮断しています",
 );
 
 const lessonStudioSource = fs.readFileSync(

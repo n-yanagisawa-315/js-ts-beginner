@@ -175,7 +175,7 @@ export function LearningAssistant({
           allowAnswer: Boolean(context.correct),
           preferHint: /ヒント/.test(trimmed),
           fallback: unanswered
-            ? "問題文を「最初の状態」「行う操作」「確かめる結果」の順に分け、まず最初の状態だけ確認してみましょう。"
+            ? "問題文を「最初の状態」「行う操作」「確かめる結果」の順に分け、まず最初の状態だけ見てみましょう。"
             : groundedSummary(context),
           restrictedAnswer: unanswered ? context.expectedAnswer : undefined,
         },

@@ -725,6 +725,16 @@ function CodeLabInner({
               {failReason ? (
                 <FailDock tick={failTick} message={failReason} onClose={onDismissFail} />
               ) : null}
+              {checked && requiresExplanation ? (
+                <section className="border-t border-[#c5c9d0] bg-[#f5f7f9] px-5 py-4 text-ink">
+                  <SelfExplanation
+                    question={question}
+                    value={reflection}
+                    onChange={onReflection}
+                    mode="reasoning"
+                  />
+                </section>
+              ) : null}
               {successDock ?? toolbar}
             </section>
             <aside className="console-stack min-h-[16rem] border-t border-[#c5c9d0] lg:border-t-0 lg:border-l">
@@ -966,7 +976,14 @@ function AnswerReviewDialog({
   onClose: () => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) return;
+        if (showExplanation && reflection.trim().length < 10) return;
+        onClose();
+      }}
+    >
       <DialogContent className="answer-review-dialog">
         <DialogHeader>
           <DialogTitle>回答を振り返る</DialogTitle>
@@ -989,7 +1006,14 @@ function AnswerReviewDialog({
           />
         ) : null}
         <DialogFooter>
-          <Button onClick={onClose}>演習に戻る</Button>
+          <Button
+            onClick={onClose}
+            disabled={showExplanation && reflection.trim().length < 10}
+          >
+            {showExplanation && reflection.trim().length < 10
+              ? "振り返りを書いてから戻る"
+              : "演習に戻る"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
