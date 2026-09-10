@@ -13,30 +13,6 @@ type CopyToken = {
 const TOKEN =
   /(`[^`]+`)|("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(\b[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+\b(?:\([^)]*\))?|\b[A-Za-z_$][\w$]*\([^)]*\))|(\b(?:const|let|var|typeof|return|if|else|for|while|switch|case|break|continue|function|class|new|async|await|import|export|from)\b)/g;
 
-const SYNTAX_KEYWORDS = new Set([
-  "const",
-  "let",
-  "var",
-  "return",
-  "if",
-  "else",
-  "for",
-  "while",
-  "switch",
-  "case",
-  "function",
-  "class",
-  "new",
-  "async",
-  "await",
-  "import",
-  "export",
-  "from",
-]);
-
-/** これからエディタへ書く対象になる制御語。構文キーワードでもチップに出す。 */
-const WRITABLE_STATEMENT_KEYWORDS = new Set(["break", "continue"]);
-
 const VALUE_KEYWORDS = new Set(["true", "false", "null", "undefined"]);
 
 const SKIP_INPUT_IDENTIFIERS = new Set(["console", "console.log", "log"]);
@@ -208,10 +184,7 @@ function tokensFromCode(code: string, appearanceOrder = false): CopyToken[] {
   )) {
     const value = match[0];
     const index = match.index ?? 0;
-    if (
-      (SYNTAX_KEYWORDS.has(value) && !WRITABLE_STATEMENT_KEYWORDS.has(value)) ||
-      VALUE_KEYWORDS.has(value)
-    ) {
+    if (VALUE_KEYWORDS.has(value)) {
       continue;
     }
     if (isProseContext(unquoted, index, value.length)) continue;
@@ -344,6 +317,24 @@ export function piecesOf(
     })),
   ];
   return pieces.flatMap((piece) => addDerivedTokens(piece, derived));
+}
+
+/** 手順文用。明示の `...` だけをコピー対象にし、文を途中で割らない。 */
+export function stepPieces(text: string): CopyPiece[] {
+  const pieces: CopyPiece[] = [];
+  let last = 0;
+  for (const match of text.matchAll(/`([^`]+)`/g)) {
+    const index = match.index ?? 0;
+    if (index > last) {
+      pieces.push({ kind: "text", value: text.slice(last, index) });
+    }
+    pieces.push({ kind: "code", value: match[1], display: match[1] });
+    last = index + match[0].length;
+  }
+  if (last < text.length) {
+    pieces.push({ kind: "text", value: text.slice(last) });
+  }
+  return pieces;
 }
 
 export function inputTokenPieces(

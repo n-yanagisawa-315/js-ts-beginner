@@ -20,6 +20,8 @@ import {
 import { LearningFlowHeader } from "@/components/learning-flow-header";
 import type { QuizChallengeProps } from "@/components/quiz-challenge";
 import { SlideTheater } from "@/components/slide-theater";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -257,7 +259,8 @@ function resolveStudioBootstrap(lesson: LessonPageDTO["lesson"]): StudioBootstra
 }
 
 export function LessonStudio({ course }: { course: LessonPageDTO }) {
-  const { lesson, navigation, prequestion, predictionOptions } = course;
+  const { lesson, navigation, prequestion, predictionOptions, exitRecallHints } =
+    course;
   const hydrated = useSyncExternalStore(
     subscribeToNothing,
     () => true,
@@ -773,6 +776,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
         navigation={navigation}
         prequestion={prequestion}
         predictionOptions={predictionOptions}
+        exitRecallHints={exitRecallHints}
         value={exitRecall}
         confidence={confidence}
         comparisonLabel="学習前の予想"
@@ -1019,6 +1023,7 @@ function LearningCheckpoint({
   navigation,
   prequestion,
   predictionOptions,
+  exitRecallHints = [],
   value,
   confidence,
   comparisonLabel,
@@ -1033,6 +1038,7 @@ function LearningCheckpoint({
   navigation: LessonNavigationDTO;
   prequestion: string;
   predictionOptions: string[];
+  exitRecallHints?: string[];
   value: string;
   confidence: number | null;
   comparisonLabel?: string;
@@ -1043,11 +1049,13 @@ function LearningCheckpoint({
   assistant?: ReactNode;
 }) {
   const [confidenceOpen, setConfidenceOpen] = useState(false);
+  const [hintLevel, setHintLevel] = useState(0);
   const prediction = mode === "predict";
   const title = prediction ? "説明を見る前に予想する" : "資料を閉じて思い出す";
   const prompt = prediction
     ? prequestion
     : `「${lesson.title}」の仕組みを、コードを見ずに1〜3文で説明してください。正確さより、今取り出せることを確かめます。`;
+  const visibleHints = exitRecallHints.slice(0, hintLevel);
 
   return (
     <div className="learning-checkpoint-shell">
@@ -1057,110 +1065,148 @@ function LearningCheckpoint({
         stage={prediction ? "学習前の予想" : "講義末の出口想起"}
       />
       <main id="main-content" className="learning-checkpoint">
-      <Card className="learning-checkpoint-card">
-        <CardHeader>
-          <p className="learning-checkpoint-step">
-            {prediction ? "学習前の予想" : "講義末の出口想起"}
-          </p>
-          <p className="learning-checkpoint-project">
-            {lesson.story?.project}
-          </p>
-          <CardTitle asChild>
-            <h1>{title}</h1>
-          </CardTitle>
-          <CardDescription className="learning-checkpoint-incident">
-            {prediction ? lesson.story?.incident : lesson.story?.outcome}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-        {prediction ? (
-          <FieldSet className="learning-prediction-options">
-            <FieldLegend>{prompt}</FieldLegend>
-            <FieldDescription>
-              正解を当てる問題ではありません。今の考えに一番近いものを選びます。
-            </FieldDescription>
-            <ToggleGroup
-              type="single"
-              value={value}
-              onValueChange={(next) => {
-                if (next) onChange(next);
-              }}
-              orientation="vertical"
-              className="learning-prediction-options-list"
-            >
-              {predictionOptions.map((option, index) => (
-                <ToggleGroupItem
-                  key={option}
-                  value={option}
+        <Card className="learning-checkpoint-card">
+          <CardHeader>
+            <div className="learning-checkpoint-meta">
+              <Badge variant="secondary">
+                {prediction ? "学習前の予想" : "講義末の出口想起"}
+              </Badge>
+              {lesson.story?.project ? (
+                <p className="learning-checkpoint-project">
+                  {lesson.story.project}
+                </p>
+              ) : null}
+            </div>
+            <CardTitle asChild>
+              <h1>{title}</h1>
+            </CardTitle>
+            <CardDescription className="learning-checkpoint-incident">
+              {prediction ? lesson.story?.incident : lesson.story?.outcome}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {prediction ? (
+              <FieldSet className="learning-prediction-options">
+                <FieldLegend>{prompt}</FieldLegend>
+                <FieldDescription>
+                  正解を当てる問題ではありません。今の考えに一番近いものを選びます。
+                </FieldDescription>
+                <ToggleGroup
+                  type="single"
+                  value={value}
+                  onValueChange={(next) => {
+                    if (next) onChange(next);
+                  }}
+                  orientation="vertical"
+                  className="learning-prediction-options-list"
                 >
-                  <span aria-hidden="true">
-                    {String.fromCharCode(65 + index)}
-                  </span>
-                  {option}
-                  {value === option ? (
-                    <small aria-hidden="true">選択中</small>
-                  ) : null}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </FieldSet>
-        ) : (
-          <Field>
-            <FieldLabel htmlFor="learning-recall">{prompt}</FieldLabel>
-            <Textarea
-              id="learning-recall"
-              name="lesson-exit-recall"
-              autoComplete="off"
-              value={value}
-              onChange={(event) => onChange(event.currentTarget.value)}
-              placeholder="例: 右側を先に計算し、その値を左の名前へ結び付ける…"
-            />
-          </Field>
-        )}
-        {value.trim() && comparisonResponse?.trim() ? (
-          <details className="learning-checkpoint-comparison">
-            <summary>書いた内容を比較する</summary>
-            <p>
-              <strong>{comparisonLabel}</strong>
-              {comparisonResponse}
-            </p>
-            <small>
-              文章が変わったこと自体を習得とは判定しません。増えた説明と、まだ曖昧な点を確認します。
-            </small>
-          </details>
-        ) : null}
-        <p className="learning-checkpoint-note">
-          {prediction
-            ? "予想は採点しません。先に考えることで、説明のどこを見るかを決めます。"
-            : "この後は休憩して構いません。睡眠時間を削って続ける必要はありません。"}
-        </p>
-        </CardContent>
-        <CardFooter className="learning-checkpoint-actions">
-          {assistant}
-          <Button
-            disabled={value.trim() === ""}
-            onClick={() => {
-              if (confidence === null) {
-                setConfidenceOpen(true);
-                return;
-              }
-              onContinue();
-            }}
-          >
-            {prediction ? "予想を残して説明を見る" : "思い出した内容を残して完了"}
-          </Button>
-        </CardFooter>
-      </Card>
-      <ConfidenceDialog
-        open={confidenceOpen}
-        value={confidence}
-        onChange={onConfidence}
-        onCancel={() => setConfidenceOpen(false)}
-        onConfirm={() => {
-          setConfidenceOpen(false);
-          onContinue();
-        }}
-      />
+                  {predictionOptions.map((option, index) => (
+                    <ToggleGroupItem key={option} value={option}>
+                      <span aria-hidden="true">
+                        {String.fromCharCode(65 + index)}
+                      </span>
+                      {option}
+                      {value === option ? (
+                        <small aria-hidden="true">選択中</small>
+                      ) : null}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </FieldSet>
+            ) : (
+              <div className="learning-checkpoint-recall">
+                <Field>
+                  <FieldLabel htmlFor="learning-recall">{prompt}</FieldLabel>
+                  <FieldDescription>
+                    まずは何も見ずに書いてみてください。詰まったら下のヒントを1段だけ開けます。
+                  </FieldDescription>
+                  <Textarea
+                    id="learning-recall"
+                    name="lesson-exit-recall"
+                    autoComplete="off"
+                    value={value}
+                    onChange={(event) => onChange(event.currentTarget.value)}
+                    placeholder="例: 名前は宣言した範囲の中で見える。内側からは外側が見えるが、外からは内側へは戻れない…"
+                  />
+                </Field>
+                {exitRecallHints.length > 0 ? (
+                  <div className="learning-checkpoint-hints">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={hintLevel >= exitRecallHints.length}
+                      onClick={() =>
+                        setHintLevel((current) =>
+                          Math.min(current + 1, exitRecallHints.length),
+                        )
+                      }
+                    >
+                      {hintLevel === 0
+                        ? "ヒントを1段だけ見る"
+                        : hintLevel < exitRecallHints.length
+                          ? "次のヒントを見る"
+                          : "ヒントを確認済み"}
+                    </Button>
+                    {visibleHints.map((hint, index) => (
+                      <Alert key={hint} className="learning-checkpoint-hint">
+                        <AlertTitle>
+                          ヒント {index + 1}/{exitRecallHints.length}
+                        </AlertTitle>
+                        <AlertDescription>{hint}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )}
+            {value.trim() && comparisonResponse?.trim() ? (
+              <details className="learning-checkpoint-comparison">
+                <summary>書いた内容を比較する</summary>
+                <p>
+                  <strong>{comparisonLabel}</strong>
+                  {comparisonResponse}
+                </p>
+                <small>
+                  文章が変わったこと自体を習得とは判定しません。増えた説明と、まだ曖昧な点を確認します。
+                </small>
+              </details>
+            ) : null}
+            <Alert className="learning-checkpoint-note">
+              <AlertDescription>
+                {prediction
+                  ? "予想は採点しません。先に考えることで、説明のどこを見るかを決めます。"
+                  : "この後は休憩して構いません。睡眠時間を削って続ける必要はありません。"}
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+          <CardFooter className="learning-checkpoint-actions">
+            {assistant}
+            <Button
+              disabled={value.trim() === ""}
+              onClick={() => {
+                if (confidence === null) {
+                  setConfidenceOpen(true);
+                  return;
+                }
+                onContinue();
+              }}
+            >
+              {prediction
+                ? "予想を残して説明を見る"
+                : "思い出した内容を残して完了"}
+            </Button>
+          </CardFooter>
+        </Card>
+        <ConfidenceDialog
+          open={confidenceOpen}
+          value={confidence}
+          onChange={onConfidence}
+          onCancel={() => setConfidenceOpen(false)}
+          onConfirm={() => {
+            setConfidenceOpen(false);
+            onContinue();
+          }}
+        />
       </main>
     </div>
   );

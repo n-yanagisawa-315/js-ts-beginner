@@ -81,6 +81,7 @@ export type LessonPageDTO = {
   lesson: ResolvedLessonDTO;
   prequestion: string;
   predictionOptions: string[];
+  exitRecallHints: string[];
   navigation: LessonNavigationDTO;
 };
 

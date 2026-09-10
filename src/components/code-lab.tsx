@@ -373,7 +373,7 @@ function CodeLabInner({
     <LabToolbar
       checked={checked}
       canSubmit={canSubmit && !isRunning && !isSubmitting}
-      canAdvance={Boolean(failReason) && reflection.trim().length >= 10}
+      canAdvance={Boolean(failReason)}
       correctCount={correctCount}
       total={total}
       onReset={() => {
@@ -400,7 +400,7 @@ function CodeLabInner({
   );
   const successDock = checked ? (
     <SuccessDock
-      canContinue={!requiresExplanation || reflection.trim().length >= 10}
+      canContinue
       nextLabel={nextLabel}
       onAnswer={showAnswer}
       onNext={onNext}
@@ -880,11 +880,7 @@ function QuestionGuide({
               <li key={step}>
                 <span>{stepIndex + 1}</span>
                 <p>
-                  <CopyableText
-                    text={step}
-                    code={learnerCode}
-                    copyValues={isShell ? copyValues : undefined}
-                  />
+                  <CopyableText text={step} stepsOnly />
                 </p>
               </li>
             ))}
@@ -980,7 +976,6 @@ function AnswerReviewDialog({
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) return;
-        if (showExplanation && reflection.trim().length < 10) return;
         onClose();
       }}
     >
@@ -988,7 +983,7 @@ function AnswerReviewDialog({
         <DialogHeader>
           <DialogTitle>回答を振り返る</DialogTitle>
           <DialogDescription>
-            回答前の自信と実際の結果を比べ、次の回答に活かします。
+            回答前の自信と実際の結果を比べ、次の回答に活かします。振り返り文は任意です。
           </DialogDescription>
         </DialogHeader>
         <ConfidenceScale
@@ -1006,14 +1001,7 @@ function AnswerReviewDialog({
           />
         ) : null}
         <DialogFooter>
-          <Button
-            onClick={onClose}
-            disabled={showExplanation && reflection.trim().length < 10}
-          >
-            {showExplanation && reflection.trim().length < 10
-              ? "振り返りを書いてから戻る"
-              : "演習に戻る"}
-          </Button>
+          <Button onClick={onClose}>演習に戻る</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1039,9 +1027,7 @@ function SuccessDock({
       <div>
         <h2 id={titleId}>Congratulations!</h2>
         <p role="status">
-          {canContinue
-            ? `正解です！「${actionLabel}」を押して先へ進みましょう。`
-            : "正解です！振り返りを10文字以上入力すると次に進めます。"}
+          正解です！「{actionLabel}」を押して先へ進みましょう。
         </p>
       </div>
       <div className="result-dock-actions">

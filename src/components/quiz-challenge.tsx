@@ -382,20 +382,11 @@ export function QuizChallenge({
           </p>
         </div>
         {checked ? (
-          <Button
-            onClick={onNext}
-            disabled={requiresExplanation && reflection.trim().length < 10}
-          >
-            {nextLabel}
-          </Button>
+          <Button onClick={onNext}>{nextLabel}</Button>
         ) : (
           <div className="flex flex-wrap justify-end gap-2">
             {failReason ? (
-              <Button
-                variant="outline"
-                onClick={onNext}
-                disabled={reflection.trim().length < 10}
-              >
+              <Button variant="outline" onClick={onNext}>
                 あとで解き直す
               </Button>
             ) : null}

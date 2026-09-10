@@ -28,13 +28,13 @@ export function SelfExplanation({
     <Field className={`self-explanation${dark ? " is-dark" : ""}`}>
       <FieldLabel htmlFor={id}>
         {reasoning
-          ? "次へ進む前に、使った判断基準を1文で説明する"
-          : "次へ進む前に、考え方の違いを1文で説明する"}
+          ? "使った判断基準を1文で説明する（任意）"
+          : "考え方の違いを1文で説明する（任意）"}
       </FieldLabel>
       <FieldDescription>
         {reasoning
-          ? "「まず ___ を確認し、その結果から ___ と判断した」の形で、答えではなく理由を書きます。"
-          : "「最初は ___ と思った。実際は ___ の順で動く」の形で、答えではなく理由を書きます。"}
+          ? "任意です。「まず ___ を確認し、その結果から ___ と判断した」の形で、答えではなく理由を書けます。"
+          : "任意です。「最初は ___ と思った。実際は ___ の順で動く」の形で、答えではなく理由を書けます。"}
       </FieldDescription>
       <Textarea
         id={id}
@@ -48,15 +48,11 @@ export function SelfExplanation({
             : "最初は同時に動くと思った。実際は右側を計算してから左側を更新する…"
         }
       />
-      {value.trim().length < 10 ? (
-        <small>
-          {reasoning
-            ? "10文字以上で判断理由を記録できます。"
-            : "10文字以上書くと「あとで解き直す」を選べます。"}
-        </small>
-      ) : (
-        <small>説明を記録できます。</small>
-      )}
+      <small>
+        {value.trim().length >= 10
+          ? "この端末に説明を記録できます。"
+          : "書かなくても次へ進めます。10文字以上でこの端末に記録されます。"}
+      </small>
     </Field>
   );
 }

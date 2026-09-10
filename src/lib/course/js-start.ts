@@ -816,7 +816,7 @@ console.log(title);
         talk: [
           {
             speaker: "beginner",
-            text: "まず「宣言」は、実際のコードではどの部分ですか？",
+            text: "まず、名前を使えるようにする部分はコードのどこですか？",
           },
           {
             speaker: "engineer",
@@ -824,15 +824,15 @@ console.log(title);
           },
           {
             speaker: "beginner",
-            text: "では「初期化」は、どの操作ですか？",
+            text: "では、最初の値を結びつける操作はどれですか？",
           },
           {
             speaker: "engineer",
-            text: "let score = 10; のように、宣言と同時に最初の値10を結び付ける操作です。let score; score = 10; と2行で書く場合も、scoreへ最初の値が入る時点が初期化です。",
+            text: "let score = 10; のように、宣言と同時に最初の値10を結び付ける操作が初期化です。let score; score = 10; と2行で書く場合も、scoreへ最初の値が入る時点が初期化です。",
           },
           {
             speaker: "beginner",
-            text: "最初の値を10から20へ変える場合も、初期化ですか？",
+            text: "最初の値を10から20へ変える場合も、同じ操作ですか？",
           },
           {
             speaker: "engineer",

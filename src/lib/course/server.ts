@@ -19,6 +19,8 @@ import {
 } from "./chapters";
 import {
   applyCourseLearningDesign,
+  exitRecallHintsForLesson,
+  predictionOptionsForLesson,
   prequestionForLesson,
 } from "./learning-design";
 import { nodeCore } from "./node-core";
@@ -169,6 +171,7 @@ export function getLessonPageDTO(id: string): LessonPageDTO | undefined {
     },
     prequestion: prequestionForLesson(lesson),
     predictionOptions: predictionOptionsForLesson(lesson),
+    exitRecallHints: exitRecallHintsForLesson(lesson),
     navigation: {
       trackLabel: TRACK_LABEL[lesson.track],
       chapterTitle: chapter?.title ?? lesson.title,
@@ -223,22 +226,4 @@ export function resolveReviewBatch(request: ReviewBatchRequest) {
     request,
     (lesson) => getChapter(lesson.chapter)?.title ?? lesson.title,
   );
-}
-
-function predictionOptionsForLesson(lesson: Lesson): string[] {
-  if (lesson.id === "js-run") {
-    return [
-      "JavaScriptは、書かれた命令を上から1行ずつ動かす",
-      "JavaScriptは、すべての行を同時に動かす",
-      "JavaScriptは、下の行から上へ向かって動かす",
-      "まだ分からないので、説明で確かめたい",
-    ];
-  }
-  const objective = lesson.objectives?.[0]?.label ?? lesson.title;
-  return [
-    `「${objective}」は、値や表示が変わる順番に関係する`,
-    `「${objective}」は、入力の種類や条件を確かめる`,
-    `「${objective}」は、操作や通信の後で処理を動かす`,
-    "まだ分からないので、説明で確かめたい",
-  ];
 }

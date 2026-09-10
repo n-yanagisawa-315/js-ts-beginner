@@ -307,6 +307,204 @@ function isSummary(slide: Slide): boolean {
   return slide.title === "この講義の要点";
 }
 
+function firstTeachingSlide(lesson: Lesson): Slide | undefined {
+  return lesson.slides.find((slide) => !isSummary(slide));
+}
+
+type PredictionLens =
+  | "order"
+  | "binding"
+  | "value"
+  | "branch"
+  | "iteration"
+  | "function"
+  | "object"
+  | "async"
+  | "dom"
+  | "module"
+  | "type"
+  | "node"
+  | "sql"
+  | "git";
+
+function predictionLensForLesson(lesson: Lesson): PredictionLens {
+  if (lesson.track === "sql") return "sql";
+  if (lesson.track === "github") return "git";
+  if (lesson.track === "ts") return "type";
+  if (lesson.track === "node") return "node";
+
+  const diagram = firstTeachingSlide(lesson)?.diagram;
+  if (!diagram) return "order";
+  const group = CONTRAST_GROUP[diagram];
+  if (group === "iteration-choice") return "iteration";
+  if (group === "declaration-let-const-var") return "binding";
+  if (group === "async-model-choice") return "async";
+  if (group === "module-system-choice") return "module";
+
+  switch (diagram) {
+    case "sequence":
+    case "calc":
+      return "order";
+    case "values":
+    case "dynamic":
+      return "value";
+    case "branch":
+    case "truthy":
+      return "branch";
+    case "fn-box":
+    case "callback-flow":
+    case "closure":
+    case "this-call":
+    case "class-instance":
+      return "function";
+    case "object":
+    case "array":
+    case "ref":
+    case "spread":
+    case "scope":
+      return "object";
+    case "dom-tree":
+    case "dom-query":
+    case "dom-update":
+    case "dom-create":
+    case "dom-event":
+    case "dom-form":
+    case "dom-render":
+    case "dom-storage":
+    case "dom-fetch":
+      return "dom";
+    case "modules":
+      return "module";
+    default:
+      return "order";
+  }
+}
+
+function predictionFocusPrompt(lens: PredictionLens): string {
+  switch (lens) {
+    case "order":
+      return "命令はどの順で動くかに近いものを選びます。";
+    case "binding":
+      return "名前と値の結び付きで何が起きるかに近いものを選びます。";
+    case "value":
+      return "値の形や見え方がどう変わるかに近いものを選びます。";
+    case "branch":
+      return "条件で処理がどう分かれるかに近いものを選びます。";
+    case "iteration":
+      return "何回・どの順で処理が進むかに近いものを選びます。";
+    case "function":
+      return "何が入り、何が戻るか／いつ動くかに近いものを選びます。";
+    case "object":
+      return "まとめたデータの持ち方や共有のされ方に近いものを選びます。";
+    case "async":
+      return "待っているあいだに何が進むかに近いものを選びます。";
+    case "dom":
+      return "画面のどの要素や操作が変わるかに近いものを選びます。";
+    case "module":
+      return "どのファイルへ分け、どうつなぐかに近いものを選びます。";
+    case "type":
+      return "どの約束（型）が誤りを実行前に止めるかに近いものを選びます。";
+    case "node":
+      return "どの入出力や起動の手順が動きを変えるかに近いものを選びます。";
+    case "sql":
+      return "どの列・条件・並びが結果の行を変えるかに近いものを選びます。";
+    case "git":
+      return "どの操作が履歴や共有の状態を変えるかに近いものを選びます。";
+  }
+}
+
+function predictionOptionStems(
+  lens: PredictionLens,
+  objective: string,
+): [string, string, string] {
+  switch (lens) {
+    case "order":
+      return [
+        `「${objective}」は、命令が動く順番に関係する`,
+        `「${objective}」は、値の形や計算の結果に関係する`,
+        `「${objective}」は、条件で処理を分けることに関係する`,
+      ];
+    case "binding":
+      return [
+        `「${objective}」は、名前に値を結び付ける`,
+        `「${objective}」は、すでに結んだ値を書き換える`,
+        `「${objective}」は、同じ名前を別の場所でも使えるようにする`,
+      ];
+    case "value":
+      return [
+        `「${objective}」は、値の種類や見え方を決める`,
+        `「${objective}」は、計算や変換の結果を作る`,
+        `「${objective}」は、後から同じ値を参照できるようにする`,
+      ];
+    case "branch":
+      return [
+        `「${objective}」は、条件が真のときだけ進む道を選ぶ`,
+        `「${objective}」は、複数の候補から一つを選ぶ`,
+        `「${objective}」は、条件に関係なく同じ処理を繰り返す`,
+      ];
+    case "iteration":
+      return [
+        `「${objective}」は、同じ処理を繰り返す回数や順番に関係する`,
+        `「${objective}」は、一覧の各要素へ一度ずつ処理を渡す`,
+        `「${objective}」は、条件で処理を1回だけ分岐させる`,
+      ];
+    case "function":
+      return [
+        `「${objective}」は、渡した値を受け取り、結果を返す`,
+        `「${objective}」は、後で動かす処理そのものを渡す`,
+        `「${objective}」は、作ったあとも外側の値を覚えている`,
+      ];
+    case "object":
+      return [
+        `「${objective}」は、複数の値を一つのまとまりとして持つ`,
+        `「${objective}」は、同じまとまりを共有して書き換える`,
+        `「${objective}」は、必要な部品だけを取り出して使う`,
+      ];
+    case "async":
+      return [
+        `「${objective}」は、返事を待ちながら他の処理を進める`,
+        `「${objective}」は、成功・失敗のあとで次の処理をつなぐ`,
+        `「${objective}」は、画面を止めずに完了まで一気に待つ`,
+      ];
+    case "dom":
+      return [
+        `「${objective}」は、画面上の要素を探して表示を変える`,
+        `「${objective}」は、操作が起きたあとに処理を動かす`,
+        `「${objective}」は、入力や保存の内容を読み書きする`,
+      ];
+    case "module":
+      return [
+        `「${objective}」は、役割ごとに別ファイルへ分ける`,
+        `「${objective}」は、分けたファイルを読み込んでつなぐ`,
+        `「${objective}」は、同じ名前でも衝突しない公開の範囲を決める`,
+      ];
+    case "type":
+      return [
+        `「${objective}」は、値の形を約束して誤りを実行前に止める`,
+        `「${objective}」は、いくつかの候補のうちどれかを表す`,
+        `「${objective}」は、不明な値を検査してから安全に扱う`,
+      ];
+    case "node":
+      return [
+        `「${objective}」は、ファイルや通信など外部との入出力に関係する`,
+        `「${objective}」は、プロセスの起動や終了の手順に関係する`,
+        `「${objective}」は、同じ環境で再現できる依存関係の扱いに関係する`,
+      ];
+    case "sql":
+      return [
+        `「${objective}」は、どの列を読み出すかに関係する`,
+        `「${objective}」は、どの行を条件で残すかに関係する`,
+        `「${objective}」は、並びや件数、複数表の結び付きに関係する`,
+      ];
+    case "git":
+      return [
+        `「${objective}」は、変更を記録して履歴に残す`,
+        `「${objective}」は、作業の流れを分岐・統合する`,
+        `「${objective}」は、共有先と履歴を同期する`,
+      ];
+  }
+}
+
 function storyBeat(index: number, teachingCount: number): StoryBeat {
   if (index === 0) return "problem";
   if (index === 1) return "prediction";
@@ -598,13 +796,15 @@ export function applyLearningDesign(lesson: Lesson): Lesson {
     );
   });
 
+  const firstFocus = teachingSlides[0]?.title ?? lesson.title;
+
   return {
     ...lesson,
     story:
       lesson.story ??
       {
         project: PROJECT_BY_TRACK[lesson.track],
-        incident: `${INCIDENT_BY_TRACK[lesson.track]} 今回は「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」のために「${lesson.title}」を使います。`,
+        incident: `${INCIDENT_BY_TRACK[lesson.track]} 工程は「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」。まずは「${firstFocus}」から入ります。`,
         outcome: lesson.summary,
       },
     objectives:
@@ -622,8 +822,106 @@ export function applyLearningDesign(lesson: Lesson): Lesson {
 }
 
 export function prequestionForLesson(lesson: Lesson): string {
-  const first = lesson.objectives?.[0]?.label ?? lesson.title;
-  return `${lesson.story?.project ?? PROJECT_BY_TRACK[lesson.track]}の工程「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」で「${lesson.title}」が必要になりました。説明を見る前に、最初の目標「${first}」がどの値や実行順を変えるか、一つだけ予想してください。`;
+  if (lesson.id === "js-run") {
+    return "説明を見る前に、JavaScriptが命令をどの順で動かすか、一つだけ予想してください。";
+  }
+  const first =
+    lesson.objectives?.[0]?.label ??
+    firstTeachingSlide(lesson)?.title ??
+    lesson.title;
+  const lens = predictionLensForLesson(lesson);
+  return `説明を見る前に、「${first}」について一つだけ予想してください。${predictionFocusPrompt(lens)}`;
+}
+
+export function predictionOptionsForLesson(lesson: Lesson): string[] {
+  if (lesson.id === "js-run") {
+    return [
+      "JavaScriptは、書かれた命令を上から1行ずつ動かす",
+      "JavaScriptは、すべての行を同時に動かす",
+      "JavaScriptは、下の行から上へ向かって動かす",
+      "まだ分からないので、説明で確かめたい",
+    ];
+  }
+  const objective =
+    lesson.objectives?.[0]?.label ??
+    firstTeachingSlide(lesson)?.title ??
+    lesson.title;
+  return [
+    ...predictionOptionStems(predictionLensForLesson(lesson), objective),
+    "まだ分からないので、説明で確かめたい",
+  ];
+}
+
+function exitRecallProbe(lens: PredictionLens): string {
+  switch (lens) {
+    case "order":
+      return "命令や値は、どの順で決まり、どこへ結び付くかを思い出すと書きやすいです。";
+    case "binding":
+      return "名前はどこで作られ、どこまで見えるかを思い出すと書きやすいです。";
+    case "value":
+      return "値の種類や見え方が、どこでどう変わるかを思い出すと書きやすいです。";
+    case "branch":
+      return "条件が真／偽のとき、処理がどう分かれるかを思い出すと書きやすいです。";
+    case "iteration":
+      return "何回・どの順で処理が進み、いつ終わるかを思い出すと書きやすいです。";
+    case "function":
+      return "何が入り、何が戻り、呼ぶたびに何が新しくなるかを思い出すと書きやすいです。";
+    case "object":
+      return "まとめたデータの持ち方や、共有・取り出しの違いを思い出すと書きやすいです。";
+    case "async":
+      return "待っているあいだに何が進み、完了後に何が続くかを思い出すと書きやすいです。";
+    case "dom":
+      return "画面のどの要素を探し、どの操作のあとに何が変わるかを思い出すと書きやすいです。";
+    case "module":
+      return "何をどのファイルへ分け、どう読み込んでつなぐかを思い出すと書きやすいです。";
+    case "type":
+      return "どの約束が実行前に誤りを止め、何を検査するかを思い出すと書きやすいです。";
+    case "node":
+      return "どの入出力や起動手順が、動きや終了の仕方を変えるかを思い出すと書きやすいです。";
+    case "sql":
+      return "どの列・条件・並びが、結果の行を変えるかを思い出すと書きやすいです。";
+    case "git":
+      return "どの操作が履歴や共有の状態を変えるかを思い出すと書きやすいです。";
+  }
+}
+
+export function exitRecallHintsForLesson(lesson: Lesson): string[] {
+  const hints: string[] = [];
+  const summary = lesson.summary.trim();
+  if (summary) {
+    hints.push(
+      `この講義の要約は「${summary}」でした。その意味を、仕組みの説明として自分の言葉に言い換えてみてください。`,
+    );
+  }
+
+  const topics = (() => {
+    const fromObjectives =
+      lesson.objectives?.map((item) => item.label).filter(Boolean) ?? [];
+    if (fromObjectives.length > 0) return fromObjectives.slice(0, 3);
+    return lesson.slides
+      .filter((slide) => !isSummary(slide))
+      .map((slide) => slide.title)
+      .slice(0, 3);
+  })();
+  if (topics.length > 0) {
+    hints.push(
+      `触れた話題の手がかり: ${topics
+        .map((topic) => `「${topic}」`)
+        .join("、")}。このうち今思い出せるものを説明に入れてください。`,
+    );
+  }
+
+  hints.push(exitRecallProbe(predictionLensForLesson(lesson)));
+
+  const summarySlide = lesson.slides.find((slide) => isSummary(slide));
+  const point = summarySlide?.points?.find((item) => item.trim());
+  if (point) {
+    hints.push(
+      `もう一段の観点: 「${point}」。答えそのものを写すのではなく、なぜそう言えるかを書いてください。`,
+    );
+  }
+
+  return [...new Set(hints)].slice(0, 3);
 }
 
 function transferConceptIds(
@@ -993,7 +1291,11 @@ export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
       .filter((candidate) => candidate.track === lesson.track && candidate.order < lesson.order)
       .sort((a, b) => b.order - a.order)[0];
     if (!previous || !lesson.story) return lesson;
-    const connectedIncident = `前の講義で「${previous.summary}」まで確認しました。その仕組みを使ったところ、次は「${lesson.title}」が必要になりました。${lesson.story.incident}`;
+    const firstFocus =
+      lesson.objectives?.[0]?.label ??
+      firstTeachingSlide(lesson)?.title ??
+      lesson.title;
+    const connectedIncident = `前は「${previous.summary}」まで。今回は「${lesson.title}」で、まず「${firstFocus}」の動きを予想します。`;
     const firstTeaching = lesson.slides.findIndex((slide) => !isSummary(slide));
     return {
       ...lesson,

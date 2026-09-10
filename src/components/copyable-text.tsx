@@ -5,6 +5,7 @@ import { IconCheck, IconCopy } from "@/components/icons";
 import {
   inputTokenPieces,
   piecesOf,
+  stepPieces,
 } from "@/lib/copyable-tokens";
 
 export async function copyText(value: string): Promise<boolean> {
@@ -22,22 +23,26 @@ export function CopyableText({
   code,
   copyValues,
   tokensOnly = false,
+  stepsOnly = false,
 }: {
   text?: string;
   className?: string;
   code?: string;
   copyValues?: string[];
   tokensOnly?: boolean;
+  stepsOnly?: boolean;
 }) {
   const liveId = useId();
   const [copied, setCopied] = useState<string | null>(null);
   const pieces = tokensOnly
     ? inputTokenPieces(code ?? "", copyValues ?? [])
-    : piecesOf(
-        text.replaceAll("starter", "最初から入っているコード"),
-        code,
-        copyValues,
-      );
+    : stepsOnly
+      ? stepPieces(text)
+      : piecesOf(
+          text.replaceAll("starter", "最初から入っているコード"),
+          code,
+          copyValues,
+        );
 
   async function copy(value: string) {
     const ok = await copyText(value);

@@ -275,19 +275,19 @@ const noResult = shout(3); // undefined`,
         talk: [
           {
             "speaker": "beginner",
-            "text": "=>を使えば、どんな関数でもreturnを書かなくていいですか？"
+            "text": "短い1行の書き方だと、戻り値を書かなくてもいいんですか？"
           },
           {
             "speaker": "engineer",
-            "text": "本文が式1つなら省略できますが、波括弧を付けたらreturnが必要です。"
+            "text": "右辺が式1つだけなら書けます。でも波括弧 { } を付けた本文では、値を返すときに return が必要です。この短い書き方をアロー関数といい、真ん中の => が目印です。"
           },
           {
             "speaker": "beginner",
-            "text": "引数が1つのとき、括弧がある例とない例は別の意味ですか？"
+            "text": "引数が1つのとき、丸括弧がある書き方とない書き方は別物ですか？"
           },
           {
             "speaker": "engineer",
-            "text": "どちらでも同じです。短い関数を値として渡す場面で便利です。functionとのthisの違いはありますが、それは中級で扱います。"
+            "text": "どちらでも同じです。アロー関数は、短い関数を値として渡すときに便利です。function との this の違いは中級で扱います。"
           }
         ],
         diagram: "fn-box",
@@ -382,11 +382,11 @@ hello();`,
         starter: "function calculateTotal(a, b) {\n  return a + b;\n}\n// 2件の注文合計を計算する\n",
         fileName: "script.js",
         steps: [
-          "最初の2値をcalculateTotalへ渡して結果を表示する",
-          "次の2値でもcalculateTotalを呼び出して結果を表示する",
-          "2行の順番と値を確認する",
+          "`calculateTotal(2, 3)` を呼び出し、戻り値を表示する",
+          "`calculateTotal(10, 1)` を呼び出し、戻り値を表示する",
+          "上の行が5、下の行が11になっているか確認する",
         ],
-        hint: "関数の定義はすでに完成しています。同じ関数名に、呼び出すたび異なる引数を渡します。",
+        hint: "関数の中身は変えません。console.log の中で calculateTotal を2回呼び出します。呼び出すたびに渡す明細金額を変えます。",
         sample: "5\n11",
         answer: `function calculateTotal(a, b) {
   return a + b;
@@ -425,11 +425,11 @@ console.log(calculateTotal(10, 1));`,
           'function greet(name = "客") {\n // ここに書いてください\n}\nconsole.log(greet());\nconsole.log(greet("Aya"));\n',
         fileName: "script.js",
         steps: [
-          "hiとnameから挨拶文を作る",
-          "作った文字列を戻り値として返す",
+          "`\"hi \"` と `name` をつなげて挨拶文を作る",
+          "`return` で作った文字列を戻り値として返す",
           "省略時と指定時の2行を確認する",
         ],
-        hint: "仮引数の既定値はstarterにあります。関数内では、固定部分とnameの値をつないだ文字列を返します。",
+        hint: "仮引数の既定値は最初から入っています。関数内では return で、固定部分と name をつないだ文字列を返します。",
         sample: "hi 客\nhi Aya",
         answer: `function greet(name = "客") {
   return "hi " + name;
@@ -449,9 +449,9 @@ console.log(greet("Aya"));`,
           "function double(n) {\n // 2倍を返す\n}\nfunction shout(n) {\n // 2倍を表示するだけ\n}\nconsole.log(double(3));\nconsole.log(shout(3));\n",
         fileName: "script.js",
         steps: [
-          "doubleで2倍の値を計算して返す",
-          "shoutで2倍の値を関数内から表示する",
-          "shoutには戻り値を追加しない",
+          "`double` で2倍を計算し、`return` で返す",
+          "`shout` で2倍の値を関数内から表示する",
+          "`shout` には `return` を書かない",
           "3行の出力順を確認する",
         ],
         hint: "値を後で使えるようにするのが戻り値です。表示だけの関数では、明示的に返さなければ戻り値は未定義になります。",
@@ -476,11 +476,11 @@ console.log(shout(3));`,
         starter: 'function check(n) {\n  if (n < 0) {\n    // invalidを返して終了\n  }\n  return "ok";\n}\nconsole.log(check(-1));\nconsole.log(check(1));\n',
         fileName: "script.js",
         steps: [
-          "負の数を判定するifの中でinvalidを返す",
-          "それ以外では既存のreturnまで進む",
+          "負の数のとき `return \"invalid\"` で関数を終了する",
+          "それ以外では既存の `return \"ok\"` まで進む",
           "2行の出力を確認する",
         ],
-        hint: "表示ではなく、ifの中から値を返して関数を終了します。",
+        hint: "表示ではなく、if の中から return で値を返して関数を終了します。",
         sample: "invalid\nok",
         answer: `function check(n) {
   if (n < 0) {
@@ -1397,19 +1397,19 @@ while (n > 0) {
         talk: [
           {
             "speaker": "beginner",
-            "text": "continueしたら、そのループ自体がそこで終了しますか？"
+            "text": "途中で飛ばす命令を使うと、その繰り返し自体がそこで終わるんですか？"
           },
           {
             "speaker": "engineer",
-            "text": "continueは今の周の残りだけを飛ばし、次の周へ進みます。"
+            "text": "いいえ。今の周の残りだけを飛ばして次の周へ進むのが continue です。"
           },
           {
             "speaker": "beginner",
-            "text": "breakは次の周へ、continueはループの外へ、だと思っていました。"
+            "text": "やめる命令は次の周へ、飛ばす命令はループの外へ、だと思っていました。"
           },
           {
             "speaker": "engineer",
-            "text": "逆です。breakは一番内側のループ全体から降り、下の行へ進みます。探し物が見つかったらbreak、特定の値だけ処理しないならcontinueが合います。"
+            "text": "逆です。break は一番内側のループ全体から降り、下の行へ進みます。探し物が見つかったら break、特定の値だけ処理しないなら continue が合います。"
           }
         ],
         diagram: "loop-control",
@@ -2211,28 +2211,28 @@ console.log(leaked);`,
         scenario: "注文ごとの処理回数をローカル変数に保ち、別の注文へ持ち越さない。",
         projectRole: "build",
         prompt: "1件の注文内の処理回数だけを数える processOrderを完成させ、2回呼んでも毎回1から始まることを確認してください。",
-        lead: "processOrderの中には局所変数orderCountを0で用意し、その呼び出し中に1増やして返します。starterはprocessOrderを2回呼んで結果を表示します。前回の状態を持ち越さず、どちらも1になれば完成です。",
+        lead: "processOrderの中では局所変数`orderCount`だけを使います（スライド例の`n`ではありません）。0で用意し、`orderCount++`で1増やして返します。2回呼んでもどちらも1になれば完成です。",
         kind: "code",
         starter:
-          "function processOrder() {\n // 局所変数 n を 0 から 1 増やす\n}\nconsole.log(processOrder());\nconsole.log(processOrder());\n",
+          "function processOrder() {\n  let orderCount = 0;\n  // orderCount を 1 増やして返す\n}\nconsole.log(processOrder());\nconsole.log(processOrder());\n",
         fileName: "script.js",
         steps: [
-          "関数内に0から始まる局所変数nを作る",
-          "nを1増やす",
-          "増やした値を戻り値として返す",
-          "2回とも同じ結果になることを確認する",
+          "すでに用意された `orderCount` をそのまま使う（`n` は使わない）",
+          "`orderCount++` で1増やす",
+          "`return orderCount` で増やした値を返す",
+          "2回とも `1` になることを確認する",
         ],
-        hint: "nを関数の外へ出すと状態が残ります。今回は関数の内側で毎回作り直されるスコープを使います。",
+        hint: "スライドの例では`n`でしたが、この演習の局所変数名は`orderCount`です。`n++`と書くと`n is not defined`になります。",
         sample: "1\n1",
         answer: `function processOrder() {
   let orderCount = 0;
-  n++;
+  orderCount++;
   return orderCount;
 }
 console.log(processOrder());
 console.log(processOrder());`,
         explain:
-          "前回の滞在の荷物は残りません。残したいなら戻り値で渡すか、外側の変数を使います。",
+          "呼ぶたびに`orderCount`は新しく0から始まります。前回の滞在の荷物は残りません。残したいなら戻り値で渡すか、外側の変数を使います。",
       },
     ],
   },
