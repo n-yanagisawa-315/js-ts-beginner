@@ -276,27 +276,30 @@ console.log(fn(200, 300));`,
         id: "q2",
         slide: 1,
         prompt:
-          "買い物リストの各商品を表示するため、`show` を配列側に1要素ずつ呼んでもらう書き方を選んでください。",
+          "買い物リストの各商品を表示するため、用意された `show` を配列側に1要素ずつ呼んでもらってください。",
         lead:
-          "starterには商品名の配列と、受け取った商品を表示する `show` が用意されています。選んだ処理によって、りんごとみかんが順に表示される必要があります。渡す時点で `show` を実行せず、関数そのものを配列へ渡す形を選んでください。",
-        code: `function show(x) {
+          "starterには商品名の配列と、受け取った商品を表示する `show` があります。渡す時点で `show` を実行せず、関数そのものを配列へ渡し、りんごとみかんが順に表示されるようにしてください。",
+        kind: "code",
+        starter: `function show(x) {
   console.log(x);
 }
-const xs = ["りんご", "みかん"];`,
-        kind: "choice",
-        options: [
-          "xs.forEach(show);",
-          "xs.forEach(show());",
-          "show(xs[0], xs[1]);",
-        ],
+const xs = ["りんご", "みかん"];
+// show を1要素ずつ呼んでもらう
+`,
+        fileName: "script.js",
         steps: [
-          "配列側が要素ごとに呼び出す形になっている",
-          "渡す時点でshowを実行していない",
-          "showが各回の要素を受け取れる",
+          "配列側が要素ごとに呼び出す形を書く",
+          "渡す時点でshowを実行しない",
+          "showが各回の要素を受け取れることを確認する",
         ],
         hint:
           "名前だけなら関数への参照、名前の直後に括弧があればその場での呼び出しです。",
-        answer: "xs.forEach(show);",
+        sample: "りんご\nみかん",
+        answer: `function show(x) {
+  console.log(x);
+}
+const xs = ["りんご", "みかん"];
+xs.forEach(show);`,
         explain: "showそのものを渡すと、forEachが各要素を引数にして呼びます。",
       },
       {

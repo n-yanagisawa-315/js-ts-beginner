@@ -23,5 +23,5 @@ export const EXPECTED_TOTALS = {
   lessons: 97,
   slides: 429,
   questions: 372,
-  choices: 97,
+  choices: 91,
 };

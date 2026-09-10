@@ -405,11 +405,12 @@ assert.equal(
   undefined,
   "独力問題からコメントだけのstarterを外す",
 );
-assert.equal(designed[1].questions[1].kind, "order");
-assert.ok(designed[1].questions[1].fragments.length >= 2);
+assert.equal(designed[1].questions[1].kind, "code");
 assert.equal(designed[1].questions[2].exerciseKind, "transfer");
 assert.ok(designed[1].questions[2].conceptIds.length <= 4);
-assert.match(designed[1].questions[2].answer, /paidOrders.*npm ci/);
+assert.match(designed[1].questions[2].answer, /filter\(\(order\) => order\.paid\)/);
+assert.equal(designed[1].questions[2].kind, "code");
+assert.equal(designed[1].questions[2].transferLevel, "far");
 const diagnoses = Object.values(designed[0].questions[0].misconceptionByAnswer);
 assert.ok(diagnoses.every((item) => item.id && item.nextCheck));
 assert.equal(

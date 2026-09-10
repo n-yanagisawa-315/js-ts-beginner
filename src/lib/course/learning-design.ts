@@ -626,142 +626,15 @@ export function prequestionForLesson(lesson: Lesson): string {
   return `${lesson.story?.project ?? PROJECT_BY_TRACK[lesson.track]}の工程「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」で「${lesson.title}」が必要になりました。説明を見る前に、最初の目標「${first}」がどの値や実行順を変えるか、一つだけ予想してください。`;
 }
 
-function orderingQuestionIndex(questions: Question[]): number {
-  for (let index = questions.length - 2; index >= 0; index -= 1) {
-    const question = questions[index];
-    const lineCount = question?.answer.trim().split("\n").length ?? 0;
-    if (
-      question?.kind === "code" &&
-      question.scaffoldLevel === "faded" &&
-      lineCount >= 2 &&
-      lineCount <= 8
-    ) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-function asOrderingQuestion(question: Question): Question {
-  const lines = question.answer.trim().split("\n");
-  const offset = Math.max(1, Math.floor(lines.length / 2));
-  const fragments = [...lines.slice(offset), ...lines.slice(0, offset)];
-  return {
-    ...question,
-    kind: "order",
-    prompt: `処理が正しい順で動くように、${lines.length}個のコード断片を並べてください。${question.prompt}`,
-    starter: undefined,
-    fragments,
-    exerciseKind: "faded",
-    scaffoldLevel: "faded",
-  };
-}
-
-function transferQuestion(
+function transferConceptIds(
   lesson: Lesson,
-  question: Question,
   relatedLessons: Lesson[],
   availableConceptIds: string[],
   far: boolean,
-): Question {
-  const misconceptionId = `${lesson.id}:cumulative-transfer`;
+): string[] {
   const relatedObjectives = relatedLessons.flatMap(
     (item) => item.objectives ?? [],
   );
-  let prompt: string;
-  let options: string[];
-  let answer: string;
-  let explain: string;
-  let code = relatedLessons
-    .flatMap((item) => item.slides)
-    .map((slide) => slide.code)
-    .filter((value): value is string => Boolean(value))
-    .slice(0, 3)
-    .join("\n\n// 次の処理\n");
-
-  if (far && lesson.track === "js") {
-    code = TRACK_CAPSTONE_CODE.js;
-    prompt =
-      "引き継いだ注文管理コードを読みます。支払済み注文だけを集計し、CIでも同じ依存関係を再現する組み合わせを選んでください。";
-    options = [
-      "paidOrdersで絞ってから集計し、CIではnpm ciを使う",
-      "元のordersを直接削除しながら集計し、CIではnpm updateを使う",
-      "forEachの戻り値を新配列として集計し、lockを削除する",
-      "未払いを含む全件を集計し、node_modulesを保存して配布する",
-    ];
-    answer = options[0];
-    explain =
-      "配列の変換と副作用を分け、支払状態で絞ってから集計します。依存関係はlockからnpm ciで再現します。";
-  } else if (far && lesson.track === "ts") {
-    code = TRACK_CAPSTONE_CODE.ts;
-    prompt =
-      "API由来のquantityが文字列の可能性を残すコードです。型だけを言い切らず、実行時にも安全に合計する修正を選んでください。";
-    options = [
-      "unknownの形とquantityの型を検証し、数値へ変換できた値だけOrderとして扱う",
-      "as Orderを二重に書き、文字列のquantityをnumberへ自動変換する",
-      "OrderItem.quantityをanyへ変え、すべての演算を許可する",
-      "型注釈を削除すれば実行時に自動検証される",
-    ];
-    answer = options[0];
-    explain =
-      "型アサーションは値を変換しません。外部境界ではunknownとして形を検証し、変換後の値へ型を付けます。";
-  } else if (far && lesson.track === "node") {
-    code = TRACK_CAPSTONE_CODE.node;
-    prompt =
-      "複数コンテナで動く注文APIを安全に運用します。非同期I/O、ログ収集、終了処理をまとめた判断を選んでください。";
-    options = [
-      "I/Oはawaitで失敗を捕捉し、ログはstdout/stderrへ出し、SIGTERMでserver.closeを始める",
-      "同期I/Oでイベントループを止め、ログは/tmpだけへ保存し、SIGKILLで必ず終了する",
-      "Promiseの失敗を無視し、ログはlocalStorageへ出し、終了処理を省く",
-      "すべての要求を同じ配列へ無制限にため、終了時に新規受付を続ける",
-    ];
-    answer = options[0];
-    explain =
-      "待ち時間は非同期処理へ渡し、診断可能な標準ストリームへ記録し、通常終了要求では新規受付を止めて処理中の要求を待ちます。";
-  } else if (far && lesson.track === "sql") {
-    code = TRACK_CAPSTONE_CODE.sql;
-    prompt =
-      "支払済み注文を顧客ごとに集計します。表を安全に結び、集計結果を大きい順で表示する考え方を選んでください。";
-    options = [
-      "顧客IDでJOINし、WHEREで支払済みに絞ってからGROUP BYし、合計でORDER BYする",
-      "名前の一部が似ている行を結び、全注文を集計して順序を指定しない",
-      "JOINせず全行を掛け合わせ、重複した合計をそのまま使う",
-      "UPDATEで元データを書き換えてから画面用の合計を作る",
-    ];
-    answer = options[0];
-    explain =
-      "テーブルの関係はIDで結び、対象行を絞ってから集計します。表示順はORDER BYで明示します。";
-  } else if (far && lesson.track === "github") {
-    code = TRACK_CAPSTONE_CODE.github;
-    prompt =
-      "注文絞り込み機能をmainへ直接置かず、レビューして共有する流れを選んでください。";
-    options = [
-      "機能branchでcommitし、originへpushしてPull Requestを作る",
-      "mainの履歴を削除し、作業ファイルだけをチャットへ貼る",
-      "未commitのままPull Requestを作り、差分確認を省く",
-      "別機能の変更も同じcommitへ混ぜ、説明なしでmergeする",
-    ];
-    answer = options[0];
-    explain =
-      "branchへ意味のあるcommitを作り、remoteへ共有してPull Requestで差分を確認します。";
-  } else {
-    const objectives = relatedObjectives.map((objective) => objective.label);
-    const first = objectives[0] ?? "入力の状態";
-    const last = objectives.at(-1) ?? "出力の状態";
-    prompt = `章末の注文処理を調査します。「${first}」と「${last}」を両方使って原因を切り分ける手順を選んでください。`;
-    options = [
-      `最初に「${first}」の値と実行順を確認し、その結果を「${last}」の判断へ渡す`,
-      `「${last}」だけを見て、「${first}」の入力状態は確認しない`,
-      `どちらも自動で正しくなる前提にして、実行結果を確認しない`,
-      `二つの仕組みを同じものとして扱い、名前だけを書き換える`,
-    ];
-    answer = options[0];
-    explain = `章末課題では片方の用語を思い出すだけでなく、「${first}」の結果が「${last}」へどう影響するかを順に追います。`;
-  }
-
-  const optionOffset = lesson.order % options.length;
-  options = [...options.slice(optionOffset), ...options.slice(0, optionOffset)];
-
   const farConceptSuffixes: Record<Track, string[]> = {
     js: ["map", "fn-box", "modules"],
     ts: ["unknown", "shape", "narrow"],
@@ -778,7 +651,7 @@ function transferQuestion(
     ...(relatedObjectives[0]?.conceptIds ?? []),
     ...(relatedObjectives.at(-1)?.conceptIds ?? []),
   ];
-  const measuredConceptIds = [
+  return [
     ...new Set(
       far
         ? farConceptIds.length >= 2
@@ -789,38 +662,289 @@ function transferQuestion(
           : availableConceptIds.slice(0, 2),
     ),
   ].slice(0, 4);
+}
 
-  const base: Question = {
+function farTransferQuestion(
+  lesson: Lesson,
+  question: Question,
+  conceptIds: string[],
+): Question {
+  const misconceptionId = `${lesson.id}:cumulative-transfer`;
+  const base = {
     ...question,
-    prompt,
-    lead: far
-      ? "初めて見る長いコードから、複数の仕組みを組み合わせて判断します。"
-      : "この章で別々に学んだ仕組みを、1つの注文処理の中でつなぎます。",
-    kind: "choice",
-    options,
-    starter: undefined,
+    options: undefined,
     fragments: undefined,
-    answer,
-    explain,
-    code,
-    exerciseKind: "transfer",
-    scaffoldLevel: "independent",
-    transferLevel: far ? "far" : "near",
-    conceptIds: measuredConceptIds,
+    misconceptionByAnswer: undefined,
+    feedbackByAnswer: undefined,
+    exerciseKind: "transfer" as const,
+    scaffoldLevel: "independent" as const,
+    transferLevel: "far" as const,
+    conceptIds,
     misconceptionId,
+    code: TRACK_CAPSTONE_CODE[lesson.track],
+    lead: "初めて見る長いコードから、複数の仕組みを組み合わせて完成させます。",
   };
-  const diagnosis = misconceptionByAnswer(base, misconceptionId);
+
+  if (lesson.track === "js") {
+    return {
+      ...base,
+      kind: "code",
+      fileName: "script.js",
+      prompt:
+        "支払済み注文だけを取り出し、各注文の顧客名と合計金額を空白区切りで1行ずつ表示してください。",
+      starter: `const orders = [
+  { customer: "Aya", price: 1200, qty: 1, paid: true },
+  { customer: "Ren", price: 800, qty: 2, paid: false },
+  { customer: "Kai", price: 500, qty: 3, paid: true },
+];
+function total(order) {
+  return order.price * order.qty;
+}
+// 支払済みだけを表示
+`,
+      sample: "Aya 1200\nKai 1500",
+      answer: `const orders = [
+  { customer: "Aya", price: 1200, qty: 1, paid: true },
+  { customer: "Ren", price: 800, qty: 2, paid: false },
+  { customer: "Kai", price: 500, qty: 3, paid: true },
+];
+function total(order) {
+  return order.price * order.qty;
+}
+orders
+  .filter((order) => order.paid)
+  .forEach((order) => {
+    console.log(order.customer, total(order));
+  });`,
+      explain:
+        "配列の変換と副作用を分け、支払状態で絞ってから表示します。依存関係の再現は別途 lock から npm ci で行います。",
+      steps: [
+        "支払済みの注文だけを残す",
+        "各注文の合計を求める",
+        "顧客名と合計を1行ずつ表示する",
+      ],
+      hint: "元の配列を消し込まず、条件に合うものだけを取り出してから表示します。",
+    };
+  }
+
+  if (lesson.track === "ts") {
+    return {
+      ...base,
+      kind: "code",
+      fileName: "script.ts",
+      prompt:
+        "API由来の quantity が文字列でも数値でも扱えるよう、数値へ変換できた行だけ合計して表示してください。",
+      starter: `type OrderItem = { price: number; quantity: unknown };
+const items: OrderItem[] = [
+  { price: 1200, quantity: 1 },
+  { price: 800, quantity: "2" },
+  { price: 500, quantity: "x" },
+];
+// 変換できた quantity だけを掛けて合計を表示
+`,
+      sample: "2800",
+      answer: `type OrderItem = { price: number; quantity: unknown };
+const items: OrderItem[] = [
+  { price: 1200, quantity: 1 },
+  { price: 800, quantity: "2" },
+  { price: 500, quantity: "x" },
+];
+let sum = 0;
+for (const item of items) {
+  const quantity = Number(item.quantity);
+  if (Number.isFinite(quantity)) {
+    sum += item.price * quantity;
+  }
+}
+console.log(sum);`,
+      typeTests: `const _ok: number = Number("2");`,
+      explain:
+        "型アサーションは値を変換しません。外部境界では値を検証し、変換できたものだけ計算に使います。",
+      steps: [
+        "quantity を数値へ変換する",
+        "有限の数値だけを合計へ加える",
+        "合計を表示する",
+      ],
+      hint: "as で型を言い切っても、実行時の文字列は数値になりません。",
+    };
+  }
+
+  if (lesson.track === "node") {
+    return {
+      ...base,
+      kind: "code",
+      fileName: "server.js",
+      runtime: "node",
+      prompt:
+        "読み取りに失敗したとき、標準エラーへ failed と出し、続けて status に 500 を表示する処理を完成させてください。",
+      starter: `async function handle() {
+  try {
+    throw new Error("boom");
+  } catch (error) {
+    // 失敗を記録し、500を表示
+  }
+}
+await handle();
+`,
+      sample: "failed\n500",
+      answer: `async function handle() {
+  try {
+    throw new Error("boom");
+  } catch (error) {
+    console.error("failed");
+    console.log(500);
+  }
+}
+await handle();`,
+      explain:
+        "待ち時間のある処理の失敗は捕捉し、診断可能な標準ストリームへ残してからエラー応答へ進みます。",
+      steps: [
+        "失敗を標準エラーへ残す",
+        "呼び出し側へ渡す状態として500を表示する",
+      ],
+      hint: "ログは一時ファイルだけへ閉じ込めず、標準出力・標準エラーへ出します。",
+    };
+  }
+
+  if (lesson.track === "sql") {
+    return {
+      ...base,
+      kind: "sql",
+      prompt:
+        "支払済み注文を顧客ごとに集計し、合計金額の大きい順で顧客名と合計を返す SQL を書いてください。",
+      starter: "-- 顧客と注文を結び、支払済みだけを集計\n",
+      answer: `SELECT c.name, SUM(o.total) AS paid_total
+FROM customers AS c
+JOIN orders AS o ON o.customer_id = c.id
+WHERE o.status = 'paid'
+GROUP BY c.id, c.name
+ORDER BY paid_total DESC;`,
+      sqlSchema: `CREATE TABLE customers (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL
+);
+CREATE TABLE orders (
+  id INTEGER PRIMARY KEY,
+  customer_id INTEGER NOT NULL,
+  total INTEGER NOT NULL,
+  status TEXT NOT NULL
+);`,
+      sqlSeed: `INSERT INTO customers (id, name) VALUES (1, 'Aya'), (2, 'Ren');
+INSERT INTO orders (id, customer_id, total, status) VALUES
+  (1, 1, 1200, 'paid'),
+  (2, 1, 800, 'draft'),
+  (3, 2, 1500, 'paid');`,
+      sqlExpectedRows: [
+        { name: "Ren", paid_total: 1500 },
+        { name: "Aya", paid_total: 1200 },
+      ],
+      explain:
+        "テーブルの関係はIDで結び、対象行を絞ってから集計します。表示順はORDER BYで明示します。",
+      steps: [
+        "顧客と注文をIDで結ぶ",
+        "支払済みだけに絞る",
+        "顧客ごとに合計し、大きい順に並べる",
+      ],
+      hint: "名前のあいまい一致ではなく、外部キーで結びます。",
+    };
+  }
+
   return {
     ...base,
-    misconceptionByAnswer: diagnosis,
-    feedbackByAnswer: diagnosis
-      ? Object.fromEntries(
-          Object.entries(diagnosis).map(([option, item]) => [
-            option,
-            `${item.feedback} 次は「${item.nextCheck}」を確認してください。`,
-          ]),
-        )
-      : undefined,
+    kind: "git",
+    prompt:
+      "注文絞り込み機能を feature/order-filter 枝で commit し、origin へ push してから Pull Request を作ってください。",
+    starter: "# branch → commit → push → PR\n",
+    answer: `git switch -c feature/order-filter
+git add src/order-filter.js
+git commit -m "注文状態の絞り込みを追加"
+git push -u origin feature/order-filter
+gh pr create --base main --head feature/order-filter`,
+    gitInitialState: {
+      branch: "main",
+      remote: "origin",
+      files: {
+        "src/order-filter.js":
+          "export function paidOnly(orders) {\n  return orders.filter((o) => o.paid);\n}\n",
+      },
+    },
+    gitAssertions: [
+      { kind: "branch", name: "feature/order-filter" },
+      { kind: "pushed", branch: "feature/order-filter" },
+      { kind: "pr-open", base: "main", head: "feature/order-filter" },
+    ],
+    explain:
+      "branchへ意味のあるcommitを作り、remoteへ共有してPull Requestで差分を確認します。",
+    steps: [
+      "作業枝を作る",
+      "変更をcommitする",
+      "originへpushする",
+      "Pull Requestを作る",
+    ],
+    hint: "mainへ直接置かず、レビューできる流れで共有します。",
+  };
+}
+
+function transferQuestion(
+  lesson: Lesson,
+  question: Question,
+  relatedLessons: Lesson[],
+  availableConceptIds: string[],
+  far: boolean,
+): Question {
+  const conceptIds = transferConceptIds(
+    lesson,
+    relatedLessons,
+    availableConceptIds,
+    far,
+  );
+  if (far) {
+    return farTransferQuestion(lesson, question, conceptIds);
+  }
+
+  const framedLead = question.lead
+    ? `この章で学んだ仕組みをつなげます。${question.lead}`
+    : "この章で別々に学んだ仕組みを、1つの注文処理の中でつなぎます。";
+
+  if (question.kind === "choice") {
+    const misconceptionId = `${lesson.id}:cumulative-transfer`;
+    const base: Question = {
+      ...question,
+      lead: framedLead,
+      exerciseKind: "transfer",
+      scaffoldLevel: "independent",
+      transferLevel: "near",
+      conceptIds,
+      misconceptionId,
+      fragments: undefined,
+    };
+    const diagnosis = misconceptionByAnswer(base, misconceptionId);
+    return {
+      ...base,
+      misconceptionByAnswer: diagnosis,
+      feedbackByAnswer: diagnosis
+        ? Object.fromEntries(
+            Object.entries(diagnosis).map(([option, item]) => [
+              option,
+              `${item.feedback} 次は「${item.nextCheck}」を確認してください。`,
+            ]),
+          )
+        : undefined,
+    };
+  }
+
+  return {
+    ...question,
+    lead: framedLead,
+    options: undefined,
+    fragments: undefined,
+    misconceptionByAnswer: undefined,
+    feedbackByAnswer: undefined,
+    exerciseKind: "transfer",
+    scaffoldLevel: "independent",
+    transferLevel: "near",
+    conceptIds,
+    misconceptionId: `${lesson.id}:cumulative-transfer`,
   };
 }
 
@@ -906,15 +1030,10 @@ export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
         : item.chapter === lesson.chapter,
     );
     const lastQuestionIndex = lesson.questions.length - 1;
-    const orderQuestionIndex = chapterLast
-      ? orderingQuestionIndex(lesson.questions)
-      : -1;
     return {
       ...lesson,
       questions: lesson.questions.map((question, index) =>
-        index === orderQuestionIndex
-          ? asOrderingQuestion(question)
-          : index === lastQuestionIndex
+        index === lastQuestionIndex
           ? {
               ...transferQuestion(
                 lesson,
@@ -924,8 +1043,8 @@ export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
                 trackLast,
               ),
               scenario: trackLast
-                ? `${PROJECT_BY_TRACK[lesson.track]}全体の引き継ぎコードを読み、未知のコードから判断する`
-                : `${lesson.chapter}で学んだ複数の方法を区別して判断する章末課題`,
+                ? `${PROJECT_BY_TRACK[lesson.track]}全体の引き継ぎコードを読み、未知のコードから完成させる`
+                : `${lesson.chapter}で学んだ複数の方法をつなげる章末課題`,
               projectRole: "transfer",
             }
           : question,

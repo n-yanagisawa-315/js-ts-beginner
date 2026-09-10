@@ -1108,21 +1108,23 @@ for (const x of xs) {
       {
         id: "q4",
         slide: 3,
-        prompt: "配列として扱える値を選んでください。",
-        lead: "数値キーとlengthがあっても、通常のオブジェクトに配列の仕組みは付きません。見た目ではなく、配列として作られた値かを判断します。",
-        kind: "choice",
-        options: [
-          "数値キーを持つ通常オブジェクト",
-          "角括弧で作った配列オブジェクト",
-          "array印を持つ通常オブジェクト",
-        ],
+        prompt:
+          "角括弧で作った値と、数値キーだけの通常オブジェクトについて、`Array.isArray` の結果を順に表示してください。",
+        lead: "数値キーとlengthがあっても、通常のオブジェクトに配列の仕組みは付きません。見た目ではなく、配列として作られた値かを判定して表示します。",
+        kind: "code",
+        starter:
+          "const xs = [1, 2];\nconst fake = { 0: 1, length: 1 };\n// それぞれが配列かどうかを順に表示\n",
+        fileName: "script.js",
         steps: [
-          "0から始まるキーがあるだけで判断していない",
-          "lengthという欄があるだけで判断していない",
-          "配列専用のメソッドや判定を使える値を選んでいる",
+          "角括弧で作った値を判定して表示する",
+          "数値キーだけの通常オブジェクトを判定して表示する",
         ],
         hint: "通常のオブジェクトへ数字の欄を足しても、配列には変わりません。",
-        answer: "角括弧で作った配列オブジェクト",
+        sample: "true\nfalse",
+        answer: `const xs = [1, 2];
+const fake = { 0: 1, length: 1 };
+console.log(Array.isArray(xs));
+console.log(Array.isArray(fake));`,
         explain:
           "角括弧で作った値だけが配列です。数字キーやlengthを持つ通常オブジェクトは、配列専用の仕組みを持ちません。",
       },
@@ -1531,24 +1533,28 @@ if (score >= 80) {
       {
         id: "q4",
         slide: 3,
-        prompt: "数値の80点以上だけを合格にする条件を選んでください。",
-        lead: "境界の80は含めつつ、入力ミスで混ざった文字列は合格にしたくありません。値の範囲と種類の両方を確認する条件を選びます。",
-        kind: "choice",
-        options: [
-          'typeof score === "string" && score >= 80',
-          'typeof score === "number" && score > 80',
-          'typeof score === "number" && score >= 80',
-          'typeof score === "number" || score >= 80',
-        ],
+        prompt:
+          "用意された3つの値について、数値（typeof が \"number\"）かつ80以上なら true、そうでなければ false を順に表示してください。",
+        lead: "境界の80は含めつつ、入力ミスで混ざった文字列は合格にしたくありません。値の種類と範囲の両方を確かめる式を、各行で書いてください。",
+        kind: "code",
+        starter:
+          'const scoreA = 80;\nconst scoreB = 79;\nconst scoreC = "80";\n// typeof が "number" かつ 80以上かを、A・B・Cの順に表示\n',
+        fileName: "script.js",
         steps: [
-          "境界値の80を合格に含めている",
-          "80より大きい数値も合格になる",
-          "数字に見える文字列を合格にしない",
+          '値が typeof で "number" かどうかを確かめる',
+          "80以上かどうかを確かめる",
+          "両方を満たすときだけ true になる式を表示する",
         ],
-        hint: "以上の比較だけでは自動変換が起こる場合があります。先に値の種類も確かめます。",
-        answer: 'typeof score === "number" && score >= 80',
+        hint: '以上の比較だけでは自動変換が起こる場合があります。先に typeof で "number" かを確かめます。',
+        sample: "true\nfalse\nfalse",
+        answer: `const scoreA = 80;
+const scoreB = 79;
+const scoreC = "80";
+console.log(typeof scoreA === "number" && scoreA >= 80);
+console.log(typeof scoreB === "number" && scoreB >= 80);
+console.log(typeof scoreC === "number" && scoreC >= 80);`,
         explain:
-          "種類を厳密に確認してから、境界を含む比較を行うため、数値の80以上だけが通ります。",
+          "種類を厳密に確認してから、境界を含む比較を行うため、数値の80以上だけが true になります。",
       },
       {
         id: "q5",

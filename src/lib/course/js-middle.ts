@@ -1399,23 +1399,34 @@ console.log(a.role);`,
         id: "q4",
         slide: 3,
         prompt:
-          "全利用者に共通する種類を表す静的プロパティの参照方法を選んでください。",
+          "全利用者に共通する種類 `kind` を、インスタンスを作らずに読み取って表示してください。",
         lead:
-          "個体ごとの名前とは違い、種類のような共通情報は設計図側に置けます。インスタンスを作らずに参照できる式を見分けます。",
-        kind: "choice",
-        options: [
-          "クラス本体の User.kind",
-          "生成後の new User().kind",
-          "prototype の kind",
-          "現在の値の this.kind",
-        ],
+          "個体ごとの名前とは違い、種類のような共通情報は設計図側に置けます。starterのクラスから、新しい個体を作らずに共通の種類を読んでください。",
+        kind: "code",
+        starter: `class User {
+  static kind = "member";
+  constructor(name) {
+    this.name = name;
+  }
+}
+// 共通の種類を表示
+`,
+        fileName: "script.js",
         steps: [
           "静的な値がインスタンスとクラスのどちらに属するか整理する",
-          "新しい個体を作らずに参照している選択肢を選ぶ",
+          "新しい個体を作らずに参照する",
+          "読み取った値を表示する",
         ],
         hint:
           "通常のインスタンスプロパティやプロトタイプ上のメソッドとは、所有者が異なります。",
-        answer: "クラス本体の User.kind",
+        sample: "member",
+        answer: `class User {
+  static kind = "member";
+  constructor(name) {
+    this.name = name;
+  }
+}
+console.log(User.kind);`,
         explain:
           "static は個体ではなく設計図に付きます。工場メソッドや定数に使います。",
       },

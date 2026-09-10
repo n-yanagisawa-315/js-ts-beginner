@@ -255,12 +255,13 @@ for (const marker of [
   '"independent"',
   "lastByChapter",
   "lastByTrack",
-  'transferLevel: far ? "far" : "near"',
-  "asOrderingQuestion",
+  'transferLevel: "far"',
+  'transferLevel: "near"',
+  "farTransferQuestion",
   "fadedStarter",
   "diagnoseOption",
   "transferQuestion",
-  "measuredConceptIds",
+  "transferConceptIds",
   'scaffold === "independent"',
 ]) {
   if (!learningDesign.includes(marker)) {
