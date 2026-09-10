@@ -64,7 +64,8 @@ console.log(add(2, 3)); // 5
 function notify(message) {
   console.log(message);
 }
-later(notify); // ()なしで渡す`,
+later(notify); // ()なしで渡す
+// 準備完了`,
   },
   object: {
     label: "object.js",
@@ -235,7 +236,9 @@ console.log("先に出る");`,
   console.log(value);
 }
 load();
-console.log("await の前までは同期");`,
+console.log("await の前までは同期");
+// await の前までは同期
+// ok`,
   },
   "event-loop": {
     label: "event-loop.js",
@@ -248,7 +251,7 @@ setTimeout(() => console.log("macro"), 0);
     label: "app.js",
     code: `// math.js export function add(a, b) { return a + b; }
 import { add } from "./math.js";
-console.log(add(2, 3));`,
+console.log(add(2, 3)); // 5`,
   },
   contract: {
     label: "contract.ts",
@@ -281,7 +284,7 @@ const b: Id = 12;
     label: "fn-type.ts",
     code: `type Add = (a: number, b: number) => number;
 const add: Add = (a, b) => a + b;
-console.log(add(1, 2));`,
+console.log(add(1, 2)); // 3`,
   },
   narrow: {
     label: "narrow.ts",
@@ -360,7 +363,7 @@ await writeFile("out.txt", text);`,
     label: "path.mjs",
     code: `import path from "node:path";
 const file = path.join("dir", "file.txt");
-console.log(file);`,
+console.log(file); // dir/file.txt`,
   },
   "node-http": {
     label: "http.mjs",

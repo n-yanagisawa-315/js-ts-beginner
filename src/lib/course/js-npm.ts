@@ -32,7 +32,7 @@ import { add } from "./math.js";
 import { format } from "date-fns";`,
         codeCaption: "./ が自分、名前だけがパッケージ",
         codeExample: `import { add } from "./math.js";
-console.log(add(2, 3));
+console.log(add(2, 3)); // 5
 // パッケージも、使う側の書き方は import で同じ`,
       },
       {

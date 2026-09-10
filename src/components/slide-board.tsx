@@ -105,7 +105,7 @@ function ExplainVisual({
 }) {
   if (!listing) return null;
 
-  // 全スライドを参考サイト寄りに：コード窓（＋可能ならコンソール）を基本表示
+  // 実行結果が分かるときだけ左右対比＋実行矢印。不要なスライドはコード窓＋注釈のみ
   if (consoleLines && consoleLines.length > 0) {
     return (
       <div className="slide-dual-panels has-flow">

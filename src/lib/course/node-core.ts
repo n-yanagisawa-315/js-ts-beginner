@@ -439,7 +439,8 @@ createReadStream("big.txt").pipe(createWriteStream("copy.txt"));`,
         code: `import { EventEmitter } from "node:events";
 const bus = new EventEmitter();
 bus.on("tick", () => console.log("t"));
-bus.emit("tick");`,
+bus.emit("tick");
+// t`,
       },
       {
         title: "Transform は途中の加工",

@@ -1,5 +1,5 @@
 import { DIAGRAM_LISTING } from "./diagram-listings";
-import { previewConsoleOutput } from "./console-preview";
+import { resolveConsoleOutput } from "./console-preview";
 import type { Lesson, Slide, SlideCallout } from "./types";
 
 type EnrichContext = {
@@ -264,9 +264,7 @@ function inferCallouts(
 
 export function enrichSlide(slide: Slide, context: EnrichContext): Slide {
   const code = slideCode(slide);
-  const consoleOutput =
-    slide.consoleOutput ??
-    (code ? previewConsoleOutput(code) : undefined);
+  const consoleOutput = resolveConsoleOutput(slide.consoleOutput, code);
   const callouts = code
     ? inferCallouts(slide, code, consoleOutput)
     : (slide.callouts ?? []);
