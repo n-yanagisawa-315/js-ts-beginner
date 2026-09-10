@@ -21,7 +21,7 @@ export const jsMiddle: Lesson[] = [
         talk: [
           { speaker: "beginner", text: "a を b に入れたあと a を変えたら、b も一緒に変わりませんか？" },
           { speaker: "engineer", text: "文字列などのプリミティブでは、b は代入時の値を持ったままです。" },
-          { speaker: "beginner", text: "文字列が長いと、参照として共有されそうです。" },
+          { speaker: "beginner", text: "文字列が長いと、コピーせずに使い回しそうに見えます。" },
           { speaker: "engineer", text: "長さでは決まりません。値の種類を見て、代入後の変数は独立して考えます。" },
         ],
         diagram: "rewrite",
@@ -36,11 +36,11 @@ console.log(b); // "hi"`,
         points: [
           "名前は2つ、オブジェクトは1つ",
           "=== は「同じ束か」。中身が同じ別物は false",
-          "配列も同じ。const b = a; b.push(1) は a にも見える",
+          "配列でも同じ。名前が2つでも、並びの実体は1つ",
         ],
         talk: [
-          { speaker: "beginner", text: "オブジェクトも代入したなら、中身が複製されたのでは？" },
-          { speaker: "engineer", text: "複製されるのは同じオブジェクトを指す参照です。" },
+          { speaker: "beginner", text: "名前が2つあるなら、中身も2つあると思っていました。" },
+          { speaker: "engineer", text: "名前は2つでも、矢印の先の束は1つです。だから b.n を変えると a.n も変わります。" },
           { speaker: "beginner", text: "では同じ内容のオブジェクト同士なら === も true ですか？" },
           { speaker: "engineer", text: "比較するのは見た目ではなく同一の実体かです。変更が両方から見えるのも、その共有が理由です。" },
         ],
@@ -55,11 +55,11 @@ console.log(a === b); // true`,
       },
       {
         title: "浅いコピーは一段目だけ新しい束",
-        lead: "const b = { ...a } や Object.assign({}, a)、配列なら [...a] や a.slice() は、外側の束は新しいです。ただし中のオブジェクトはまだ共有されます。ネストまで独立させるには構造的コピー（structuredClone など）が必要です。",
+        lead: "const b = { ...a } は、外側だけ新しい束です。中のオブジェクトはまだ同じ矢印を共有します。一段より奥まで別々にするには、別のコピーが必要です。",
         points: [
           "一段目のキーは独立、ネスト先は共有、が浅いコピー",
           "nested.x を変えると、コピー元からも見える",
-          "JSON.parse(JSON.stringify(a)) は関数や undefined を落とす",
+          "一段より奥までコピーしないと、内側の変更は元からも見える",
         ],
         talk: [
           { speaker: "beginner", text: "スプレッドでコピーすれば、元はどの階層も安全ですよね？" },

@@ -85,16 +85,79 @@ function vocabularyLines(slide: Slide): TalkLine[] | undefined {
   }
   if (slide.title === "{ } が名前の部屋になる") {
     return [
-      { speaker: "beginner", text: "本題の前に「スコープ」と「ブロック」の意味を知りたいです。" },
+      {
+        speaker: "beginner",
+        text: "波括弧の中と外で、同じ名前が見えたり見えなくなったりするんですか？",
+      },
       {
         speaker: "engineer",
-        text: "スコープは名前を読み書きできる範囲、ブロックは波括弧{ }で囲んだコードのまとまりです。letとconstでは、ブロックが名前の見える境界になります。",
+        text: "名前を読み書きできる範囲をスコープ、波括弧{ }で囲んだまとまりをブロックと呼びます。letとconstでは、ブロックが名前の見える境界になります。",
       },
     ];
   }
+  if (slide.title === "オブジェクトの代入は「同じ束への矢印」をコピーする") {
+    return [
+      {
+        speaker: "beginner",
+        text: "オブジェクトを別の名前に入れると、中身のコピーができるんですか？",
+      },
+      {
+        speaker: "engineer",
+        text: "いいえ。渡るのは束そのものではなく、置き場所をたどる矢印です。その矢印を参照と呼びます。名前は2つでも、束は1つです。",
+      },
+    ];
+  }
+  if (slide.title === "列の後ろに並ぶのが push") {
+    return [
+      {
+        speaker: "beginner",
+        text: "列の後ろに人を足すのと、列の写真を撮るのは、同じ種類の操作ですか？",
+      },
+      {
+        speaker: "engineer",
+        text: "違います。後ろに並ぶのが push で、今ある配列そのものを変えます。写真を撮るのが slice で、元の列は動きません。",
+      },
+    ];
+  }
+  const skipAutoTerms = new Set([
+    "関数",
+    "変数",
+    "宣言",
+    "評価",
+    "代入",
+    "再代入",
+    "const",
+    "let",
+    "var",
+    "参照",
+  ]);
+  const beginnerTalk = (slide.talk ?? [])
+    .filter((line) => line.speaker === "beginner")
+    .map((line) => line.text)
+    .join("\n");
+  const beginnerAlreadyUses = (term: string) => {
+    if (!beginnerTalk) return false;
+    if (/^[A-Za-z.]/.test(term)) {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`(?:^|[^A-Za-z.])${escaped}(?:[^A-Za-z.]|$)`).test(beginnerTalk);
+    }
+    return beginnerTalk.includes(term);
+  };
+  const alreadyDefined = (term: string, source: string) =>
+    [
+      `${term}は`,
+      `${term} は`,
+      `${term}とは`,
+      `${term} とは`,
+      `${term}と呼`,
+      `${term} と呼`,
+    ].some((pattern) => source.includes(pattern));
   const titleTerms = TERM_DEFINITIONS.filter(
     ([term]) =>
       slide.title.includes(term) &&
+      !skipAutoTerms.has(term) &&
+      !alreadyDefined(term, slide.title) &&
+      !beginnerAlreadyUses(term) &&
       !(term === "for" && (slide.title.includes("forEach") || slide.title.includes("for...of"))),
   )
     .sort(([termA], [termB]) => slide.title.indexOf(termA) - slide.title.indexOf(termB))
@@ -103,44 +166,40 @@ function vocabularyLines(slide: Slide): TalkLine[] | undefined {
     titleTerms.length > 0
       ? []
       : TERM_DEFINITIONS.filter(([term]) => {
-          if (
-            [
-              "関数",
-              "変数",
-              "宣言",
-              "評価",
-              "代入",
-              "再代入",
-              "const",
-              "let",
-              "var",
-            ].includes(term)
-          ) {
-            return false;
-          }
+          if (skipAutoTerms.has(term)) return false;
           if (!slide.lead.includes(term)) return false;
-          return ![
-            `${term}は`,
-            `${term} は`,
-            `${term}とは`,
-            `${term} とは`,
-            `${term}と呼`,
-            `${term} と呼`,
-          ].some((pattern) => slide.lead.includes(pattern));
+          if (beginnerAlreadyUses(term)) return false;
+          return !alreadyDefined(term, slide.lead);
         }).slice(0, 1);
   const terms = titleTerms.length > 0 ? titleTerms : leadTerms;
   if (terms.length === 0) return undefined;
 
-  return terms.flatMap(([term, definition]) => [
+  return terms.flatMap(([term, definition]) => vocabularyPrompt(term, definition));
+}
+
+function vocabularyPrompt(term: string, definition: string): TalkLine[] {
+  if (/^[A-Za-z.]/.test(term)) {
+    return [
+      {
+        speaker: "beginner",
+        text: `コードに「${term}」と出てきます。これは何をするものですか？`,
+      },
+      {
+        speaker: "engineer",
+        text: `${term}は「${definition}」です。この動きを押さえてから、例を見ましょう。`,
+      },
+    ];
+  }
+  return [
     {
-      speaker: "beginner" as const,
-      text: `本題の前に「${term}」という言葉の意味を知りたいです。`,
+      speaker: "beginner",
+      text: "コードを見る前に、いま扱う動きを日常の言葉で知りたいです。",
     },
     {
-      speaker: "engineer" as const,
-      text: `${term}は「${definition}」です。まずこの日常語の意味を押さえてから、コード上の動きを見ましょう。`,
+      speaker: "engineer",
+      text: `ここで大事なのは「${term}」です。「${definition}」。この意味を押さえてから、コード上の動きを見ましょう。`,
     },
-  ]);
+  ];
 }
 
 const SYNC_STOP_WORDS = new Set([
