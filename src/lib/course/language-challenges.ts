@@ -735,6 +735,160 @@ const nodeHttpQuestions = [
   }),
 ];
 
+const jsLogicQuestions = [
+  challengeQuestion({
+    id: "js-challenge-logic-fizzbuzz",
+    prompt: "1からnまでのFizzBuzz配列を返す fizzBuzz(n) を実装してください。3の倍数はFizz、5の倍数はBuzz、両方ならFizzBuzz、それ以外は数字の文字列です。",
+    starter: `function fizzBuzz(n) {\n  // 長さnの配列を返す\n}`,
+    answer: `function fizzBuzz(n) {\n  const result = [];\n  for (let i = 1; i <= n; i++) {\n    if (i % 15 === 0) result.push("FizzBuzz");\n    else if (i % 3 === 0) result.push("Fizz");\n    else if (i % 5 === 0) result.push("Buzz");\n    else result.push(String(i));\n  }\n  return result;\n}`,
+    explain: "15の倍数を先に判定すると、FizzとBuzzの重なりを正しく扱えます。",
+    hints: ["1からnまで繰り返します。", "15の倍数を先に見ます。", "数字は文字列にして入れます。"],
+    behaviorCases: [
+      { args: [5], expected: ["1", "2", "Fizz", "4", "Buzz"] },
+      { args: [15], expected: ["1", "2", "Fizz", "4", "Buzz", "Fizz", "7", "8", "Fizz", "Buzz", "11", "Fizz", "13", "14", "FizzBuzz"] },
+    ],
+    misconception: {
+      id: "js-fizzbuzz-order",
+      wrong: `function fizzBuzz(n) {\n  const result = [];\n  for (let i = 1; i <= n; i++) {\n    if (i % 3 === 0) result.push("Fizz");\n    else if (i % 5 === 0) result.push("Buzz");\n    else if (i % 15 === 0) result.push("FizzBuzz");\n    else result.push(String(i));\n  }\n  return result;\n}`,
+      feedback: "15の倍数が先にFizzへ入ってしまい、FizzBuzzになりません。",
+      nextCheck: "15の位置がFizzBuzzになるか確認します。",
+    },
+  }),
+  challengeQuestion({
+    id: "js-challenge-logic-factorial",
+    prompt: "非負整数nの階乗を返す factorial(n) を実装してください。0! は1です。",
+    starter: `function factorial(n) {\n  // n! を返す\n}`,
+    answer: `function factorial(n) {\n  let result = 1;\n  for (let i = 2; i <= n; i++) result *= i;\n  return result;\n}`,
+    explain: "1から積み上げるか、再帰でもよいですが、0と1は1を返す必要があります。",
+    hints: ["0と1は1です。", "2からnまで掛けます。", "累積変数を用意します。"],
+    behaviorCases: [
+      { args: [0], expected: 1 },
+      { args: [1], expected: 1 },
+      { args: [5], expected: 120 },
+    ],
+    misconception: {
+      id: "js-factorial-zero",
+      wrong: `function factorial(n) {\n  let result = 0;\n  for (let i = 1; i <= n; i++) result *= i;\n  return result;\n}`,
+      feedback: "初期値が0だと掛け算の結果が常に0です。また0!も扱えません。",
+      nextCheck: "factorial(0)とfactorial(5)を確認します。",
+    },
+  }),
+  challengeQuestion({
+    id: "js-challenge-logic-fibonacci",
+    prompt: "0始まりでn番目のフィボナッチ数を返す fibonacci(n) を実装してください。fibonacci(0)=0、fibonacci(1)=1です。",
+    starter: `function fibonacci(n) {\n  // n番目を返す\n}`,
+    answer: `function fibonacci(n) {\n  if (n <= 1) return n;\n  let a = 0;\n  let b = 1;\n  for (let i = 2; i <= n; i++) {\n    const next = a + b;\n    a = b;\n    b = next;\n  }\n  return b;\n}`,
+    explain: "直前の2項を更新しながら進めると、大きなnでも配列なしで計算できます。",
+    hints: ["0と1は自分自身です。", "前の2つを足します。", "変数をずらして更新します。"],
+    behaviorCases: [
+      { args: [0], expected: 0 },
+      { args: [1], expected: 1 },
+      { args: [7], expected: 13 },
+    ],
+    misconception: {
+      id: "js-fibonacci-one-based",
+      wrong: `function fibonacci(n) {\n  if (n <= 2) return 1;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}`,
+      feedback: "0番目が0である契約とずれます。0と1を基準にします。",
+      nextCheck: "fibonacci(0)が0、fibonacci(1)が1か確認します。",
+    },
+  }),
+  challengeQuestion({
+    id: "js-challenge-logic-pyramid",
+    prompt: "高さnのピラミッド文字列を返す pyramid(n) を実装してください。各段は\"*\"が1,3,5...個で、改行でつなぎ、末尾改行は不要です。",
+    starter: `function pyramid(n) {\n  // 複数行の文字列を返す\n}`,
+    answer: `function pyramid(n) {\n  const lines = [];\n  for (let i = 1; i <= n; i++) {\n    const stars = "*".repeat(2 * i - 1);\n    const spaces = " ".repeat(n - i);\n    lines.push(spaces + stars);\n  }\n  return lines.join("\\n");\n}`,
+    explain: "段iの星は2*i-1個、左の空白はn-i個です。",
+    hints: ["段番号を1からnします。", "星の個数は奇数です。", "空白と星を連結して改行でつなぎます。"],
+    behaviorCases: [
+      { args: [1], expected: "*" },
+      { args: [3], expected: "  *\n ***\n*****" },
+    ],
+    misconception: {
+      id: "js-pyramid-no-space",
+      wrong: `function pyramid(n) {\n  const lines = [];\n  for (let i = 1; i <= n; i++) lines.push("*".repeat(i));\n  return lines.join("\\n");\n}`,
+      feedback: "左揃えの階段になり、中央寄せのピラミッドになりません。",
+      nextCheck: "3段で中央に星が来る空白付きか確認します。",
+    },
+  }),
+  challengeQuestion({
+    id: "js-challenge-logic-reverse-pyramid",
+    prompt: "高さnの逆ピラミッド文字列を返す reversePyramid(n) を実装してください。1段目が一番広く、末尾改行は不要です。",
+    starter: `function reversePyramid(n) {\n  // 複数行の文字列を返す\n}`,
+    answer: `function reversePyramid(n) {\n  const lines = [];\n  for (let i = n; i >= 1; i--) {\n    const stars = "*".repeat(2 * i - 1);\n    const spaces = " ".repeat(n - i);\n    lines.push(spaces + stars);\n  }\n  return lines.join("\\n");\n}`,
+    explain: "ピラミッドの段を上から広い順に並べます。空白はn-i個です。",
+    hints: ["iをnから1へ減らします。", "星は2*i-1個です。", "空白はn-i個です。"],
+    behaviorCases: [
+      { args: [1], expected: "*" },
+      { args: [3], expected: "*****\n ***\n  *" },
+    ],
+    misconception: {
+      id: "js-reverse-pyramid-same",
+      wrong: `function reversePyramid(n) {\n  const lines = [];\n  for (let i = 1; i <= n; i++) {\n    const stars = "*".repeat(2 * i - 1);\n    const spaces = " ".repeat(n - i);\n    lines.push(spaces + stars);\n  }\n  return lines.join("\\n");\n}`,
+      feedback: "通常のピラミッドと同じ順です。広い段を先にします。",
+      nextCheck: "1行目が一番多くの星か確認します。",
+    },
+  }),
+];
+
+const jsDataQuestions = [
+  challengeQuestion({
+    id: "js-challenge-data-unique",
+    prompt: "配列から重複を除き、最初に出た順を保った新しい配列を返す unique(values) を実装してください。",
+    starter: `function unique(values) {\n  // 重複なし配列を返す\n}`,
+    answer: `function unique(values) {\n  return [...new Set(values)];\n}`,
+    explain: "Setは挿入順を保ちつつ重複を除けます。filterとincludesでも実装できます。",
+    hints: ["同じ値が2回あってはいけません。", "最初の出現順を保ちます。", "Setを使うと短く書けます。"],
+    behaviorCases: [
+      { args: [["a", "b", "a", "c"]], expected: ["a", "b", "c"] },
+      { args: [[1, 1, 2]], expected: [1, 2] },
+    ],
+    misconception: {
+      id: "js-unique-sort",
+      wrong: `function unique(values) {\n  return [...new Set(values)].sort();\n}`,
+      feedback: "重複は除けますが、出現順が崩れることがあります。",
+      nextCheck: "入力順が保たれるか確認します。",
+    },
+  }),
+  challengeQuestion({
+    id: "js-challenge-data-most-frequent",
+    prompt: "文字列で最も多く出現する文字を返す mostFrequent(text) を実装してください。同じ回数なら、先に出現した文字を返します。空文字なら空文字です。",
+    starter: `function mostFrequent(text) {\n  // 1文字、または空文字\n}`,
+    answer: `function mostFrequent(text) {\n  if (text.length === 0) return "";\n  const counts = new Map();\n  let best = text[0];\n  let bestCount = 0;\n  for (const ch of text) {\n    const next = (counts.get(ch) ?? 0) + 1;\n    counts.set(ch, next);\n    if (next > bestCount) {\n      best = ch;\n      bestCount = next;\n    }\n  }\n  return best;\n}`,
+    explain: "回数を数えつつ、より多いときだけ代表文字を更新すると、同点時は先勝ちになります。",
+    hints: ["空文字を先に扱います。", "文字ごとの回数を記録します。", "回数が更新されたときだけ代表を変えます。"],
+    behaviorCases: [
+      { args: ["aabbc"], expected: "a" },
+      { args: ["xyz"], expected: "x" },
+      { args: [""], expected: "" },
+    ],
+    misconception: {
+      id: "js-most-frequent-last",
+      wrong: `function mostFrequent(text) {\n  const counts = {};\n  for (const ch of text) counts[ch] = (counts[ch] ?? 0) + 1;\n  return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] ?? "";\n}`,
+      feedback: "同点のときキー順になり、先に出現した文字とは限りません。",
+      nextCheck: "aabbcでaが返るか確認します。",
+    },
+  }),
+  challengeQuestion({
+    id: "js-challenge-data-rotate",
+    prompt: "配列を右へk回回転した新しい配列を返す rotateRight(values, k) を実装してください。元配列は変更しません。kは0以上です。",
+    starter: `function rotateRight(values, k) {\n  // 新しい配列を返す\n}`,
+    answer: `function rotateRight(values, k) {\n  if (values.length === 0) return [];\n  const shift = k % values.length;\n  if (shift === 0) return [...values];\n  return values.slice(-shift).concat(values.slice(0, -shift));\n}`,
+    explain: "末尾shift個を先頭へ移します。kが大きいときは長さで割った余りを使います。",
+    hints: ["元配列を書き換えないでください。", "kはlengthで割った余りにできます。", "sliceで前後を入れ替えます。"],
+    behaviorCases: [
+      { args: [[1, 2, 3, 4], 1], expected: [4, 1, 2, 3] },
+      { args: [[1, 2, 3], 3], expected: [1, 2, 3] },
+      { args: [[], 2], expected: [] },
+    ],
+    misconception: {
+      id: "js-rotate-mutate",
+      wrong: `function rotateRight(values, k) {\n  for (let i = 0; i < k; i++) values.unshift(values.pop());\n  return values;\n}`,
+      feedback: "元の配列を破壊しています。新しい配列を返してください。",
+      nextCheck: "呼び出し後に引数配列が変わっていないか確認します。",
+    },
+  }),
+];
+
 export const languageChallenges: Lesson[] = [
   {
     id: "js-challenge-boundary",
@@ -783,6 +937,42 @@ export const languageChallenges: Lesson[] = [
     minutes: 35,
     slides: slides("非同期順序", "待つ処理をすべて直列にするのではなく、依存する処理、独立した処理、必須の後始末を分けます。", "event-loop", `const [stock, slots] = await Promise.all([\n  getStock(id), getSlots(id)\n]);`, "awaitの付け忘れと、不要な直列化は別の問題です。"),
     questions: jsAsyncQuestions,
+  },
+  {
+    id: "js-challenge-logic",
+    track: "js",
+    level: "advanced",
+    chapter: "js-challenge",
+    order: 62,
+    title: "ロジックの腕試し",
+    summary: "FizzBuzz・階乗・フィボナッチ・ピラミッドで手順を組み立てる",
+    minutes: 40,
+    slides: slides(
+      "ロジック腕試し",
+      "画面やAPIがなくても、条件分岐と繰り返しだけで契約を満たす関数を作れます。入力と出力の形を先に決め、小さな例で追跡します。",
+      "branch",
+      `fizzBuzz(5)\n// ["1","2","Fizz","4","Buzz"]`,
+      "境界の0・1と、重なる条件（15の倍数）を先に決めます。",
+    ),
+    questions: jsLogicQuestions,
+  },
+  {
+    id: "js-challenge-data",
+    track: "js",
+    level: "advanced",
+    chapter: "js-challenge",
+    order: 63,
+    title: "データ処理の腕試し",
+    summary: "重複除去・最多出現・配列回転でデータを整える",
+    minutes: 35,
+    slides: slides(
+      "データ腕試し",
+      "配列と文字列の集計・並べ替えは、注文一覧の整形と同じ考え方です。元データを壊さず、出現順や回転の契約を守ります。",
+      "array",
+      `unique(["a","b","a"]) // ["a","b"]\nrotateRight([1,2,3,4], 1) // [4,1,2,3]`,
+      "戻り値だけでなく、入力配列を書き換えていないかも確認します。",
+    ),
+    questions: jsDataQuestions,
   },
   {
     id: "ts-challenge-pick-readonly",

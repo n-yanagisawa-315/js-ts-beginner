@@ -203,7 +203,7 @@ function resolveStudioBootstrap(lesson: LessonPageDTO["lesson"]): StudioBootstra
     const nextSlide = Math.min(resume.slide, maxSlide);
     const current = lesson.slides[nextSlide];
     const pageCount = current
-      ? talkPages(current, current.listings[0]).length
+      ? talkPages(current, current.listings[0], { slideIndex: nextSlide }).length
       : 1;
     const nextPhase =
       resume.phase === "predict" && progress.hasPrequestion
@@ -366,8 +366,10 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
   const currentSlide = lesson.slides[slide];
   const conversationPages = useMemo(
     () =>
-      currentSlide ? talkPages(currentSlide, currentSlide.listings[0]) : [],
-    [currentSlide],
+      currentSlide
+        ? talkPages(currentSlide, currentSlide.listings[0], { slideIndex: slide })
+        : [],
+    [currentSlide, slide],
   );
   const lastConversationPage = Math.max(conversationPages.length - 1, 0);
   const referenceTopic = {
@@ -717,7 +719,9 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
     setConversationPage(
       previousSlide
         ? Math.max(
-            talkPages(previousSlide, previousSlide.listings[0]).length - 1,
+            talkPages(previousSlide, previousSlide.listings[0], {
+              slideIndex: previous,
+            }).length - 1,
             0,
           )
         : 0,

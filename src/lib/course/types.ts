@@ -119,6 +119,15 @@ export type ConversationPage = {
 
 export type StoryBeat = "problem" | "prediction" | "trace" | "resolution" | "transfer";
 
+export type SlideLayoutKind = "explain" | "talk" | "hero";
+
+export type SlideCallout = {
+  label: string;
+  line?: number;
+  token?: string;
+  target?: "code" | "console";
+};
+
 export type Slide = {
   title: string;
   lead: string;
@@ -131,6 +140,10 @@ export type Slide = {
   note?: string;
   talk?: TalkLine[];
   storyTalk?: TalkLine[];
+  layout?: SlideLayoutKind;
+  section?: string;
+  consoleOutput?: string[];
+  callouts?: SlideCallout[];
   objectiveId?: string;
   conceptIds?: string[];
   storyBeat?: StoryBeat;

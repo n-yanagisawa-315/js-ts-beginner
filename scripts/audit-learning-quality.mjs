@@ -140,8 +140,8 @@ for (const file of COURSE_FILES) {
   };
   visit(sourceFile);
   if (file === "language-challenges.ts") {
-    slideCount += 36;
-    questionCount += 36;
+    slideCount += 42;
+    questionCount += 44;
   }
 }
 
@@ -302,10 +302,6 @@ const inspectCapstones = (node) => {
 inspectCapstones(learningDesignAst);
 if (capstoneCount !== EXPECTED_TOTALS.tracks) issues.push(`トラック末転移課題が${capstoneCount}/${EXPECTED_TOTALS.tracks}件です`);
 
-const slideBoard = fs.readFileSync(
-  path.join(ROOT, "src/components/slide-board.tsx"),
-  "utf8",
-);
 const diagram = fs.readFileSync(
   path.join(ROOT, "src/components/diagram.tsx"),
   "utf8",
@@ -315,8 +311,7 @@ const slideLayout = fs.readFileSync(
   "utf8",
 );
 if (
-  !slideBoard.includes("story-ribbon") ||
-  !slideBoard.includes("activeCodeLines={page?.activeCodeLines}") ||
+  !diagram.includes("activeCodeLines") ||
   !slideLayout.includes("synchronizeConversationPages") ||
   !slideLayout.includes("maxScore")
 ) {

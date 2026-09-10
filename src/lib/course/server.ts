@@ -6,6 +6,7 @@ import { jsAdvanced } from "./js-advanced";
 import { jsBasic } from "./js-basic";
 import { jsCallback } from "./js-callback";
 import { jsDom } from "./js-dom";
+import { jsDomBrowser } from "./js-dom-browser";
 import { jsMiddle } from "./js-middle";
 import { jsModern } from "./js-modern";
 import { jsNpm } from "./js-npm";
@@ -23,6 +24,7 @@ import {
   predictionOptionsForLesson,
   prequestionForLesson,
 } from "./learning-design";
+import { enrichLessons } from "./slide-enrichment";
 import { nodeCore } from "./node-core";
 import { nodeStart } from "./node-start";
 import { sqlAdvanced } from "./sql-advanced";
@@ -59,6 +61,7 @@ const rawLessons: Lesson[] = [
   ...jsModern,
   ...jsAdvanced,
   ...jsDom,
+  ...jsDomBrowser,
   ...jsNpm,
   ...tsLessons,
   ...tsModern,
@@ -71,7 +74,9 @@ const rawLessons: Lesson[] = [
   ...githubAdvanced,
 ];
 
-export const lessons: Lesson[] = applyCourseLearningDesign(rawLessons);
+export const lessons: Lesson[] = enrichLessons(
+  applyCourseLearningDesign(rawLessons),
+);
 
 export {
   CHAPTERS,

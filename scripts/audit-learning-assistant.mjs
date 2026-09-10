@@ -25,6 +25,7 @@ import { jsAdvanced } from "../src/lib/course/js-advanced.ts";
 import { jsBasic } from "../src/lib/course/js-basic.ts";
 import { jsCallback } from "../src/lib/course/js-callback.ts";
 import { jsDom } from "../src/lib/course/js-dom.ts";
+import { jsDomBrowser } from "../src/lib/course/js-dom-browser.ts";
 import { jsMiddle } from "../src/lib/course/js-middle.ts";
 import { jsModern } from "../src/lib/course/js-modern.ts";
 import { jsNpm } from "../src/lib/course/js-npm.ts";
@@ -45,6 +46,7 @@ const lessons = applyCourseLearningDesign([
   ...jsModern,
   ...jsAdvanced,
   ...jsDom,
+  ...jsDomBrowser,
   ...jsNpm,
   ...tsLessons,
   ...tsModern,

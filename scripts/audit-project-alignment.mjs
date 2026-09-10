@@ -48,10 +48,10 @@ for (const file of COURSE_FILES) {
   );
   if (file === "language-challenges.ts") {
     const challengeCount = sourceText.match(/challengeQuestion\(\{/g)?.length ?? 0;
-    lessonCount += 12;
+    lessonCount += 14;
     buildCount += challengeCount;
-    if (challengeCount !== 36 || !PROJECT_TERMS.test(sourceText)) {
-      issues.push(`${file}: 注文題材のチャレンジ36問を確認できません`);
+    if (challengeCount !== 44 || !PROJECT_TERMS.test(sourceText)) {
+      issues.push(`${file}: 注文題材のチャレンジ44問を確認できません`);
     }
     continue;
   }

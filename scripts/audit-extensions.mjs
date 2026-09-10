@@ -20,7 +20,7 @@ const challengeQuestions = languageChallenges.flatMap((lesson) =>
   lesson.questions.map((question) => ({ lesson, question })),
 );
 
-if (languageChallenges.length !== 12 || challengeQuestions.length !== 36) {
+if (languageChallenges.length !== 14 || challengeQuestions.length !== 44) {
   issues.push(
     `チャレンジ数が想定外です: ${languageChallenges.length}講義・${challengeQuestions.length}問`,
   );
@@ -85,6 +85,6 @@ if (issues.length) {
   process.exitCode = 1;
 } else {
   console.log(
-    "36チャレンジのヒント・復習variant・hidden caseと、Git原子性・commit/push採点を確認しました。",
+    "44チャレンジのヒント・復習variant・hidden caseと、Git原子性・commit/push採点を確認しました。",
   );
 }

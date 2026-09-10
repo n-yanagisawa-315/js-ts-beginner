@@ -6,7 +6,7 @@ export const jsNpm: Lesson[] = [
     track: "js",
     level: "advanced",
     chapter: "js-npm",
-    order: 33,
+    order: 34,
     title: "パッケージは借りた道具箱",
     summary: "package.json に書き、install し、名前で import する",
     minutes: 16,

@@ -5,6 +5,7 @@ import { LearningFlowHeader } from "@/components/learning-flow-header";
 import { SlideBoard } from "@/components/slide-board";
 import { Button } from "@/components/ui/button";
 import { IconChevron } from "@/components/icons";
+import { slideLayout } from "@/lib/course/slide-layout";
 import type {
   LessonNavigationDTO,
   ResolvedLessonDTO,
@@ -44,6 +45,11 @@ export function SlideTheater({
   const panelRef = useRef<HTMLDivElement>(null);
   const handleNext = useEffectEvent(onNext);
   const handlePrev = useEffectEvent(onPrev);
+  const layout = slideLayout(slide, { slideIndex: index });
+  const currentPage = conversationPages[conversationIndex];
+  const showingTalk = (currentPage?.lines.length ?? 0) > 0;
+  const showConversationChrome =
+    (layout === "talk" || showingTalk) && conversationTotal > 1;
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -74,20 +80,20 @@ export function SlideTheater({
     <main
       id="main-content"
       ref={panelRef}
-      className="slide-stage relative flex min-h-full min-w-0 flex-1 flex-col"
+      className={`slide-stage relative flex min-h-full min-w-0 flex-1 flex-col is-${layout}`}
       aria-labelledby="slide-theater-title"
     >
       <LearningFlowHeader
         lesson={lesson}
         navigation={navigation}
         stage={
-          conversationTotal > 1
+          showConversationChrome
             ? `スライド・会話 ${conversationIndex + 1}/${conversationTotal}`
             : "スライド"
         }
         current={index + 1}
         total={total}
-        dark
+        dark={false}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 sm:px-10 lg:px-14">
@@ -96,6 +102,8 @@ export function SlideTheater({
           titleId="slide-theater-title"
           pages={conversationPages}
           pageIndex={conversationIndex}
+          section={slide.section ?? lesson.title}
+          slideIndex={index}
         />
       </div>
 

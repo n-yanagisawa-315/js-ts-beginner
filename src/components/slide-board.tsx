@@ -1,7 +1,15 @@
-import { CodeHighlight } from "@/components/code-highlight";
 import { Diagram } from "@/components/diagram";
 import { TalkAvatar } from "@/components/talk-avatar";
-import { isSummarySlide, talkPages } from "@/lib/course/slide-layout";
+import {
+  SlideCodePanel,
+  SlideConsolePanel,
+} from "@/components/slide-panels";
+import { resolveConsoleOutput } from "@/lib/course/console-preview";
+import {
+  isSummarySlide,
+  slideLayout,
+  talkPages,
+} from "@/lib/course/slide-layout";
 import type { ResolvedSlideDTO } from "@/lib/course/client-dtos";
 import type { ConversationPage } from "@/lib/course/types";
 
@@ -9,13 +17,6 @@ const INLINE_TOKEN =
   /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
 const KEYWORD_TOKEN =
   /^(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)$/;
-const STORY_BEAT_LABEL = {
-  problem: "今回の作業",
-  prediction: "予想する",
-  trace: "動きを追う",
-  resolution: "解決する",
-  transfer: "別の場面へ",
-} as const;
 
 function inlineParts(text: string) {
   let offset = 0;
@@ -70,123 +71,279 @@ function EmphasisText({
   );
 }
 
+function SlideSources({
+  sources,
+}: {
+  sources: ResolvedSlideDTO["sources"];
+}) {
+  if (sources.length === 0) return null;
+  return (
+    <aside className="slide-sources" aria-label="この内容の公式資料">
+      <p>公式資料で確かめる</p>
+      <ul>
+        {sources.map((source) => (
+          <li key={source.url}>
+            <a href={source.url} target="_blank" rel="noreferrer">
+              <span>{source.publisher}</span>
+              {source.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+function ExplainVisual({
+  slide,
+  listing,
+  consoleLines,
+}: {
+  slide: ResolvedSlideDTO;
+  listing: ResolvedSlideDTO["listings"][number] | undefined;
+  consoleLines: string[] | undefined;
+}) {
+  if (!listing) return null;
+
+  if (consoleLines && consoleLines.length > 0) {
+    return (
+      <div className="slide-dual-panels">
+        <SlideCodePanel
+          label={listing.label}
+          code={listing.code}
+          callouts={slide.callouts}
+        />
+        <SlideConsolePanel lines={consoleLines} callouts={slide.callouts} />
+      </div>
+    );
+  }
+
+  if (slide.callouts && slide.callouts.length > 0) {
+    return (
+      <div className="slide-dual-panels is-single">
+        <SlideCodePanel
+          label={listing.label}
+          code={listing.code}
+          callouts={slide.callouts}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="slide-diagram-embed diagram-board">
+      <Diagram
+        id={slide.diagram}
+        listing={listing}
+        title={slide.title}
+        points={slide.points}
+      />
+    </div>
+  );
+}
+
+function ExplainBoard({
+  slide,
+  titleId,
+  section,
+}: {
+  slide: ResolvedSlideDTO;
+  titleId: string;
+  section: string;
+}) {
+  const listing = slide.listings[0];
+  const consoleLines = resolveConsoleOutput(
+    slide.consoleOutput,
+    listing?.code,
+  );
+  const summary = isSummarySlide(slide);
+
+  return (
+    <article className="slide-explain">
+      <header className="slide-explain-header">
+        <div className="slide-explain-titles">
+          <p className="slide-section">{section}</p>
+          <h2 id={titleId} className="slide-explain-title">
+            <EmphasisText text={slide.title} />
+          </h2>
+        </div>
+        <p className="slide-explain-lead">
+          <EmphasisText text={slide.lead} />
+        </p>
+      </header>
+
+      {summary && slide.points && slide.points.length > 0 ? (
+        <ul className="slide-explain-points">
+          {slide.points.map((point) => (
+            <li key={point}>
+              <EmphasisText text={point} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <ExplainVisual
+        slide={slide}
+        listing={listing}
+        consoleLines={consoleLines}
+      />
+
+      {slide.watch ? (
+        <p className="slide-explain-watch">
+          <span>注意</span>
+          <EmphasisText text={slide.watch} />
+        </p>
+      ) : null}
+
+      <SlideSources sources={slide.sources} />
+    </article>
+  );
+}
+
+function HeroBoard({
+  slide,
+  titleId,
+  section,
+}: {
+  slide: ResolvedSlideDTO;
+  titleId: string;
+  section: string;
+}) {
+  const listing = slide.listings[0];
+  const consoleLines = resolveConsoleOutput(
+    slide.consoleOutput,
+    listing?.code,
+  );
+
+  return (
+    <article className="slide-hero">
+      <header className="slide-hero-header">
+        <p className="slide-section is-center">{section}</p>
+        <h2 id={titleId} className="slide-hero-title">
+          <EmphasisText text={slide.title} />
+        </h2>
+        <p className="slide-hero-lead">
+          <EmphasisText text={slide.lead} />
+        </p>
+      </header>
+
+      <div className="slide-hero-visual">
+        <ExplainVisual
+          slide={slide}
+          listing={listing}
+          consoleLines={consoleLines}
+        />
+      </div>
+
+      <SlideSources sources={slide.sources} />
+    </article>
+  );
+}
+
+function TalkBoard({
+  titleId,
+  pages,
+  pageIndex,
+  section,
+}: {
+  titleId: string;
+  pages: ConversationPage[];
+  pageIndex: number;
+  section: string;
+}) {
+  const page =
+    pages[Math.min(pageIndex, pages.length - 1)] ?? pages[0];
+
+  return (
+    <article className="slide-talk">
+      <header className="slide-talk-header">
+        <h2 id={titleId} className="slide-talk-title">
+          {section}
+        </h2>
+        {pages.length > 1 ? (
+          <p className="talk-progress">
+            会話 {Math.min(pageIndex + 1, pages.length)} / {pages.length}
+          </p>
+        ) : null}
+      </header>
+      <ol className="slide-talk-thread" aria-label="初心者とエンジニアの会話">
+        {page?.lines.map((line, index) => (
+          <li
+            key={`${line.speaker}-${index}-${line.text.slice(0, 20)}`}
+            className={`slide-talk-line is-${line.speaker}`}
+          >
+            <div className="talk-person" aria-hidden="true">
+              <TalkAvatar speaker={line.speaker} />
+            </div>
+            <div className="talk-content">
+              <p className="sr-only">
+                {line.speaker === "engineer" ? "エンジニア" : "初心者"}
+              </p>
+              <div className="talk-bubble">
+                <EmphasisText
+                  text={line.text}
+                  strongFirst={line.speaker === "engineer"}
+                />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </article>
+  );
+}
+
 export function SlideBoard({
   slide,
   titleId,
   pages,
   pageIndex,
+  section,
+  slideIndex = 0,
 }: {
   slide: ResolvedSlideDTO;
   titleId: string;
   pages?: ConversationPage[];
   pageIndex: number;
+  section?: string;
+  slideIndex?: number;
 }) {
   const listings = slide.listings;
-  const summary = isSummarySlide(slide);
-  const resolvedPages = pages ?? talkPages(slide, listings[0]);
+  const resolvedSection = slide.section ?? section ?? "講義";
+  const layout = slideLayout(slide, { slideIndex });
+  const resolvedPages =
+    pages ?? talkPages(slide, listings[0], { slideIndex });
   const page =
     resolvedPages[Math.min(pageIndex, resolvedPages.length - 1)] ??
     resolvedPages[0];
-  const finalPage = pageIndex >= resolvedPages.length - 1;
-  const sources = slide.sources;
+  const showingTalk = (page?.lines.length ?? 0) > 0;
+
+  if (layout === "talk" || showingTalk) {
+    return (
+      <TalkBoard
+        titleId={titleId}
+        pages={resolvedPages}
+        pageIndex={pageIndex}
+        section={resolvedSection}
+      />
+    );
+  }
+
+  if (layout === "hero") {
+    return (
+      <HeroBoard
+        slide={slide}
+        titleId={titleId}
+        section={resolvedSection}
+      />
+    );
+  }
 
   return (
-    <article className="grid gap-8 py-2 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start">
-      <div>
-        {!summary && slide.storyContext && slide.storyBeat ? (
-          <aside className="story-ribbon" aria-label="今回の物語">
-            <span>{STORY_BEAT_LABEL[slide.storyBeat]}</span>
-            <p>{slide.storyContext}</p>
-          </aside>
-        ) : null}
-        <p className="kicker">{summary ? "要点" : "講義"}</p>
-        <h2
-          id={titleId}
-          className="mt-3 font-serif text-3xl font-medium leading-[1.25] tracking-tight sm:text-4xl"
-        >
-          <EmphasisText text={slide.title} />
-        </h2>
-        <p className="talk-progress">
-          会話 {Math.min(pageIndex + 1, resolvedPages.length)} /{" "}
-          {resolvedPages.length}
-        </p>
-        <ol className="talk-thread" aria-label="初心者とエンジニアの会話">
-          {page?.lines.map((line, index) => (
-            <li
-              key={`${line.speaker}-${index}-${line.text.slice(0, 20)}`}
-              className={`talk-line is-${line.speaker}`}
-            >
-              <div className="talk-person" aria-hidden="true">
-                <TalkAvatar speaker={line.speaker} />
-              </div>
-              <div className="talk-content">
-                <p className="sr-only">
-                  {line.speaker === "engineer" ? "エンジニア" : "初心者"}
-                </p>
-                <div className="talk-bubble">
-                  <EmphasisText
-                    text={line.text}
-                    strongFirst={line.speaker === "engineer"}
-                  />
-                </div>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <figure>
-          <figcaption className="kicker mb-2">
-            {page?.focus === "point"
-              ? "いま話している要点"
-              : page?.focus === "story"
-                ? "いまの作業"
-                : "図解"}
-          </figcaption>
-          <div className="diagram-board">
-            <Diagram
-              id={slide.diagram}
-              listing={listings[0]}
-              title={slide.title}
-              points={slide.points}
-              activePoint={page?.focus === "point" ? page.pointIndex : undefined}
-              activeStep={page?.diagramStep}
-              activeCodeLines={page?.activeCodeLines}
-            />
-          </div>
-        </figure>
-        {finalPage ? listings.slice(1).map((listing) => (
-          <figure key={`${listing.label}-${listing.code.slice(0, 24)}`}>
-            <div className="listing">
-              <div className="listing-label">
-                <span>コード</span>
-                <span>{listing.label}</span>
-              </div>
-              <pre className="overflow-x-auto px-4 py-3 font-mono text-[0.85rem] leading-7">
-                <CodeHighlight code={listing.code} />
-              </pre>
-            </div>
-          </figure>
-        )) : (
-          <p className="talk-code-note">
-            会話の最後に、図と対応するコードを確認できます。
-          </p>
-        )}
-        <aside className="slide-sources" aria-label="この内容の公式資料">
-          <p>公式資料で確かめる</p>
-          <ul>
-            {sources.map((source) => (
-              <li key={source.url}>
-                <a href={source.url} target="_blank" rel="noreferrer">
-                  <span>{source.publisher}</span>
-                  {source.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </aside>
-      </div>
-    </article>
+    <ExplainBoard
+      slide={slide}
+      titleId={titleId}
+      section={resolvedSection}
+    />
   );
 }

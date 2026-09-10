@@ -179,7 +179,7 @@ const learningDesign = fs.readFileSync(
 );
 const prequestionSection = learningDesign.slice(
   learningDesign.indexOf("export function prequestionForLesson"),
-  learningDesign.indexOf("function orderingQuestionIndex"),
+  learningDesign.indexOf("export function predictionOptionsForLesson"),
 );
 if (prequestionSection.includes(".at(-1)")) {
   issues.push("学習前質問: 最初と最後の未習目標を同時に問う構造が残っています");

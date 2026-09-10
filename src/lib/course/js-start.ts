@@ -13,6 +13,8 @@ export const jsStart: Lesson[] = [
     slides: [
       {
         title: "JavaScript は、手順を機械にやってもらう言葉",
+        section: "プログラムは上から1行ずつ動く",
+        layout: "hero",
         lead: "プログラムは、人の代わりに「これをやって」と書いた手順書です。JavaScript（略して JS）は、その書き方のひとつです。今この講座の画面も、ブラウザの中で JavaScript が動いて作られています。最初は英単語に見えますが、今覚える命令はまだ少しです。料理のレシピと同じで、単語の意味が分かれば読めます。",
         points: [
           "手順書を保存しただけでは何も起きない。実行すると、機械が上から読む",
@@ -40,17 +42,26 @@ export const jsStart: Lesson[] = [
         diagram: "sequence",
         code: `console.log("はじめます");
 // この1行が「画面に、はじめます と出せ」というお願い`,
-        codeCaption: "最初のお願い。画面に出す",
+        codeCaption: "script.js",
         codeExample: `console.log("はじめます");`,
+        consoleOutput: ["はじめます"],
+        callouts: [
+          {
+            label: "「はじめます」が出力（表示）される",
+            target: "console",
+            line: 0,
+          },
+        ],
         note: "Java と JavaScript は名前が似ているだけで、別の言語です。ここでは JavaScript だけを扱います。",
       },
       {
         title: "1行が、機械へのひとつのお願い",
-        lead: "コードは横に長い作文ではなく、縦に並んだ短いお願いです。1行がだいたい1つの作業です。英単語は命令の名前、そのあとの括弧 ( ) は「何を対象にするか」を入れる皿です。今は console.log だけ覚えれば進めます。console は作業場の窓、log は「記録して見せる」くらいのイメージで十分です。",
+        section: "プログラムは上から1行ずつ動く",
+        lead: "コードは横に長い作文ではなく、縦に並んだ短いお願いです。1行がだいたい1つの作業です。英単語は命令の名前、そのあとの括弧 ( ) は「何を対象にするか」を入れる皿です。今は console.log だけ覚えれば進めます。行末にはセミコロン (;) をつけます。",
         points: [
           "console.log(...) は「括弧の中身を画面に出せ」",
           "大文字と小文字は別物。Console.log や CONSOLE.LOG では動かない",
-          "行末の ; は句点。この講座では付けても付けなくても、同じように動くことが多い",
+          "行末のセミコロン (;) は句点。忘れずにつけましょう",
         ],
         talk: [
           {
@@ -73,13 +84,23 @@ export const jsStart: Lesson[] = [
         diagram: "sequence",
         code: `console.log("1行です");
 console.log("次の行です");`,
-        codeCaption: "1行、1お願い。上から順",
+        codeCaption: "script.js",
         codeExample: `console.log("1行です");`,
+        consoleOutput: ["1行です", "次の行です"],
+        callouts: [
+          {
+            label: "文末にセミコロンをつける",
+            line: 0,
+            token: ";",
+            target: "code",
+          },
+        ],
         watch:
           "全角の括弧（）や引用符「」は使えません。キーボードの半角 ( ) と \" \" です。",
       },
       {
         title: "コードはレシピ、実行は調理",
+        section: "プログラムは上から1行ずつ動く",
         lead: "JavaScript のファイルは、まだ動いていない料理のレシピです。冷蔵庫にレシピを貼っただけでは、ご飯はできません。「実行する」が、料理人にレシピを渡す操作です。この講座では提出や実行ボタンがそれに当たります。エンジン（料理人）が上から1行ずつ読んで、その行の作業をその場で行います。2行目は、1行目が終わるまで始まりません。映画のフィルムを上から順に見るのと同じです。",
         points: [
           "保存しただけでは何も起きない。実行ボタンを押した瞬間に上から始まる",
@@ -109,16 +130,25 @@ console.log("次の行です");`,
 console.log("に");
 console.log("さん");
 // 画面には いち → に → さん の順で出る`,
-        codeCaption: "書いた順に実行。レシピどおり",
+        codeCaption: "script.js",
         codeExample: `console.log("さん");
 console.log("いち");
 // 先に書いた行が先。並びを変えると表示順も変わる`,
+        consoleOutput: ["いち", "に", "さん"],
+        callouts: [
+          {
+            label: "「いち」が先に出力（表示）される",
+            target: "console",
+            line: 0,
+          },
+        ],
         watch:
           "あとから書いた行が先に動く、ということは通常ありません。順番を入れ替えたいなら、コードの位置を変えます。",
       },
       {
         title: "console.log は「窓から見せる」命令",
-        lead: "console.log は、プログラムが扱っている値を確認用の窓へ表示する命令です。英語のlogは記録、consoleは操作盤という意味です。ブラウザでは開発者ツール、Node.jsではターミナルへ表示されます。",
+        section: "プログラムは上から1行ずつ動く",
+        lead: '`console.log("〇〇");` というコードを書くと、〇〇がコンソールに出力（表示）されます。`console.log` のように決められた処理を実行するものをメソッドと呼びます。',
         points: [
           "括弧の中が「何を見せるか」。外の console.log が「見せるという行為」",
           "ブラウザなら開発者ツールの Console、Node ならターミナルに出る",
@@ -145,14 +175,23 @@ console.log("いち");
         diagram: "sequence",
         code: `console.log("確認中");
 console.log(3);`,
-        codeCaption: "括弧の中の値を確認場所へ表示",
+        codeCaption: "script.js",
         codeExample: `console.log("開始");
 console.log("終了");`,
+        consoleOutput: ["確認中", "3"],
+        callouts: [
+          {
+            label: "「確認中」が出力（表示）される",
+            target: "console",
+            line: 0,
+          },
+        ],
         note: "この段階では、console.logは「括弧の中を表示する命令」とだけ覚えれば十分です。",
       },
       {
         title: "引用符と括弧はセットで使う",
-        lead: '初めて見る記号の役目を固定します。" " は「これは言葉です」という名札。console.log の ( ) は「この中を渡す」皿です。名札を付け忘れると、エンジンはそれを命令の名前だと誤解します。',
+        section: "プログラムは上から1行ずつ動く",
+        lead: '「こんにちは」のような文字のことを文字列と呼びます。文字列は、シングルクォーテーション（ \' ）かダブルクォーテーション（ " ）で囲みます。クォーテーションを忘れるとエラーになるので注意しましょう。',
         points: [
           "こんにちは だけでは、そんな名前の変数を探せ、になる",
           '"こんにちは" は文字の列という値',
@@ -177,18 +216,33 @@ console.log("終了");`,
           }
         ],
         diagram: "sequence",
-        code: `console.log("こんにちは");
-console.log(3);
-// 言葉は引用符。数はそのまま`,
-        codeCaption: "名札（引用符）と皿（括弧）",
+        code: `console.log('こんにちは');
+console.log("こんにちは");`,
+        codeCaption: "script.js",
         codeExample: `// console.log(こんにちは); // エラー。名札が無い
 console.log("こんにちは"); // 動く`,
+        consoleOutput: ["こんにちは", "こんにちは"],
+        callouts: [
+          {
+            label: "シングルクォーテーション（ ' ）かダブルクォーテーション（ \" ）で囲む",
+            line: 0,
+            token: "'",
+            target: "code",
+          },
+          {
+            label: "ダブルクォーテーションでも同じ",
+            line: 1,
+            token: '"',
+            target: "code",
+          },
+        ],
         watch:
           "日本語も英語も、言葉なら引用符で囲みます。数の 3 には引用符は不要です。",
       },
       {
         title: "コメントはレシピの余白メモ",
-        lead: "料理人が読むのは手順だけです。余白に書いた「塩は後で足す」は実行されません。// から行末、および /* */ で囲んだ部分はエンジンが飛ばします。人のためのメモで、動かしたいコードと説明を同じファイルに置けます。",
+        section: "プログラムは上から1行ずつ動く",
+        lead: "文頭に「//」を書くと、その行はコメントとみなされ、実行されません。コメントは、どのような意味のコードであるかを記すメモとして使われます。",
         points: [
           "// は「この行のここから無視」。付箋を貼った行",
           "/* と */ の間は複数行まとめて無視。ページを折った部分",
@@ -213,18 +267,32 @@ console.log("こんにちは"); // 動く`,
           }
         ],
         diagram: "sequence",
-        code: `console.log("動く");
-// console.log("動かない");
-/* ここも無視 */`,
-        codeCaption: "メモは調理しない",
+        code: `// 「こんにちは」と出力する
+console.log("こんにちは");`,
+        codeCaption: "script.js",
         codeExample: `console.log("A");
 // console.log("B");
 console.log("C");
 // 表示は A と C。B は余白メモ`,
+        consoleOutput: ["こんにちは"],
+        callouts: [
+          {
+            label: "文頭に「//」がある行はコメントになる",
+            line: 0,
+            token: "//",
+            target: "code",
+          },
+          {
+            label: "コメントは実行されない",
+            target: "console",
+            line: 0,
+          },
+        ],
         note: "しばらく動かしたくない行は消さず、先頭に // を付けて残します。",
       },
       {
         title: "エラーは電車が止まる",
+        section: "プログラムは上から1行ずつ動く",
         lead: "存在しない名前や、括弧の閉じ忘れはエラーです。途中駅で線路が切れると、その先の駅には着きません。赤い文字や英語のメッセージが出たら「どこで止まったか」を見ます。エラーの行より下は原則走りません。すでに通った駅（上の行）の結果は残っています。最初はメッセージを全部理解しなくてよいです。止まった行を直す、で十分です。",
         points: [
           "構文エラー（括弧不足など）は、発車前に点検で止まることもある",
@@ -253,15 +321,25 @@ console.log("C");
         code: `console.log("ここまでは出る");
 unknownName; // ここで止まる
 console.log("ここは出ない");`,
-        codeCaption: "止まった駅より先には行かない",
+        codeCaption: "script.js",
         codeExample: `console.log("ここまでは出る");
 console.log("ここも出る");
 // 止まらなければ、下の行まで進む`,
+        callouts: [
+          {
+            label: "ここで止まると、下の行は実行されない",
+            line: 1,
+            token: "unknownName",
+            target: "code",
+          },
+        ],
         watch:
           "画面に何も出ないときは、もっと上の行で止まっていないかを先に疑います。",
       },
       {
         title: "この講義の要点",
+        section: "プログラムは上から1行ずつ動く",
+        layout: "explain",
         lead: "JS は手順の言葉。1行が1お願い。実行は上から下。console.log は窓。言葉は引用符。コメントは無視。エラーで以降が止まる。次の講義から「値」（個数・言葉・スイッチ）を見ます。",
         points: [
           "順番を変えたいなら、行の位置を変える",
@@ -481,6 +559,7 @@ console.log("Aya" + "さん"); // "Ayaさん"。名札のつなぎ`,
       },
       {
         title: "引用符の有無が種類を分ける",
+        section: "値には種類がある",
         lead: '棚に並んだ 3個のりんごと、「3」と書いた札は別物です。3 は数値。"3" は文字のスリー。見た目が似ていても、足し算できるか、長さを持つかが違います。初心者の混乱の大半はここにあります。',
         points: [
           "数値どうしの + は足し算。3 + 1 は 4",
@@ -506,13 +585,29 @@ console.log("Aya" + "さん"); // "Ayaさん"。名札のつなぎ`,
           }
         ],
         diagram: "values",
-        code: `typeof 3 // "number"
-typeof "3" // "string"
-typeof true // "boolean"`,
-        codeCaption: "見た目が似ても種類は違う",
+        code: `console.log(3 + 1);
+console.log("3" + 1);
+console.log(typeof 3);
+console.log(typeof "3");`,
+        codeCaption: "script.js",
         codeExample: `console.log(3 + 1); // 4
 console.log("3" + 1); // "31"
 console.log("3".length); // 1。文字の個数`,
+        consoleOutput: ["4", "31", "number", "string"],
+        callouts: [
+          {
+            label: "引用符なしは数値として計算",
+            line: 0,
+            token: "+",
+            target: "code",
+          },
+          {
+            label: "引用符ありは文字列として連結",
+            line: 1,
+            token: '"',
+            target: "code",
+          },
+        ],
         watch:
           "画面に 3 と出ても、それが number なのか string なのかは typeof か計算の結果で確認します。",
       },
@@ -1218,7 +1313,8 @@ console.log(b);`,
     slides: [
       {
         title: "数値の四則は電卓どおり",
-        lead: "個数（number）どうしなら + - * / % は卓上電卓と同じです。記号の名前は演算子（えんざんし）ですが、今は「計算の記号」で十分です。% は余り。小数もあります。割り切れるとは限りません。ここまでは「個数どうしの計算」です。次のスライドで、同じ + が文字の連結にもなる、という話をします。",
+        section: "計算と文字のつなぎ",
+        lead: "プログラミングでは、数値（数字）を扱うことができます。数値は文字列と違ってクォーテーションで囲みません。足し算や引き算といった計算もすることができます。足し算には「`+`」、引き算には「`-`」の記号を用います。",
         points: [
           "number どうしの + は足し算。1 + 2 は 3",
           "% は割り算の余り。10 % 3 は 1",
@@ -1243,17 +1339,19 @@ console.log(b);`,
           }
         ],
         diagram: "calc",
-        code: `2 + 3 // 5
-10 % 3 // 1
-1 / 0 // Infinity`,
-        codeCaption: "電卓のキーと同じ",
+        code: `console.log(123);
+console.log(12 + 3);
+console.log(12 - 3);`,
+        codeCaption: "script.js",
         codeExample: `console.log(2 * 3); // 6
 console.log(7 % 2); // 1。奇数判定にも使う
 console.log(10 / 4); // 2.5。整数に切り捨てない`,
+        consoleOutput: ["123", "15", "9"],
       },
       {
         title: "+ は文字の連結にもなる",
-        lead: '片方が string だと、+ は電卓ではなく文字をつなぐ記号です。紙と紙を貼るように、左右を文字としてつなぎます。1 + "2" は 3 ではなく "12"。フォームの入力はたいてい文字なので、気づかず + すると静かに連結になります。',
+        section: "計算と文字のつなぎ",
+        lead: '「`+`」記号を用いると、文字列同士を連結できます。左の図のように、`"にんじゃ" + "わんこ"` とすると、`"にんじゃわんこ"` という1つの文字列になります。数値どうしなら足し算、文字が混ざると連結です。',
         points: [
           '1 + "2" は 3 ではなく "12"。足し算ではなく文字をつなぐ',
           '"Aya" + "さん" は "Ayaさん"',
@@ -1278,17 +1376,81 @@ console.log(10 / 4); // 2.5。整数に切り捨てない`,
           }
         ],
         diagram: "calc",
-        code: `console.log(1 + 2); // 3 電卓
-console.log(1 + "2"); // "12"。文字をつなぐ
-console.log("A" + "B"); // "AB"`,
-        codeCaption: "同じ + でも、種類で仕事が変わる",
+        code: `console.log("にんじゃ" + "わんこ");
+console.log(12 + 3);
+console.log("12 + 3");`,
+        codeCaption: "script.js",
         codeExample: `console.log("10" - 1); // 9。引き算はつながない
 console.log("10" + 1); // "101"。+ だけ文字をつなぐ`,
+        consoleOutput: ["にんじゃわんこ", "15", "12 + 3"],
+        callouts: [
+          {
+            label: "「+」で文字列を連結する",
+            line: 0,
+            token: "+",
+            target: "code",
+          },
+          {
+            label: "「にんじゃわんこ」が出力（表示）される",
+            target: "console",
+            line: 0,
+          },
+        ],
         watch:
           "画面に 12 と出ても、それが数の十二なのか文字のいちになのかは typeof で確認します。",
       },
       {
+        title: "数値と文字列の違い",
+        section: "計算と文字のつなぎ",
+        lead: '左の図のように、`console.log(12 + 3);` は足し算の結果である `15` が出力されます。一方、`12 + 3` をクォーテーションで囲むと文字列として扱われ、そのまま出力されます。数値と文字列の違いに注意しましょう。',
+        points: [
+          "クォーテーションなしの 12 + 3 は計算される",
+          "クォーテーションありの \"12 + 3\" はそのまま文字",
+          "見た目が似ていても、種類で結果が変わる",
+        ],
+        talk: [
+          {
+            speaker: "beginner",
+            text: "画面に出た15と「12 + 3」は、どちらも同じ種類の値ですか？",
+          },
+          {
+            speaker: "engineer",
+            text: "いいえ。15は数値、引用符付きは文字列です。計算したか、文字のまま出したかの違いです。",
+          },
+          {
+            speaker: "beginner",
+            text: "じゃあ見た目だけで判断すると危険なんですね？",
+          },
+          {
+            speaker: "engineer",
+            text: "その通りです。次の計算に使う前に、数値なのか文字列なのかを意識しましょう。",
+          },
+        ],
+        diagram: "calc",
+        code: `console.log(12 + 3);
+console.log("12 + 3");`,
+        codeCaption: "script.js",
+        codeExample: `console.log(12 + 3);
+console.log("12 + 3");`,
+        consoleOutput: ["15", "12 + 3"],
+        callouts: [
+          {
+            label: "数値として計算される",
+            line: 0,
+            token: "+",
+            target: "code",
+          },
+          {
+            label: "文字列としてそのまま出る",
+            line: 1,
+            token: '"',
+            target: "code",
+          },
+        ],
+      },
+      {
         title: "テンプレートは ${} で値を埋め込む",
+        section: "計算と文字のつなぎ",
         lead: "バッククォート（`）で囲むと、${式} の位置に値を文字として差し込めます。穴あきの文に、付箋の中身をはめ込むイメージです。長い文章と変数を混ぜるときに、+ の連結より読みやすくなります。",
         points: [
           "`Hello ${name}` は name の値を文字列化して埋め込む",
@@ -1316,7 +1478,7 @@ console.log("10" + 1); // "101"。+ だけ文字をつなぐ`,
         diagram: "calc",
         code: `const name = "Aya";
 \`Hello \${name}\` // "Hello Aya"`,
-        codeCaption: "穴あき文に値をはめる",
+        codeCaption: "script.js",
         codeExample: `const n = 3;
 console.log(\`個数は \${n + 1}\`); // "個数は 4"
 console.log("個数は \${n}"); // 穴は開かない`,
@@ -1461,7 +1623,7 @@ console.log("A" + "B");`,
       },
       {
         id: "q3",
-        slide: 2,
+        slide: 3,
         prompt: "ログイン後のあいさつとして、starterの会員名nameを使い「Hello Aya」と表示してください。",
         lead: "nameにはAyaが用意されています。固定のHelloと会員名をテンプレート文字列で1つの文にし、間に半角スペースを入れて表示してください。文字列の連結演算は使いません。",
         kind: "code",
@@ -1480,7 +1642,7 @@ console.log(\`Hello \${name}\`);`,
       },
       {
         id: "q4",
-        slide: 3,
+        slide: 4,
         scenario: "フォームの文字列から order-count を数値化して更新する。",
         projectRole: "build",
         prompt: "入力欄から届いた注文件数rawOrderCountを数値へ変換し、注文を1件追加したorder-countを表示してください。",
@@ -1502,7 +1664,7 @@ console.log(Number(rawOrderCount) + 1);`,
       },
       {
         id: "q5",
-        slide: 4,
+        slide: 5,
         prompt: "数値のID 1と、文字列のID「1」が同じかを、種類まで見る比較と、変換を許す比較でこの順に表示してください。",
         lead: "見た目の1は同じでも、数値と文字列は種類が違います。先に種類も含めて比べ、次に変換を許して比べます。比較結果が false と true の順なら完成です。",
         kind: "code",

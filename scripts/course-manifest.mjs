@@ -6,6 +6,7 @@ export const COURSE_FILES = [
   "js-modern.ts",
   "js-advanced.ts",
   "js-dom.ts",
+  "js-dom-browser.ts",
   "js-npm.ts",
   "ts-lessons.ts",
   "ts-modern.ts",
@@ -20,8 +21,8 @@ export const COURSE_FILES = [
 
 export const EXPECTED_TOTALS = {
   tracks: 5,
-  lessons: 97,
-  slides: 429,
-  questions: 372,
-  choices: 91,
+  lessons: 100,
+  slides: 442,
+  questions: 385,
+  choices: 93,
 };

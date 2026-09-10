@@ -3,22 +3,18 @@ import path from "node:path";
 import ts from "typescript";
 
 const ROOT = process.cwd();
-const COURSE_FILE = path.join(ROOT, "src/lib/course/js-dom.ts");
+const COURSE_FILES = [
+  path.join(ROOT, "src/lib/course/js-dom.ts"),
+  path.join(ROOT, "src/lib/course/js-dom-browser.ts"),
+];
 const issues = [];
 
-if (!fs.existsSync(COURSE_FILE)) {
-  console.error("DOM教材監査: src/lib/course/js-dom.ts がありません。");
-  process.exit(1);
+for (const courseFile of COURSE_FILES) {
+  if (!fs.existsSync(courseFile)) {
+    console.error(`DOM教材監査: ${path.relative(ROOT, courseFile)} がありません。`);
+    process.exit(1);
+  }
 }
-
-const sourceText = fs.readFileSync(COURSE_FILE, "utf8");
-const sourceFile = ts.createSourceFile(
-  COURSE_FILE,
-  sourceText,
-  ts.ScriptTarget.Latest,
-  true,
-  ts.ScriptKind.TS,
-);
 
 function nameOf(node) {
   return ts.isIdentifier(node) || ts.isStringLiteral(node) ? node.text : "";
@@ -46,21 +42,32 @@ function objectsOf(node) {
 }
 
 const lessons = [];
-function visit(node) {
-  if (ts.isObjectLiteralExpression(node)) {
-    const fields = fieldsOf(node);
-    const slides = objectsOf(fields.get("slides"));
-    const questions = objectsOf(fields.get("questions"));
-    if (textOf(fields.get("chapter")) === "js-dom" && slides.length > 0) {
-      lessons.push({ fields, slides, questions });
-      return;
-    }
-  }
-  ts.forEachChild(node, visit);
-}
-visit(sourceFile);
+for (const courseFile of COURSE_FILES) {
+  const sourceText = fs.readFileSync(courseFile, "utf8");
+  const sourceFile = ts.createSourceFile(
+    courseFile,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
 
-if (lessons.length !== 8) issues.push(`DOM講義数: ${lessons.length}/8`);
+  function visit(node) {
+    if (ts.isObjectLiteralExpression(node)) {
+      const fields = fieldsOf(node);
+      const slides = objectsOf(fields.get("slides"));
+      const questions = objectsOf(fields.get("questions"));
+      if (textOf(fields.get("chapter")) === "js-dom" && slides.length > 0) {
+        lessons.push({ fields, slides, questions });
+        return;
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+}
+
+if (lessons.length !== 9) issues.push(`DOM講義数: ${lessons.length}/9`);
 
 let slideCount = 0;
 let questionCount = 0;
@@ -69,11 +76,11 @@ for (const lesson of lessons) {
   const id = textOf(lesson.fields.get("id")) || "unknown";
   slideCount += lesson.slides.length;
   questionCount += lesson.questions.length;
-  if (lesson.slides.length !== 5) {
-    issues.push(`${id}: スライド数 ${lesson.slides.length}/5`);
+  if (lesson.slides.length !== 5 && lesson.slides.length !== 6) {
+    issues.push(`${id}: スライド数 ${lesson.slides.length}（5または6を想定）`);
   }
-  if (lesson.questions.length !== 4) {
-    issues.push(`${id}: 問題数 ${lesson.questions.length}/4`);
+  if (lesson.questions.length !== 4 && lesson.questions.length !== 5) {
+    issues.push(`${id}: 問題数 ${lesson.questions.length}（4または5を想定）`);
   }
   let lessonRuntimeQuestions = 0;
   for (const question of lesson.questions) {
@@ -100,8 +107,8 @@ for (const lesson of lessons) {
   }
 }
 
-if (slideCount !== 40) issues.push(`DOMスライド数: ${slideCount}/40`);
-if (questionCount !== 32) issues.push(`DOM問題数: ${questionCount}/32`);
+if (slideCount !== 46) issues.push(`DOMスライド数: ${slideCount}/46`);
+if (questionCount !== 37) issues.push(`DOM問題数: ${questionCount}/37`);
 
 const runner = fs.readFileSync(path.join(ROOT, "src/lib/run-dom.ts"), "utf8");
 for (const required of [
@@ -129,6 +136,6 @@ if (issues.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    `DOM 8講義・${slideCount}スライド・${questionCount}問（振る舞い採点${runtimeQuestionCount}問）とsandbox隔離を確認しました。`,
+    `DOM 9講義・${slideCount}スライド・${questionCount}問（振る舞い採点${runtimeQuestionCount}問）とsandbox隔離を確認しました。`,
   );
 }

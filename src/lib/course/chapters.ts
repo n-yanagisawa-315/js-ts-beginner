@@ -76,7 +76,8 @@ export const CHAPTERS: Chapter[] = [
     track: "js",
     order: 11,
     title: "注文管理DOM編",
-    summary: "HTMLを取得・更新し、注文一覧の追加、絞り込み、保存、API接続まで組み立てる",
+    summary:
+      "HTMLを取得・更新し、注文一覧の追加・削除、イベント、保存、API接続、スクロール表示まで組み立てる",
   },
   {
     id: "js-module",
@@ -174,7 +175,8 @@ export const CHAPTERS: Chapter[] = [
     track: "js",
     order: 14,
     title: "JavaScriptチャレンジ編",
-    summary: "境界値・非破壊更新・クロージャ・非同期を実戦形式で解く",
+    summary:
+      "境界値・非破壊更新・クロージャ・非同期・ロジック腕試し・データ処理を実戦形式で解く",
   },
   {
     id: "ts-challenge",
