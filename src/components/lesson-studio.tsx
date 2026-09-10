@@ -460,7 +460,7 @@ export function LessonStudio({ course }: { course: LessonPageDTO }) {
               ? "学習後の想起"
               : "講義完了",
     slideTitle: assistantSlide?.title,
-    slideLead: assistantSlide?.lead,
+    slideLead: assistantQuestion?.lead ?? assistantSlide?.lead,
     conversation:
       phase === "slides" || phase === "quiz"
         ? assistantPage?.lines.map((line) => line.text).join(" ")

@@ -5,6 +5,11 @@ import type { DiagramId } from "@/lib/course/types";
 
 type NodeTone = "plain" | "main" | "accent" | "gone" | "negative";
 
+/**
+ * 図解プリミティブ
+ * 契約: 伝わるデザイン（塗りのみ・角丸四角統一・矢印は控えめ・余白でまとめる）
+ * 参照: https://tsutawarudesign.com/miyasuku3.html
+ */
 function FigureNode({
   label,
   value,
@@ -35,12 +40,12 @@ function FigureNode({
 function FigureArrow({ label }: { label: string }) {
   return (
     <p className="figure-arrow">
-      <svg width="28" height="10" viewBox="0 0 28 10" aria-hidden="true">
+      <svg width="24" height="8" viewBox="0 0 24 8" aria-hidden="true">
         <path
-          d="M0 5h22M19 2l5 3-5 3"
+          d="M0 4h18M15 1.5l5 2.5-5 2.5"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1.2"
+          strokeWidth="1"
         />
       </svg>
       <span>{label}</span>
@@ -137,7 +142,7 @@ function FigureRail({
           className={`figure-rail-step${index === mainIndex ? " is-main" : ""}`}
         >
           <span className="figure-rail-index" aria-hidden="true">
-            {String(index + 1).padStart(2, "0")}
+            {index + 1}
           </span>
           <div className="figure-rail-copy">
             <strong>{step.title}</strong>
@@ -1177,9 +1182,8 @@ export function Diagram({
       </section>
 
       <div className="diagram-connector" aria-hidden="true">
-        <span />
-        <svg viewBox="0 0 34 18">
-          <path d="M1 9h27M23 3l7 6-7 6" />
+        <svg viewBox="0 0 28 12">
+          <path d="M1 6h20M17 2.5l6 3.5-6 3.5" />
         </svg>
       </div>
 
@@ -1203,7 +1207,7 @@ export function Diagram({
                         : "is-muted"
                   }
                 >
-                  <span>P{String(index + 1).padStart(2, "0")}</span>
+                  <span>{index + 1}</span>
                   <p>{point}</p>
                 </li>
               ))}

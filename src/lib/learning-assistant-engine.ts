@@ -306,8 +306,11 @@ export function trustedAssistantAnswer(
   }
   if (question === SIMPLE_EXPLANATION_QUESTION) {
     if (grounding.unanswered) {
+      const topic = topicAnchor(grounding);
       return safeTrustedAnswer(
-        "問題文を「最初の状態」「行う操作」「確かめる結果」の3つに分けて読みましょう。まず、最初から用意されている名前や値を探してみてください。",
+        topic
+          ? `${topic}まずは、最初から用意されている名前や値だけを探してみてください。`
+          : "問題文を「最初の状態」「行う操作」「確かめる結果」の3つに分けて読みましょう。まず、最初から用意されている名前や値を探してみてください。",
         grounding,
       );
     }
@@ -315,8 +318,11 @@ export function trustedAssistantAnswer(
   }
   if (question === FAMILIAR_EXAMPLE_QUESTION) {
     if (grounding.unanswered) {
+      const topic = topicAnchor(grounding);
       return safeTrustedAnswer(
-        "料理の手順のように、材料（最初の値）→操作→できあがり（表示結果）の順で考えてみましょう。今は最初の材料が何かだけ見てください。",
+        topic
+          ? `身近な場面で言い直すと、${topic}いまやることは、最初の材料が何かだけ確かめるまでです。`
+          : "手順書を上から一行ずつ進めるように考えてみましょう。材料（最初の値）→操作→できあがり（表示結果）の順で、今は最初の材料だけ見てください。",
         grounding,
       );
     }
@@ -324,6 +330,26 @@ export function trustedAssistantAnswer(
     return lead ? firstSentences(lead, 3) : groundedSummary(grounding);
   }
   return null;
+}
+
+function topicAnchor(grounding: AssistantGrounding): string {
+  if (grounding.slideLead?.trim()) {
+    return ensureSentence(firstSentences(grounding.slideLead, 2));
+  }
+  const points = grounding.points?.filter(Boolean).slice(0, 2) ?? [];
+  if (points.length > 0) {
+    return points.map((point) => ensureSentence(point)).join("");
+  }
+  if (grounding.lessonSummary.trim()) {
+    return ensureSentence(firstSentences(grounding.lessonSummary, 2));
+  }
+  return "";
+}
+
+function ensureSentence(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  return /[。！？]$/.test(trimmed) ? trimmed : `${trimmed}。`;
 }
 
 function safeTrustedAnswer(
@@ -335,7 +361,7 @@ function safeTrustedAnswer(
     return content;
   }
   const fallback =
-    "問題文を「最初の状態」「行う操作」「確かめる結果」の順に分け、まず最初の状態だけ見てみましょう。";
+    "いま見ている説明の「最初の状態」だけに目を向けて、完成形はまだ見ないようにしましょう。";
   const candidate =
     normalizeRestrictedText(restricted).length >= 2
       ? redactRestrictedAnswer(content, restricted)

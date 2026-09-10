@@ -125,7 +125,7 @@ for (const lesson of lessons) {
     ]) {
       const grounding = {
         lessonSummary: lesson.summary,
-        slideLead: slide.lead,
+        slideLead: question.lead ?? slide.lead,
         points: slide.points,
         firstStepHint,
         unanswered: state.unanswered,
@@ -159,6 +159,26 @@ for (const lesson of lessons) {
             false,
             `${lesson.id}/${question.id}/${state.label}: 定型回答が正答を含みます`,
           );
+          if (
+            (template === SIMPLE_EXPLANATION_QUESTION ||
+              template === FAMILIAR_EXAMPLE_QUESTION) &&
+            grounding.slideLead &&
+            !containsRestrictedAnswer(grounding.slideLead, question.answer)
+          ) {
+            const topicTerms = [
+              ...new Set(
+                (grounding.slideLead.match(/[A-Za-z_][\w.-]*|[\u3040-\u30ff\u4e00-\u9fff]{2,}/g) ??
+                  []
+                ).map((term) => term.toLowerCase()),
+              ),
+            ].filter((term) => term.length >= 2).slice(0, 8);
+            const normalizedAnswer = answer.toLowerCase();
+            assert.ok(
+              topicTerms.some((term) => normalizedAnswer.includes(term)) ||
+                /最初の状態だけ|最初の材料|完成形はまだ/.test(answer),
+              `${lesson.id}/${question.id}/${state.label}: 未正解時の定型が題材に沿っていません`,
+            );
+          }
         }
         if (template === FIRST_STEP_QUESTION) {
           firstStepCount += 1;

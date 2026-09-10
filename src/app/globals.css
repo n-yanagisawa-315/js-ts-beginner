@@ -462,35 +462,41 @@ a[aria-disabled="true"] {
   color: var(--cream-mute);
 }
 
+/*
+  図解デザイン契約（伝わるデザイン / miyasuku3 + Swiss minimal）
+  - 塗り OR 線のどちらか一方。両方に色を付けない
+  - 図形は角丸四角のみ（円・楕円は使わない）。アールは --fig-radius で統一
+  - 角は丸めすぎない（6px）
+  - 矢印は主役にしない（細く・薄い色）
+  - 囲みすぎない。まとまりは余白と弱い塗りで示す
+  - 影・グラデーション・立体は使わない
+*/
 .diagram-board {
-  --fig-surface: #e8f6f7;
-  --fig-surface-deep: #d5eef0;
-  --fig-main: #2a7a86;
-  --fig-main-soft: #d7eef1;
-  --fig-sub: #6f8f97;
-  --fig-sub-soft: #e2eef0;
-  --fig-accent: #b8963d;
-  --fig-accent-soft: #f3ead0;
-  --fig-neg: #c47a6a;
-  --fig-neg-soft: #f3e4e0;
+  --fig-surface: #f4f8f9;
+  --fig-surface-deep: #e8eef0;
+  --fig-main: #2a6f7a;
+  --fig-main-soft: #dceeef;
+  --fig-sub: #5f7a82;
+  --fig-sub-soft: #e8eef0;
+  --fig-accent: #8a7340;
+  --fig-accent-soft: #efe8d8;
+  --fig-neg: #a65a52;
+  --fig-neg-soft: #f0e4e2;
   --fig-ink: #294955;
   --fig-mute: #607a84;
-  --fig-gap: 14px;
+  --fig-arrow: #8aa0a6;
+  --fig-gap: 12px;
+  --fig-radius: 6px;
   overflow: hidden;
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at 12% 18%, rgb(255 255 255 / 70%), transparent 34%),
-    linear-gradient(135deg, #e7f9fa 0%, #ccecef 100%);
-  padding: 16px;
-  box-shadow:
-    10px 10px 24px rgb(42 96 101 / 12%),
-    -6px -6px 16px rgb(255 255 255 / 70%);
+  border-radius: 8px;
+  background: var(--fig-surface);
+  padding: 14px;
   color: var(--fig-ink);
 }
 
 .diagram-visual {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) 36px minmax(0, 0.95fr);
+  grid-template-columns: minmax(0, 1.05fr) 28px minmax(0, 0.95fr);
   align-items: stretch;
   gap: 0;
 }
@@ -499,24 +505,22 @@ a[aria-disabled="true"] {
 .diagram-concept-window {
   min-width: 0;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--fig-radius);
 }
 
 .diagram-code-window {
   background: #282c31;
   color: #f8f8f2;
-  box-shadow: inset 0 0 0 1px rgb(21 76 88 / 35%);
 }
 
 .diagram-concept-window {
-  background: var(--fig-surface);
+  background: #ffffff;
   color: var(--fig-ink);
-  box-shadow: inset 0 0 0 1px rgb(42 122 134 / 10%);
 }
 
 .diagram-window-bar {
   display: flex;
-  min-height: 32px;
+  min-height: 30px;
   align-items: stretch;
   background: #263d50;
 }
@@ -546,7 +550,7 @@ a[aria-disabled="true"] {
 
 .diagram-file-dot {
   width: 7px;
-  height: 9px;
+  height: 7px;
   border-radius: 2px;
   background: #66a8b2;
 }
@@ -595,7 +599,7 @@ a[aria-disabled="true"] {
   min-height: 12rem;
   align-content: start;
   gap: 16px;
-  padding: 20px;
+  padding: 18px 16px;
 }
 
 .figure-flow {
@@ -616,9 +620,9 @@ a[aria-disabled="true"] {
   display: grid;
   gap: 8px;
   min-width: 0;
-  border-radius: 14px;
+  border-radius: var(--fig-radius);
   background: var(--fig-sub-soft);
-  padding: 14px;
+  padding: 12px;
 }
 
 .figure-contrast-side.is-emphasis {
@@ -639,9 +643,9 @@ a[aria-disabled="true"] {
 .figure-nest {
   display: grid;
   gap: 10px;
-  border-radius: 16px;
+  border-radius: var(--fig-radius);
   background: var(--fig-sub-soft);
-  padding: 14px;
+  padding: 12px;
 }
 
 .figure-nest.is-main {
@@ -649,7 +653,7 @@ a[aria-disabled="true"] {
 }
 
 .figure-nest > .figure-nest {
-  background: rgb(255 255 255 / 72%);
+  background: #ffffff;
 }
 
 .figure-nest-title {
@@ -663,7 +667,7 @@ a[aria-disabled="true"] {
   margin: 0;
   color: var(--fig-ink);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 650;
 }
 
@@ -687,12 +691,14 @@ a[aria-disabled="true"] {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
   gap: 10px;
-  padding-left: 4px;
+  margin-left: 10px;
+  padding-left: 12px;
+  border-left: 1px solid color-mix(in oklab, var(--fig-arrow) 45%, transparent);
 }
 
 .figure-rail {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -700,33 +706,32 @@ a[aria-disabled="true"] {
 
 .figure-rail-step {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 1.6rem minmax(0, 1fr);
   gap: 10px;
-  align-items: start;
+  align-items: stretch;
+  min-height: 3.25rem;
 }
 
 .figure-rail-index {
   display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--fig-sub-soft);
-  color: var(--fig-sub);
+  place-items: start center;
+  padding-top: 12px;
+  color: var(--fig-mute);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
+  line-height: 1;
 }
 
 .figure-rail-step.is-main .figure-rail-index {
-  background: var(--fig-main);
-  color: #fff;
+  color: var(--fig-main);
 }
 
 .figure-rail-copy {
   display: grid;
   gap: 4px;
-  border-radius: 12px;
+  align-content: center;
+  border-radius: var(--fig-radius);
   background: var(--fig-sub-soft);
   padding: 10px 12px;
 }
@@ -751,15 +756,16 @@ a[aria-disabled="true"] {
   display: grid;
   gap: 4px;
   min-width: 0;
-  border-radius: 14px;
+  flex: 1 1 7.5rem;
+  border-radius: var(--fig-radius);
   background: var(--fig-sub-soft);
   padding: 12px 14px;
   color: var(--fig-ink);
 }
 
 .figure-node.is-main {
-  background: var(--fig-main);
-  color: #fff;
+  background: var(--fig-main-soft);
+  color: var(--fig-ink);
 }
 
 .figure-node.is-accent {
@@ -768,7 +774,7 @@ a[aria-disabled="true"] {
 }
 
 .figure-node.is-gone {
-  background: var(--fig-sub-soft);
+  background: transparent;
   color: var(--fig-mute);
   text-decoration: line-through;
 }
@@ -779,60 +785,64 @@ a[aria-disabled="true"] {
 
 .figure-node > p {
   margin: 0;
-  color: inherit;
-  opacity: 0.78;
+  color: var(--fig-mute);
   font-size: 0.66rem;
   font-weight: 650;
 }
 
 .figure-node.is-main > p {
-  color: rgb(255 255 255 / 82%);
-  opacity: 1;
+  color: var(--fig-main);
 }
 
 .figure-node > strong {
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 650;
   line-height: 1.35;
+  color: inherit;
+}
+
+.figure-node.is-main > strong {
+  color: var(--fig-main);
 }
 
 .figure-node > small {
-  color: inherit;
-  opacity: 0.78;
+  color: var(--fig-mute);
   font-size: 0.66rem;
   line-height: 1.45;
 }
 
 .figure-arrow {
   display: inline-flex;
+  flex: 0 0 auto;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-width: 3.5rem;
-  color: var(--fig-sub);
+  gap: 2px;
+  min-width: 2.75rem;
+  align-self: center;
+  color: var(--fig-arrow);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.62rem;
-  line-height: 1.3;
+  font-size: 0.58rem;
+  line-height: 1.25;
   text-align: center;
 }
 
 .figure-arrow svg {
-  color: var(--fig-sub);
-  opacity: 0.75;
+  color: var(--fig-arrow);
+  opacity: 0.9;
 }
 
 .figure-note {
   display: grid;
   gap: 4px;
-  border-radius: 12px;
+  border-radius: var(--fig-radius);
   background: var(--fig-accent-soft);
   padding: 10px 12px;
 }
 
 .figure-note strong {
-  color: #7a6528;
+  color: var(--fig-accent);
   font-size: 0.72rem;
 }
 
@@ -850,9 +860,6 @@ a[aria-disabled="true"] {
 .figure-trace {
   display: grid;
   gap: 6px;
-  border-radius: 14px;
-  background: rgb(255 255 255 / 70%);
-  padding: 8px;
 }
 
 .figure-trace-row {
@@ -860,7 +867,7 @@ a[aria-disabled="true"] {
   grid-template-columns: 5rem minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 8px;
   align-items: start;
-  border-radius: 10px;
+  border-radius: var(--fig-radius);
   background: var(--fig-sub-soft);
   padding: 8px 10px;
 }
@@ -889,15 +896,16 @@ a[aria-disabled="true"] {
 
 .figure-list {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
 }
 
 .figure-list p {
   display: grid;
   grid-template-columns: 4.8rem minmax(0, 1fr);
-  gap: 8px;
+  gap: 10px;
   margin: 0;
+  padding: 8px 0;
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -915,11 +923,9 @@ a[aria-disabled="true"] {
 
 .diagram-topic {
   margin: 0;
-  border-radius: 10px;
-  background: var(--fig-main-soft);
-  padding: 10px 12px;
+  padding: 0;
   color: var(--fig-ink);
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 650;
   line-height: 1.55;
 }
@@ -928,36 +934,39 @@ a[aria-disabled="true"] {
   display: grid;
   gap: 8px;
   margin: 0;
-  padding: 14px 0 0;
-  border-top: 1px solid rgb(42 122 134 / 14%);
+  padding: 12px 0 0;
+  border-top: 1px solid color-mix(in oklab, var(--fig-arrow) 35%, transparent);
   list-style: none;
 }
 
 .diagram-reading-list li {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 1.5rem minmax(0, 1fr);
   gap: 8px;
-  border-radius: 10px;
-  background: rgb(255 255 255 / 55%);
-  padding: 8px 10px;
+  padding: 2px 0;
   color: var(--fig-ink);
   font-size: 0.74rem;
   line-height: 1.55;
 }
 
 .diagram-reading-list li.is-active {
-  background: var(--fig-main-soft);
+  color: var(--fig-main);
+  font-weight: 650;
 }
 
 .diagram-reading-list li.is-muted {
-  opacity: 0.45;
+  opacity: 0.42;
 }
 
 .diagram-reading-list span {
-  color: var(--fig-main);
+  color: var(--fig-mute);
   font-family: var(--font-code), ui-monospace, monospace;
   font-size: 0.64rem;
   font-weight: 700;
+}
+
+.diagram-reading-list li.is-active span {
+  color: var(--fig-main);
 }
 
 .diagram-reading-list p {
@@ -968,8 +977,7 @@ a[aria-disabled="true"] {
   position: relative;
   display: grid;
   place-items: center;
-  color: var(--fig-sub);
-  opacity: 0.8;
+  color: var(--fig-arrow);
 }
 
 .diagram-connector::before {
@@ -982,19 +990,15 @@ a[aria-disabled="true"] {
 }
 
 .diagram-connector span {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ccecef;
-  box-shadow: 0 0 0 2px currentColor;
+  display: none;
 }
 
 .diagram-connector svg {
   position: relative;
   z-index: 1;
-  width: 28px;
+  width: 22px;
   overflow: visible;
+  background: var(--fig-surface);
 }
 
 .diagram-connector path {
@@ -1002,20 +1006,19 @@ a[aria-disabled="true"] {
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.25;
+  stroke-width: 1.1;
 }
 
 .diagram-board .slide-detail-map {
   margin-top: 12px;
-  border-radius: 14px;
-  background: var(--fig-surface);
+  border-radius: var(--fig-radius);
+  background: #ffffff;
   padding: 14px;
-  box-shadow: inset 0 0 0 1px rgb(42 122 134 / 10%);
 }
 
 @media (max-width: 767px) {
   .diagram-board {
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 10px;
   }
 
