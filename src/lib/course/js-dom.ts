@@ -21,10 +21,10 @@ export const jsDom: Lesson[] = [
         codeExample: `const form = document.querySelector("#order-form");
         console.log(form?.children.length);`,
         talk: [
-          { speaker: "beginner", text: "「HTMLは親子の木になる」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「documentが木の入口」を手掛かりに、HTMLは親子の木になるの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「mainの中にフォームと一覧がある」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「mainの中にフォームと一覧がある」と「要素の入れ子が親子関係になる」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "注文画面のHTMLは、どうやってJavaScriptから触れる形になるんですか？" },
+          { speaker: "engineer", text: "ブラウザがHTMLを親子のDOMツリーに変換します。documentがその木の入口で、mainの下にフォームと注文一覧がぶら下がります。" },
+          { speaker: "beginner", text: "一覧のulと各注文のliは、どういう関係ですか？" },
+          { speaker: "engineer", text: "ulが親、liが子です。入れ子がそのまま親子関係になるので、枝をたどって表示を調べられます。" },
         ],
       },
       {
@@ -37,10 +37,10 @@ export const jsDom: Lesson[] = [
         codeExample: `const list = document.querySelector("#order-list");
         console.log(list instanceof HTMLElement);`,
         talk: [
-          { speaker: "beginner", text: "「querySelectorで一つ選ぶ」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「#はidを選ぶ」を手掛かりに、querySelectorで一つ選ぶの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「見つからない場合はnull」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「見つからない場合はnull」と「選んだ要素を変数に保存する」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "注文件数の数字だけ取りたいとき、どう探せばいいですか？" },
+          { speaker: "engineer", text: "querySelectorにCSSセレクターを渡すと、最初に一致した要素を1つ返します。#order-countのように、役割が変わりにくいidが目印になります。" },
+          { speaker: "beginner", text: "見つからなかったら何が返りますか？ すぐ文字を書いて大丈夫？" },
+          { speaker: "engineer", text: "見つからないとnullです。選んだ要素は変数に保存し、使う前に存在を確かめてから更新します。" },
         ],
       },
       {
@@ -53,10 +53,10 @@ export const jsDom: Lesson[] = [
         codeExample: `const unpaid = document.querySelectorAll('[data-status="unpaid"]');
         console.log(unpaid.length);`,
         talk: [
-          { speaker: "beginner", text: "「querySelectorAllで複数選ぶ」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「一致する要素をまとめて受け取る」を手掛かりに、querySelectorAllで複数選ぶの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「lengthで個数を確認する」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「lengthで個数を確認する」と「forEachで一件ずつ扱う」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "注文行が何行もあるときは、querySelectorでは足りないですか？" },
+          { speaker: "engineer", text: "最初の1つしか取れないので、複数ならquerySelectorAllを使います。戻り値はNodeListで、lengthで件数を見られます。" },
+          { speaker: "beginner", text: "各行の文字を順に確認するにはどうしますか？" },
+          { speaker: "engineer", text: "NodeListはforEachで回せます。各liのtextContentを順に読めば、一覧の中身を一件ずつ確認できます。" },
         ],
       },
       {
@@ -70,10 +70,10 @@ export const jsDom: Lesson[] = [
         codeExample: `const form = document.querySelector("#order-form");
         const customer = form?.querySelector('[name="customer"]');`,
         talk: [
-          { speaker: "beginner", text: "「選ぶ範囲を一覧の内側に絞る」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「親要素からquerySelectorを呼べる」を手掛かりに、選ぶ範囲を一覧の内側に絞るの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「セレクターの意図が読みやすくなる」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「セレクターの意図が読みやすくなる」と「nullの可能性を先に確かめる」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "いつもdocumentから探せば十分ではないですか？" },
+          { speaker: "engineer", text: "画面の別場所に似た要素があると、意図しない枝を掴むことがあります。先に#order-listを取り、その要素からquerySelectorすると範囲を限定できます。" },
+          { speaker: "beginner", text: "親がnullのまま内側を探すとどうなりますか？" },
+          { speaker: "engineer", text: "親が無いのに子を探すと失敗します。list?.querySelectorのように、親の存在を先に確かめてから内側を探します。" },
         ],
       },
       {
@@ -86,10 +86,10 @@ export const jsDom: Lesson[] = [
         console.log(rows.length);`,
         codeExample: `document.querySelector("#order-count");`,
         talk: [
-          { speaker: "beginner", text: "DOMツリーから必要な注文要素を探す手順を、最後にどう整理すればよいですか？" },
-          { speaker: "engineer", text: "ここでは「querySelectorは最初の一つ」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「querySelectorAllは一致する複数」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「querySelectorAllは一致する複数」と「親から探すと範囲を限定できる」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "DOMを触るとき、最初に意識することは何ですか？" },
+          { speaker: "engineer", text: "HTMLから作られた部品の木だと捉えることです。安定したセレクターで枝を選び、一つか複数か、どこから探すかを決めます。" },
+          { speaker: "beginner", text: "querySelectorとquerySelectorAllの使い分けを確認させてください。" },
+          { speaker: "engineer", text: "最初の一つならquerySelector、一致する全部ならquerySelectorAllです。親から探せば、似た要素の取り違えを減らせます。" },
         ],
       },
     ],
@@ -289,10 +289,10 @@ export const jsDom: Lesson[] = [
         document.querySelector("#order-count").textContent = String(orders.length);`,
         codeExample: `document.querySelector("#message").textContent = "注文を読み込みました";`,
         talk: [
-          { speaker: "beginner", text: "「textContentで文字を変える」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「文字をそのまま表示する」を手掛かりに、textContentで文字を変えるの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「件数はorders.lengthから作る」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「件数はorders.lengthから作る」と「再代入すると以前の表示を置き換える」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "選んだ要素の表示文を変えるには、何を書き換えますか？" },
+          { speaker: "engineer", text: "textContentへ文字列を代入します。タグとして解釈せず、文字そのものが画面に出ます。" },
+          { speaker: "beginner", text: "注文件数は、画面の文字を手で数えればいいですか？" },
+          { speaker: "engineer", text: "いいえ。orders.lengthなどデータから作り、textContentへ入れ直します。再代入すると以前の表示は置き換わります。" },
         ],
       },
       {
@@ -306,10 +306,10 @@ export const jsDom: Lesson[] = [
         codeExample: `row.classList.remove("unpaid");
         row.classList.add("paid");`,
         talk: [
-          { speaker: "beginner", text: "「classListで状態を表す」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「addでクラスを付ける」を手掛かりに、classListで状態を表すの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「removeでクラスを外す」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「removeでクラスを外す」と「toggleの第2引数で真偽に合わせる」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "未払いの見た目を付けるとき、styleを直接書くべきですか？" },
+          { speaker: "engineer", text: "状態名をクラスに対応させる方が追いやすいです。classList.addでunpaidを付け、外すときはremoveを使います。" },
+          { speaker: "beginner", text: "真偽値に合わせて付け外しを一度にやる方法はありますか？" },
+          { speaker: "engineer", text: "toggleの第2引数に真偽を渡せます。trueなら付け、falseなら外す、と状態と見た目を揃えられます。" },
         ],
       },
       {
@@ -322,10 +322,10 @@ export const jsDom: Lesson[] = [
         row.dataset.status = "paid";`,
         codeExample: `console.log(row.getAttribute("data-order-id")); // o-1`,
         talk: [
-          { speaker: "beginner", text: "「属性で要素に情報を持たせる」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「data-order-idはdataset.orderIdでも読める」を手掛かりに、属性で要素に情報を持たせるの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「状態はdata-statusへ保存できる」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「状態はdata-statusへ保存できる」と「見た目の文字と識別情報を分ける」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "クリック後にどの注文か知るために、表示文字へidを埋め込みますか？" },
+          { speaker: "engineer", text: "表示と識別は分けます。data-order-idなどのdata属性に置き、あとからdataset.orderIdやgetAttributeで読みます。" },
+          { speaker: "beginner", text: "支払状態も同じように持てますか？" },
+          { speaker: "engineer", text: "data-statusへ保存できます。見た目の文字はtextContent、識別や状態は属性、と役割を分けると後の処理が楽です。" },
         ],
       },
       {
@@ -339,10 +339,10 @@ export const jsDom: Lesson[] = [
         codeExample: `const message = document.querySelector("#message");
         if (message) message.textContent = "準備完了";`,
         talk: [
-          { speaker: "beginner", text: "「値がない可能性を確かめる」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「nullのまま更新しない」を手掛かりに、値がない可能性を確かめるの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「早めに失敗させる」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「早めに失敗させる」と「安定したセレクターを使う」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "querySelectorの結果を、確認なしでtextContentへ書いていいですか？" },
+          { speaker: "engineer", text: "対象が無いとnullなので、そのまま書くと実行時エラーになります。ifで存在を確認してから更新します。" },
+          { speaker: "beginner", text: "見つからないとき、黙ってスキップするのが安全ですか？" },
+          { speaker: "engineer", text: "重要な要素なら、分かるエラーを早めに出した方が不具合を追えます。セレクターも、壊れにくいidを使うのが基本です。" },
         ],
       },
       {
@@ -356,10 +356,10 @@ export const jsDom: Lesson[] = [
         row.dataset.status = "paid";`,
         codeExample: `document.querySelector("#order-count").textContent = "1";`,
         talk: [
-          { speaker: "beginner", text: "注文の文字・見た目・識別情報は、それぞれ何を使って更新するのですか？" },
-          { speaker: "engineer", text: "ここでは「文字はtextContent」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「状態の見た目はclassList」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「状態の見た目はclassList」と「識別情報はdata属性」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "要素を更新するとき、何をどの道具で変えると整理しやすいですか？" },
+          { speaker: "engineer", text: "文字はtextContent、状態の見た目はclassList、注文idなどの識別情報はdata属性、と目的別に分けます。" },
+          { speaker: "beginner", text: "データと画面がずれたときは、どちらを正にしますか？" },
+          { speaker: "engineer", text: "配列などのデータを正にし、そこから表示を作り直します。要素が無い場合も考えて、nullのまま触らないようにします。" },
         ],
       },
     ],
@@ -550,10 +550,10 @@ export const jsDom: Lesson[] = [
         codeExample: `const amount = document.createElement("span");
         amount.textContent = "12000円";`,
         talk: [
-          { speaker: "beginner", text: "「createElementで部品を作る」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「タグ名から要素を作る」を手掛かりに、createElementで部品を作るの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「作っただけでは画面に出ない」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「作っただけでは画面に出ない」と「利用者の文字はtextContentへ入れる」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "注文行のliは、最初からHTMLに書いておく必要がありますか？" },
+          { speaker: "engineer", text: "動的に増やすならcreateElementでメモリ上に作れます。タグ名から要素を作り、顧客名などはtextContentで入れます。" },
+          { speaker: "beginner", text: "createElementした瞬間に、画面へ出ますか？" },
+          { speaker: "engineer", text: "出ません。作っただけでは木に繋がっていないので、あとで親へ追加して初めて表示されます。" },
         ],
       },
       {
@@ -569,10 +569,10 @@ export const jsDom: Lesson[] = [
         badge.textContent = "未払い";
         row.append(badge);`,
         talk: [
-          { speaker: "beginner", text: "「appendで親へつなぐ」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「子要素を親の末尾へ追加する」を手掛かりに、appendで親へつなぐの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「複数要素を一度にappendできる」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「複数要素を一度にappendできる」と「親子関係がDOMツリーへ反映される」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "作ったliを画面に出すには、何をすればいいですか？" },
+          { speaker: "engineer", text: "order-listなど親要素へappendします。子を親の末尾へ足すと、DOMツリーに反映されて表示されます。" },
+          { speaker: "beginner", text: "行の中の小さなspanも、同じ流れですか？" },
+          { speaker: "engineer", text: "はい。先にspanを行へappendし、最後に行を一覧へappendする、と内側から組み立てると追いやすいです。複数も一度に渡せます。" },
         ],
       },
       {
@@ -592,10 +592,10 @@ export const jsDom: Lesson[] = [
         codeExample: `document.querySelector("#order-count").textContent =
           String(orders.length);`,
         talk: [
-          { speaker: "beginner", text: "「renderは配列から画面を作る」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「replaceChildrenで古い行を消す」を手掛かりに、renderは配列から画面を作るの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「forEachで注文ごとに行を作る」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「forEachで注文ごとに行を作る」と「件数も同じ配列から更新する」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "注文を足すたびに、古い行の横へつぎ足し続けるのが普通ですか？" },
+          { speaker: "engineer", text: "ずれやすいので、renderOrdersのように配列を正として一覧を作り直す方が整理しやすいです。" },
+          { speaker: "beginner", text: "作り直す前に、古い行はどうしますか？" },
+          { speaker: "engineer", text: "replaceChildrenで空にしてから、forEachで注文ごとに行を作ります。件数表示も同じ配列のlengthから更新します。" },
         ],
       },
       {
@@ -609,10 +609,10 @@ export const jsDom: Lesson[] = [
         codeExample: `// <b>もタグではなく文字として表示される
         document.querySelector("#order-list").append(row);`,
         talk: [
-          { speaker: "beginner", text: "「innerHTMLを避けて文字を守る」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「利用者の値をHTML文字列へ連結しない」を手掛かりに、innerHTMLを避けて文字を守るの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「要素はcreateElementで作る」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「要素はcreateElementで作る」と「文字はtextContentで設定する」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "顧客名をinnerHTMLへ連結すれば、短く書けそうですが？" },
+          { speaker: "engineer", text: "外から入る文字がタグとして解釈される危険があります。要素はcreateElement、文字はtextContent、が安全です。" },
+          { speaker: "beginner", text: "textContentなら、尖ったカッコを含む名前も大丈夫ですか？" },
+          { speaker: "engineer", text: "文字として表示されるので、HTMLとして実行されません。利用者の値をHTML文字列へ連結しない、が要点です。" },
         ],
       },
       {
@@ -627,10 +627,10 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `list.append(...orders.map(createOrderRow));`,
         talk: [
-          { speaker: "beginner", text: "ordersから安全な注文行を作って一覧へ出す流れを、もう一度確認したいです。" },
-          { speaker: "engineer", text: "ここでは「createElementで作る」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「textContentで文字を入れる」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「textContentで文字を入れる」と「appendでツリーへつなぐ」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "注文行を画面へ出す手順を、短い順で確認したいです。" },
+          { speaker: "engineer", text: "createElementで作り、textContentで文字を入れ、appendで親へつなぎます。これをrenderにまとめれば、ordersから同じ画面を再現できます。" },
+          { speaker: "beginner", text: "なぜrenderにまとめる価値があるんですか？" },
+          { speaker: "engineer", text: "追加・削除・絞り込みのあとも、同じ関数で安全に描き直せるからです。画面をバラバラにいじるよりずれが減ります。" },
         ],
       },
     ],
@@ -837,10 +837,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `document.querySelector("#order-list").append(button);`,
         talk: [
-          { speaker: "beginner", text: "「addEventListenerでクリックを待つ」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「イベント名はclick」を手掛かりに、addEventListenerでクリックを待つの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「第2引数はコールバック」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「第2引数はコールバック」と「一度登録するとクリックごとに呼ばれる」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "ボタンを押した処理は、登録した瞬間に一度だけ動くんですか？" },
+          { speaker: "engineer", text: "いいえ。addEventListenerの第2引数はコールバックなので、登録時は実行せず、クリックのたびに呼ばれます。" },
+          { speaker: "beginner", text: "イベント名は自由に付けられますか？" },
+          { speaker: "engineer", text: "ブラウザが決めた名前を使います。押す操作ならclickです。関数そのものを渡す点は、これまで学んだコールバックと同じです。" },
         ],
       },
       {
@@ -856,10 +856,10 @@ export const jsDom: Lesson[] = [
           event.target.textContent = "処理済み";
         }`,
         talk: [
-          { speaker: "beginner", text: "「event.targetは操作された場所」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「eventは発生情報を持つ」を手掛かりに、event.targetは操作された場所の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「targetは最初に操作された要素」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「targetは最初に操作された要素」と「要素の型やmatchesを確認して使う」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "リスナーの中で、どの要素が押されたかはどう分かりますか？" },
+          { speaker: "engineer", text: "引数のeventに発生情報が入り、event.targetが最初に操作された要素です。" },
+          { speaker: "beginner", text: "targetをそのまま信用して、すぐにdatasetを読んでいいですか？" },
+          { speaker: "engineer", text: "内側の子要素のこともあるので、要素の型やmatchesで「意図したボタンか」を確かめてから使います。" },
         ],
       },
       {
@@ -874,10 +874,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `const order = orders.find((item) => item.id === id);`,
         talk: [
-          { speaker: "beginner", text: "「datasetで注文idを受け渡す」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「data属性はDOMに残る小さな識別情報」を手掛かりに、datasetで注文idを受け渡すの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「datasetでは文字列として読む」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「datasetでは文字列として読む」と「findでordersの注文と結び付ける」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "押された注文を特定するために、ボタン文言へ番号を書きますか？" },
+          { speaker: "engineer", text: "表示文字に埋め込まなくても、data-order-idを付けておけばクリック時にdataset.orderIdから読めます。" },
+          { speaker: "beginner", text: "読んだidはどうやってordersと結び付けますか？" },
+          { speaker: "engineer", text: "datasetの値は文字列なので、findでordersから同じidの注文を探します。DOMに残る小さな識別情報、と考えるとよいです。" },
         ],
       },
       {
@@ -891,10 +891,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `console.log(button.dataset.status); // paid`,
         talk: [
-          { speaker: "beginner", text: "「currentTargetは登録した要素」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「targetは実際の発生元」を手掛かりに、currentTargetは登録した要素の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「currentTargetはリスナー登録先」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「currentTargetはリスナー登録先」と「用途に応じて読み分ける」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "targetとcurrentTargetは、同じものだと思っていました。" },
+          { speaker: "engineer", text: "違うことがあります。targetは実際の発生元、currentTargetはリスナーを登録した要素です。" },
+          { speaker: "beginner", text: "ボタンのdatasetを読むなら、どちらが安定しますか？" },
+          { speaker: "engineer", text: "アイコンや文字がtargetになることがあるので、登録先のcurrentTargetから読む方が安定します。用途で読み分けます。" },
         ],
       },
       {
@@ -908,10 +908,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `button.dataset.orderId = order.id;`,
         talk: [
-          { speaker: "beginner", text: "クリックされた注文とordersの一件を結び付ける鍵は何でしたか？" },
-          { speaker: "engineer", text: "ここでは「リスナーには関数を渡す」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「targetとcurrentTargetを区別する」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「targetとcurrentTargetを区別する」と「datasetから注文idを読む」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "イベント処理で忘れやすい点を整理したいです。" },
+          { speaker: "engineer", text: "リスナーには関数を渡し、操作が起きたときにコールバックが動きます。targetとcurrentTargetを区別し、datasetから注文idを読みます。" },
+          { speaker: "beginner", text: "表示文字と注文データのつなぎは、どこに置きますか？" },
+          { speaker: "engineer", text: "data属性です。画面の文言を解析するより、識別情報をDOMに持たせてordersと結び付ける方が安全です。" },
         ],
       },
     ],
@@ -1133,10 +1133,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `form.dispatchEvent(new Event("submit", { cancelable: true }));`,
         talk: [
-          { speaker: "beginner", text: "「submitイベントで送信をまとめる」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「formへsubmitを登録する」を手掛かりに、submitイベントで送信をまとめるの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「preventDefaultで既定送信を止める」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「preventDefaultで既定送信を止める」と「送信方法が違っても同じ処理になる」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "送信ボタンのclickだけ聞けば、フォーム入力は取れますか？" },
+          { speaker: "engineer", text: "Enterキー送信を取りこぼします。formへsubmitを登録すると、押し方に関係なく同じ入口になります。" },
+          { speaker: "beginner", text: "submitを受けると、ページが再読み込みされませんか？" },
+          { speaker: "engineer", text: "既定の送信を止めるためpreventDefaultを呼びます。止めたあとに、自分で入力の処理を続けます。" },
         ],
       },
       {
@@ -1149,10 +1149,10 @@ export const jsDom: Lesson[] = [
         const total = Number(data.get("total"));`,
         codeExample: `const item = String(data.get("item") ?? "");`,
         talk: [
-          { speaker: "beginner", text: "「FormDataで名前付き入力を読む」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「name属性がデータの鍵」を手掛かりに、FormDataで名前付き入力を読むの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「getの結果は文字列など」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「getの結果は文字列など」と「数値はNumberで変換する」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "入力欄を1つずつquerySelectorで拾う必要がありますか？" },
+          { speaker: "engineer", text: "FormDataへformを渡せば、name属性を鍵にして値を読めます。customer・item・totalなど、画面とデータで共通の名前にします。" },
+          { speaker: "beginner", text: "金額も文字列のまま足して大丈夫ですか？" },
+          { speaker: "engineer", text: "getの結果は文字列などなので、数値にしたい欄はNumberで変換します。名前が揃っていると読み取りが一か所にまとまります。" },
         ],
       },
       {
@@ -1167,10 +1167,10 @@ export const jsDom: Lesson[] = [
         if (!Number.isFinite(total) || total <= 0) return;`,
         codeExample: `message.textContent = "";`,
         talk: [
-          { speaker: "beginner", text: "「空欄と金額を検証する」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「trimで空白だけの入力を防ぐ」を手掛かりに、空欄と金額を検証するの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「Number.isFiniteで数値を確かめる」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「Number.isFiniteで数値を確かめる」と「不正なら早めにreturnする」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "入力をそのままordersへ足して、あとで直せばいいですか？" },
+          { speaker: "engineer", text: "追加前に検証します。顧客名と商品名はtrim後に空でないか、合計は正の数かを確かめ、不正なら配列を変えずにreturnします。" },
+          { speaker: "beginner", text: "失敗したことは、利用者にどう伝えますか？" },
+          { speaker: "engineer", text: "messageなどへ理由を表示します。Number.isFiniteで数値を確かめ、空白だけの入力もtrimで防ぎます。" },
         ],
       },
       {
@@ -1189,10 +1189,10 @@ export const jsDom: Lesson[] = [
         form.reset();`,
         codeExample: `message.textContent = "注文を追加しました";`,
         talk: [
-          { speaker: "beginner", text: "「検証後にordersへ追加する」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「注文の形を一か所で揃える」を手掛かりに、検証後にordersへ追加するの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「初期statusはunpaid」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「初期statusはunpaid」と「追加後に再描画してresetする」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "検証を通ったあとの順番を確認したいです。" },
+          { speaker: "engineer", text: "注文オブジェクトを作り、ordersへ追加し、renderOrdersで再描画し、フォームをresetします。初期statusはunpaidに揃えます。" },
+          { speaker: "beginner", text: "注文の形がバラバラだと何が困りますか？" },
+          { speaker: "engineer", text: "描画や保存のたびに例外が出やすくなります。追加する形を一か所で揃えると、あとが安定します。" },
         ],
       },
       {
@@ -1207,10 +1207,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `renderOrders(orders);`,
         talk: [
-          { speaker: "beginner", text: "フォーム送信から未払い注文を追加するまで、どの順番で処理しますか？" },
-          { speaker: "engineer", text: "ここでは「submitで受けてpreventDefault」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「FormDataはnameで読む」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「FormDataはnameで読む」と「検証してから追加とrender」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "フォームから注文を受け取る流れを短く言えますか？" },
+          { speaker: "engineer", text: "submitで受けてpreventDefaultし、FormDataでnameから読み、検証を通ったものだけ追加してrenderします。" },
+          { speaker: "beginner", text: "データ変更と画面更新のタイミングは？" },
+          { speaker: "engineer", text: "配列を先に変え、そのあと再描画します。検証に落ちたときは配列も画面の件数も変えません。" },
         ],
       },
     ],
@@ -1435,10 +1435,10 @@ export const jsDom: Lesson[] = [
         codeExample: `orders[1].status = "paid";
         renderOrders(orders);`,
         talk: [
-          { speaker: "beginner", text: "「ordersを画面の元データにする」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「配列を正しい状態の置き場にする」を手掛かりに、ordersを画面の元データにするの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「DOMだけを直接直し続けない」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「DOMだけを直接直し続けない」と「変更後はrenderを呼ぶ」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "支払済みにしたとき、DOMの文字だけ書き換えれば足りますか？" },
+          { speaker: "engineer", text: "DOMだけ直し続けると、再描画や保存とずれます。まずordersを変え、その結果をrenderへ渡すのが中心です。" },
+          { speaker: "beginner", text: "配列を正しい状態の置き場にする、とはどういう意味ですか？" },
+          { speaker: "engineer", text: "画面に見えているものが一時的でも、正はordersだという考え方です。変更後は必ずrenderを呼び、表示をデータに合わせます。" },
         ],
       },
       {
@@ -1452,10 +1452,10 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `const shown = visibleOrders(orders, "unpaid");`,
         talk: [
-          { speaker: "beginner", text: "「filterで表示対象を選ぶ」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「allは元配列を使う」を手掛かりに、filterで表示対象を選ぶの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「paidとunpaidを比較する」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「paidとunpaidを比較する」と「filterは元配列を変更しない」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "未払いだけ見せるとき、ordersから未払い以外を消しますか？" },
+          { speaker: "engineer", text: "消すと元データが失われます。filterで表示用の新しい配列を作り、paid/unpaidを比較します。allなら元配列を使います。" },
+          { speaker: "beginner", text: "filterは元のordersを書き換えますか？" },
+          { speaker: "engineer", text: "書き換えません。選んだ結果の新しい配列が返り、元は残ります。表示と保存用の正本を分けられます。" },
         ],
       },
       {
@@ -1469,10 +1469,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `count.textContent = String(shown.length);`,
         talk: [
-          { speaker: "beginner", text: "「changeのたびに再描画する」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「selectのvalueが選択中の値」を手掛かりに、changeのたびに再描画するの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「changeで絞り込みを実行」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「changeで絞り込みを実行」と「表示件数はfiltered.length」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "絞り込みは、ページを読み直したときだけ実行すればいいですか？" },
+          { speaker: "engineer", text: "選択欄のchangeのたびに、現在のvalueで絞り込み、renderOrdersへ渡します。件数はfiltered.lengthに合わせます。" },
+          { speaker: "beginner", text: "selectの値はどう読みますか？" },
+          { speaker: "engineer", text: "select.valueが選択中の値です。それを条件にfilterし、見えている注文だけを描画します。" },
         ],
       },
       {
@@ -1489,10 +1489,10 @@ export const jsDom: Lesson[] = [
         });`,
         codeExample: `// 再描画後のボタンにも同じ親リスナーが働く`,
         talk: [
-          { speaker: "beginner", text: "「イベント委譲で作り直しに強くする」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「親へ一つのリスナーを置く」を手掛かりに、イベント委譲で作り直しに強くするの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「closestで対象ボタンを探す」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「closestで対象ボタンを探す」と「datasetのidで状態を更新して再描画する」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "各支払ボタンへ毎回addEventListenerすれば確実ですか？" },
+          { speaker: "engineer", text: "renderで行を作り直すと、古いボタンのリスナーは消えます。order-listなど親へ一つ登録し、closestでボタンを探す委譲が向きます。" },
+          { speaker: "beginner", text: "親で受けたあと、どの注文を更新しますか？" },
+          { speaker: "engineer", text: "見つかったボタンのdatasetのidでordersを更新し、もう一度renderします。新しい行も同じ親リスナーで処理できます。" },
         ],
       },
       {
@@ -1507,10 +1507,10 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `filter.addEventListener("change", refresh);`,
         talk: [
-          { speaker: "beginner", text: "状態変更や絞り込みのあと、一覧を正しく保つ考え方を確認したいです。" },
-          { speaker: "engineer", text: "ここでは「状態から表示を計算する」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「絞り込み後に再描画する」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「絞り込み後に再描画する」と「親でクリックを受ける」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "絞り込み表示の正しい順番は何ですか？" },
+          { speaker: "engineer", text: "ordersを先に変更し、filterで表示対象を計算し、renderします。作り直される子のクリックは、親への委譲でまとめます。" },
+          { speaker: "beginner", text: "画面に見えている件数と、保存したい全件は同じ配列ですか？" },
+          { speaker: "engineer", text: "違うことがあります。正本はorders、画面はfilter後です。件数表示も、今見えている配列のlengthに合わせます。" },
         ],
       },
     ],
@@ -1753,10 +1753,10 @@ export const jsDom: Lesson[] = [
         const restored = JSON.parse(text);`,
         codeExample: `console.log(restored[0].customer); // 田中`,
         talk: [
-          { speaker: "beginner", text: "「JSONで配列を文字列にする」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「stringifyは値から文字列へ変換」を手掛かりに、JSONで配列を文字列にするの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「parseはJSON文字列を値へ復元」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「parseはJSON文字列を値へ復元」と「保存前後で注文の形を保つ」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "orders配列を、そのままlocalStorageへ渡せますか？" },
+          { speaker: "engineer", text: "localStorageが保存できるのは文字列です。JSON.stringifyで文字列へ変換し、戻すときはJSON.parseを使います。" },
+          { speaker: "beginner", text: "stringifyとparseで、注文の形は保てますか？" },
+          { speaker: "engineer", text: "通常のオブジェクトや配列なら保てます。保存前後で同じ欄があるか確認し、表示や集計に使える形を維持します。" },
         ],
       },
       {
@@ -1769,10 +1769,10 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `saveOrders([{ id: "o-1", status: "unpaid" }]);`,
         talk: [
-          { speaker: "beginner", text: "「localStorageへ名前を付けて保存する」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「setItemの値は文字列」を手掛かりに、localStorageへ名前を付けて保存するの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「鍵は一貫した名前にする」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「鍵は一貫した名前にする」と「注文変更後に保存する」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "保存する場所はどう決めますか？" },
+          { speaker: "engineer", text: "setItemの第1引数が鍵です。注文管理ではordersなど一貫した名前にJSON文字列を入れ、変更のたびに同じ鍵を更新します。" },
+          { speaker: "beginner", text: "いつsetItemを呼べばいいですか？" },
+          { speaker: "engineer", text: "注文の追加や状態変更など、ordersが変わった直後です。値は必ず文字列なので、先にstringifyします。" },
         ],
       },
       {
@@ -1786,10 +1786,10 @@ export const jsDom: Lesson[] = [
         codeExample: `document.querySelector("#order-count").textContent =
           String(orders.length);`,
         talk: [
-          { speaker: "beginner", text: "「起動時に保存済み注文を戻す」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「getItemは未保存ならnull」を手掛かりに、起動時に保存済み注文を戻すの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「値がある場合だけparseする」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「値がある場合だけparseする」と「復元後にrenderする」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "ページを開いた直後、いつも空の一覧から始まりますか？" },
+          { speaker: "engineer", text: "getItemで鍵を読めば、以前の注文を戻せます。値がなければnullなので、そのときは空配列を使います。" },
+          { speaker: "beginner", text: "復元したあとは何をしますか？" },
+          { speaker: "engineer", text: "値がある場合だけparseし、配列をordersへ入れたらrenderOrdersを呼びます。再読み込み後も同じ画面に戻せます。" },
         ],
       },
       {
@@ -1808,10 +1808,10 @@ export const jsDom: Lesson[] = [
         codeExample: `const orders = loadOrders();
         renderOrders(orders);`,
         talk: [
-          { speaker: "beginner", text: "「壊れた保存値は空配列へ戻す」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「parseの失敗をcatchする」を手掛かりに、壊れた保存値は空配列へ戻すの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「Array.isArrayで形を確認する」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「Array.isArrayで形を確認する」と「失敗時は案内して空配列を使う」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "保存文字列が壊れていたら、parseはそのまま成功しますか？" },
+          { speaker: "engineer", text: "壊れていると例外になります。try/catchで囲み、失敗時は案内を出して空配列へ戻します。" },
+          { speaker: "beginner", text: "parseできても配列でない値だったら？" },
+          { speaker: "engineer", text: "Array.isArrayで形を確認します。配列でなければ拒否し、安全な初期状態へ戻すのが基本です。" },
         ],
       },
       {
@@ -1824,10 +1824,10 @@ export const jsDom: Lesson[] = [
         renderOrders(restored);`,
         codeExample: `localStorage.getItem("orders");`,
         talk: [
-          { speaker: "beginner", text: "保存したordersがない場合や壊れている場合も、画面を起動できますか？" },
-          { speaker: "engineer", text: "ここでは「stringifyして保存」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「parseして復元」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「parseして復元」と「try/catchと形の確認で代替する」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "ブラウザ保存の流れを短くまとめてください。" },
+          { speaker: "engineer", text: "stringifyしてlocalStorageへ保存し、起動時はparseして復元します。未保存・壊れたJSON・配列でない値は、空配列へ代替します。" },
+          { speaker: "beginner", text: "失敗した読み込みを、黙って無視してよいですか？" },
+          { speaker: "engineer", text: "利用者へ案内を出し、空の一覧として再出発できる状態にした方が安全です。try/catchと形の確認がセットです。" },
         ],
       },
     ],
@@ -2027,10 +2027,10 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `loadOrders().then((orders) => console.log(orders.length));`,
         talk: [
-          { speaker: "beginner", text: "「fetchで注文APIへ要求する」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「fetchはすぐに最終データを返さない」を手掛かりに、fetchで注文APIへ要求するの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「awaitでResponseを待つ」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「awaitでResponseを待つ」と「response.jsonもawaitする」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "fetchを呼んだ瞬間に、注文配列が返ってきますか？" },
+          { speaker: "engineer", text: "すぐには最終データは来ません。ResponseのPromiseが返るので、awaitでResponseを待ち、続けてresponse.jsonもawaitします。" },
+          { speaker: "beginner", text: "この講座のデモは、本当に外部サイトへ取りに行きますか？" },
+          { speaker: "engineer", text: "外部通信ではなく、同じアプリの/api/demo-ordersから取得する想定です。流れは本番のfetchと同じです。" },
         ],
       },
       {
@@ -2044,10 +2044,10 @@ export const jsDom: Lesson[] = [
         codeExample: `document.querySelector("#order-count").textContent =
           String(orders.length);`,
         talk: [
-          { speaker: "beginner", text: "「読み込み中を先に表示する」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「要求前にloading表示」を手掛かりに、読み込み中を先に表示するの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「完了後に案内を更新」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「完了後に案内を更新」と「同じmessage要素を状態表示に使う」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "通信が終わるまで、画面は何も変えなくていいですか？" },
+          { speaker: "engineer", text: "止まって見えるので、fetchより前にmessageを「読み込み中...」へ変えます。完了後に案内を更新します。" },
+          { speaker: "beginner", text: "成功と失敗で、別の要素を用意する必要がありますか？" },
+          { speaker: "engineer", text: "同じmessage要素を状態表示に使えば足ります。loading・成功・errorを、同じ場所の文言で切り替えます。" },
         ],
       },
       {
@@ -2063,10 +2063,10 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `list.replaceChildren();`,
         talk: [
-          { speaker: "beginner", text: "「HTTP失敗をokで確認する」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「okがfalseなら成功データとして扱わない」を手掛かりに、HTTP失敗をokで確認するの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「throwでcatchへ移す」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「throwでcatchへ移す」と「失敗時は一覧を安全な状態にする」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "fetchが例外を投げなければ、中身は成功データですか？" },
+          { speaker: "engineer", text: "404や500でもResponseは返ることがあります。response.okがfalseなら成功として扱わず、throwしてcatchへ移します。" },
+          { speaker: "beginner", text: "失敗したとき、一覧はどうしますか？" },
+          { speaker: "engineer", text: "利用者向けの案内を出し、一覧は安全な状態（空や直前の正本）に保ちます。ok確認を飛ばさないのが要点です。" },
         ],
       },
       {
@@ -2084,10 +2084,10 @@ export const jsDom: Lesson[] = [
         codeExample: `document.querySelector("#order-count").textContent =
           String(orders.length);`,
         talk: [
-          { speaker: "beginner", text: "「取得したordersをrenderへ渡す」では、注文管理画面のどの部分を操作するのですか？" },
-          { speaker: "engineer", text: "ここでは「取得結果をorders状態へ代入」を手掛かりに、取得したordersをrenderへ渡すの処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「描画はrenderOrdersへ任せる」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「描画はrenderOrdersへ任せる」と「成功と失敗でmessageを分ける」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "APIのJSONを、その場でDOMへ直接書き込みますか？" },
+          { speaker: "engineer", text: "まずorders状態へ代入し、描画はrenderOrdersへ任せます。通信とDOM生成を分けると、保存済み注文にも同じrenderを使えます。" },
+          { speaker: "beginner", text: "成功と失敗でmessageはどう分けますか？" },
+          { speaker: "engineer", text: "成功なら件数や完了の案内、失敗なら理由です。どちらも、一覧更新の方針とセットで決めます。" },
         ],
       },
       {
@@ -2106,10 +2106,10 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `start(); // 注文管理画面の入口`,
         talk: [
-          { speaker: "beginner", text: "API読込中・成功・失敗の三つを、完成画面ではどう切り替えますか？" },
-          { speaker: "engineer", text: "ここでは「fetchとjsonをawaitする」を手掛かりに、この講義の要点の処理を一段ずつ組み立てます。対象となる注文データとDOM要素の対応を先に確認しましょう。" },
-          { speaker: "beginner", text: "「loading・成功・errorを表示する」は、コードを動かす前と後のどちらで確かめますか？" },
-          { speaker: "engineer", text: "実行前に対象と条件を読み、実行後に「loading・成功・errorを表示する」と「ordersを一つのrenderへ渡す」が画面へ反映されたかを確認します。この二段階で見ると間違えた場所を特定できます。" },
+          { speaker: "beginner", text: "APIから注文を読む完成形の手順は？" },
+          { speaker: "engineer", text: "読み込み中を示し、fetchとjsonをawaitし、okで成否を確認し、成功したordersをrenderへ渡します。" },
+          { speaker: "beginner", text: "失敗しても画面を保つ、とは具体的に何ですか？" },
+          { speaker: "engineer", text: "理由をmessageへ出し、壊れたデータで描画を続けないことです。loading・成功・errorをはっきり切り替えます。" },
         ],
       },
     ],

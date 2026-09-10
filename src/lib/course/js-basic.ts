@@ -940,43 +940,40 @@ console.log(line.slice(0, 1)); // ["Aya"]。列はそのまま`,
           "slice と splice は名前が似て動きが正反対に近いです。切ってコピーが slice、本体を切るのが splice。",
       },
       {
-        title: "for...of で中身を順に取る",
-        lead: "車両を先頭から見て回るのが for...of です。番号が要らなければ for (const x of xs) が読みやすいです。号車番号も要るなら通常の for。for...in はキー列挙用で、配列には向きません。",
+        title: "番号で1個ずつ読む",
+        lead: "全部の車両を見るときは、0号車・1号車と番号を指定して読みます。今は手で番号を書いて確認します。何両あるか分からない列を自動で回す書き方は、あとの繰り返し編とコールバック編で扱います。",
         points: [
-          "of は値（乗客）、in はキー（号車番号の文字列）",
-          "途中で抜けるのは break、スキップは continue",
+          "xs[0]、xs[1] のように、番号を決めて読む",
+          "有効な番号は 0 以上、length 未満",
+          "自動で回す for / forEach / for...of は後の講義",
         ],
         talk: [
           {
             "speaker": "beginner",
-            "text": "配列を回すならfor...inでも、inだから中身が取れそうです。"
+            "text": "2両なら、xs[0]とxs[1]をそれぞれ書けば全部読めますか？",
           },
           {
             "speaker": "engineer",
-            "text": "配列の値を順に取るならfor...ofです。"
+            "text": "はい。台数が少ないあいだは、番号を直書きしても追えます。",
           },
           {
             "speaker": "beginner",
-            "text": "番号も必要な場合や、途中を飛ばしたい場合はどうしますか？"
+            "text": "両数が増えたら、毎回番号を手で書くのは大変では？",
           },
           {
             "speaker": "engineer",
-            "text": "番号が要るなら通常のforが向きます。for...ofでもbreakで終了、continueで次の要素へ進めます。for...inはキーを文字列として列挙するため、配列の中身には不向きです。"
-          }
+            "text": "そのとおりです。何回も同じ読み方を繰り返す仕組みは、次の繰り返し編で学びます。今は「番号で1個取り出す」感覚だけ押さえてください。",
+          },
         ],
-        diagram: "for-of-loop",
+        diagram: "array",
         code: `const xs = ["a", "b"];
-for (const x of xs) {
-  console.log(x);
-}`,
-        codeCaption: "先頭から、中身だけ順に",
-        codeExample: `const xs = ["a", "b"];
-for (const x of xs) {
-  console.log(x);
-}
-for (const i in xs) {
-  console.log(i); // "0" "1"。号車名の文字列
-}`,
+console.log(xs[0]); // a
+console.log(xs[1]); // b
+// xs[2] は範囲外で undefined`,
+        codeCaption: "今は番号を指定して読む",
+        codeExample: `const xs = ["a", "b", "c"];
+console.log(xs[0]);
+console.log(xs[xs.length - 1]); // 末尾も番号で読む`,
       },
       {
         title: "配列もオブジェクトの一種",
@@ -1014,7 +1011,7 @@ console.log(Array.isArray({ 0: 1 })); // false`,
       {
         title: "この講義の要点",
         lead: "先頭は 0 号車。length は台数。push は列の後ろ。slice は写真。次は if と for の使い方です。",
-        points: ["最後の添字は length - 1", "for...of は値を取る"],
+        points: ["最後の添字は length - 1", "両数が増えたときの自動繰り返しは後の講義"],
         talk: [
           {
             "speaker": "beginner",
@@ -1026,11 +1023,11 @@ console.log(Array.isArray({ 0: 1 })); // false`,
           },
           {
             "speaker": "beginner",
-            "text": "pushもsliceも元の並びを変える操作で、値を順に取るならfor...inを使うと覚えていました。",
+            "text": "pushもsliceも元の並びを変える操作で、値はまだ手で番号を指定して読む、と覚えました。",
           },
           {
             "speaker": "engineer",
-            "text": "pushは元を変えますがsliceはコピーを返します。配列の値ならfor...ofです。次は条件による分岐と、繰り返しを自分で制御する方法を見ましょう。",
+            "text": "pushは元を変えますがsliceはコピーを返します。列を自動で回す書き方は、次の条件・繰り返し編のあとに戻ってきます。",
           },
         ],
         diagram: "array",
@@ -1087,23 +1084,22 @@ console.log(orders.slice(0, 2));`,
       {
         id: "q3",
         slide: 2,
-        prompt: "starterのxsをfor...ofで先頭から走査し、各要素を1行ずつ表示してください。",
-        lead: "for...ofは、配列の位置番号ではなく値そのものを順に受け取ります。aとbを順番に取り出し、ループの各回で表示してください。",
+        prompt: "starterのxsについて、先頭の値と末尾の値をこの順で表示してください。",
+        lead: "要素が2つなら、先頭は添字0、末尾は要素数から1を引いた位置です。番号を指定して読み、aとbの順に表示してください。",
         kind: "code",
-        starter: 'const xs = ["a", "b"];\n// for...of で中身を表示\n',
+        starter: 'const xs = ["a", "b"];\n// 先頭と末尾を表示\n',
         fileName: "script.js",
         steps: [
-          "xsの各値をfor...ofで順に受け取る",
-          "受け取った現在の値を毎回表示する",
+          "先頭を添字0で読んで表示する",
+          "末尾位置を length - 1 で求めて表示する",
           "aとbの2行になることを確認する",
         ],
-        hint: "必要なのは要素の値だけです。キーを列挙する方法や、自分で番号を増やす方法は使いません。",
+        hint: "今は繰り返し構文を使わず、番号を指定して1個ずつ読みます。末尾の位置は個数そのものではありません。",
         sample: "a\nb",
         answer: `const xs = ["a", "b"];
-for (const x of xs) {
-  console.log(x);
-}`,
-        explain: "of は値、in はキーです。配列の中身を取るなら for...of です。",
+console.log(xs[0]);
+console.log(xs[xs.length - 1]);`,
+        explain: "先頭は 0、末尾は length - 1 です。自動で回す書き方は後の講義です。",
       },
       {
         id: "q4",
@@ -1447,7 +1443,7 @@ while (n > 0) {
           },
           {
             "speaker": "engineer",
-            "text": "条件が変わらなければ止まりません。回数が明確ならfor、終了状態を待つならwhileを選びます。次は配列の各要素へ繰り返しを適用しましょう。",
+            "text": "条件が変わらなければ止まりません。回数が明確ならfor、終了状態を待つならwhileを選びます。配列をまとめて回す話は、関数とコールバックを学んだあとに戻ってきます。",
           },
         ],
         diagram: "loop",
@@ -1636,12 +1632,12 @@ while (i < 3) {
     chapter: "js-callback",
     order: 12,
     title: "配列を1個ずつ処理する",
-    summary: "for、forEach、for...of で中身を順に見る",
+    summary: "学んだ for を配列に当て、コールバックの forEach と for...of を使い分ける",
     minutes: 16,
     slides: [
       {
-        title: "番号で配列を取り出す for",
-        lead: "配列用のforでも実行順は同じです。最初にiを0へ初期化し、各周の前にiがlength未満か確認し、trueならxs[i]を読み、本体の後でiを1増やします。lengthと同じ番号は存在しないため、その時点で条件がfalseになり終了します。",
+        title: "復習: 配列に for を当てる",
+        lead: "繰り返し編の for を、配列の番号読みに当てます。新しい構文ではありません。最初に i を 0 へ初期化し、各周の前に i が length 未満か確認し、true なら xs[i] を読み、本体の後で i を 1 増やします。length と同じ番号は存在しないため、そこで終了します。",
         points: [
           "i は 0 から。xs[0] が先頭",
           "i < xs.length で、範囲外に出ない",
@@ -1650,19 +1646,19 @@ while (i < 3) {
         talk: [
           {
             "speaker": "beginner",
+            "text": "前に学んだ for と、配列を読む for は別物ですか？"
+          },
+          {
+            "speaker": "engineer",
+            "text": "同じ3段です。違うのは、条件と本体で xs.length と xs[i] を使うことだけです。"
+          },
+          {
+            "speaker": "beginner",
             "text": "配列を全部読む条件は、i <= xs.lengthで末尾まで含めますか？"
           },
           {
             "speaker": "engineer",
-            "text": "i < xs.lengthです。lengthと同じ添字は範囲外です。"
-          },
-          {
-            "speaker": "beginner",
-            "text": "値だけ欲しいのに、わざわざ番号を使う利点はありますか？"
-          },
-          {
-            "speaker": "engineer",
-            "text": "何番目かも必要な処理では便利です。iを0から増やし、各周でxs[i]を読めば、先頭から範囲外へ出ずに処理できます。"
+            "text": "i < xs.lengthです。lengthと同じ添字は範囲外です。番号も必要な処理では、この書き方が向きます。"
           }
         ],
         diagram: "for-loop",
@@ -1682,9 +1678,9 @@ for (let i = 0; i < xs.length; i++) {
       },
       {
         title: "forEach は「各要素に関数を渡す」",
-        lead: "forEachは、配列が先頭から要素を1個ずつ取り出し、渡された関数を各要素につき1回呼ぶ処理です。このように「相手に呼んでもらうため渡す関数」をコールバック関数と呼びます。各呼び出しには現在の値・0始まりの番号・元の配列が渡されます。関数が返した値は集めず、forEach全体もundefinedを返します。",
+        lead: "forEachは、配列が先頭から要素を1個ずつ取り出し、渡された関数を各要素につき1回呼ぶ処理です。このように「相手に呼んでもらうため渡す関数」をコールバック関数と呼びます。カウンタ i を自分で書かなくてよく、関数が返した値は集めず、forEach全体もundefinedを返します。",
         points: [
-          "配列要素ごとに callback(value, index, array) を同期的に呼ぶ",
+          "配列要素ごとに渡した関数を同期的に呼ぶ",
           "コールバックのreturn値は使われず、forEach自体はundefinedを返す",
           "空配列なら0回。breakによる途中終了はできない",
         ],
@@ -1695,7 +1691,7 @@ for (let i = 0; i < xs.length; i++) {
           },
           {
             "speaker": "engineer",
-            "text": "配列の各要素について、渡した関数を1回ずつ呼びます。"
+            "text": "いいえ。配列の各要素について、渡した関数を1回ずつ呼びます。要素が2つなら2回、空なら0回です。"
           },
           {
             "speaker": "beginner",
@@ -1703,7 +1699,7 @@ for (let i = 0; i < xs.length; i++) {
           },
           {
             "speaker": "engineer",
-            "text": "その管理はforEach側が行い、コールバックの第1引数へ現在の要素を渡します。全部に同じ処理をするとき、カウンタなしで読みやすく書けます。"
+            "text": "その管理はforEach側が行います。全部に同じ処理をするとき、カウンタなしで読みやすく書けます。番号の受け取り方は次で詳しく見ます。"
           }
         ],
         diagram: "foreach-loop",
@@ -1724,7 +1720,7 @@ xs.forEach((x) => {
       },
       {
         title: "第2引数は番号、第3引数は配列そのもの",
-        lead: "forEachは各周でコールバックを呼ぶとき、現在の値・0始まりの番号・処理中の配列を、この順番で渡します。引数名は自由ですが位置の意味は変わりません。後ろの不要な引数は省略できますが、第2引数だけを第1位置へずらすことはできません。",
+        lead: "forEachが関数を呼ぶとき、渡す順番は決まっています。第1が今の値、第2が0始まりの番号、第3が元の配列です。引数名は自由ですが位置の意味は変わりません。後ろの不要な引数は省略できますが、第2だけを第1位置へずらすことはできません。",
         points: [
           "1つ目: 今の値",
           "2つ目: 0 始まりの番号",
@@ -1764,7 +1760,7 @@ xs.forEach((x, i) => {
       },
       {
         title: "for...of は値だけ。break できる",
-        lead: "for (const x of xs) も1個ずつ値を取ります。ベルトを途中で止められるのが for...of、最後まで流し切るのが forEach です。全部やるなら forEach、途中でやめたい・番号も要るなら for、値だけでよいなら for...of が向きです。",
+        lead: "値だけ順に取り、途中で止めたいときに使うのが for...of です。forEach は最後まで流し切り、中では break できません。番号も要る・細かく制御するなら通常の for、全件へ同じ処理なら forEach、値だけで途中終了もしたいなら for...of、と使い分けます。",
         points: [
           "forEach の中では break できない（関数の中だから）",
           "for...of は値、for...in はキー。配列の中身は of",
@@ -1815,7 +1811,7 @@ xs.forEach((x) => {
           },
           {
             "speaker": "engineer",
-            "text": "その選び方で大丈夫です。通常のforでは範囲外へ出ない条件も忘れないようにします。",
+            "text": "その選び方で大丈夫です。通常のforは復習どおり範囲外へ出ない条件も忘れないようにします。",
           },
           {
             "speaker": "beginner",
@@ -1835,8 +1831,8 @@ xs.forEach((x) => {
         slide: 0,
         scenario: "order-list を先頭から走査し、各 orderId を表示する。",
         projectRole: "build",
-        prompt: "order-listを番号付きforループで確認し、order-1、order-2の順に1行ずつ表示してください。",
-        lead: "starterには2つの orderIdが順に用意されています。添字を0から始め、要素数に達する前まで繰り返して、各位置のorderIdを表示してください。",
+        prompt: "前に学んだ番号付きforでorder-listを確認し、order-1、order-2の順に1行ずつ表示してください。",
+        lead: "繰り返し編のforを配列に当てます。starterには2つの orderIdが順に用意されています。添字を0から始め、要素数に達する前まで繰り返して、各位置のorderIdを表示してください。",
         kind: "code",
         starter:
           'const orders = ["order-1", "order-2"];\n// i を 0 から length 未満まで\n',
@@ -1848,7 +1844,7 @@ xs.forEach((x) => {
           "各周で添字を1増やす",
         ],
         hint: "配列の長さと同じ位置は範囲外です。現在の添字を角括弧で配列に渡すと、その位置の値を読めます。",
-        sample: "りんご\nみかん",
+        sample: "order-1\norder-2",
         answer: `const orders = ["order-1", "order-2"];
 for (let i = 0; i < orders.length; i++) {
   console.log(orders[i]);
@@ -2033,7 +2029,7 @@ console.log(count); // 10。家全体の count`,
           },
           {
             "speaker": "engineer",
-            "text": "違います。varはブロックを越えて関数全体へ漏れることがあります。"
+            "text": "違います。varはブロックを越えて関数全体へ漏れることがあります。同じ関数内なら、ifの外からでも同じ名前が見えます。"
           },
           {
             "speaker": "beginner",
@@ -2041,7 +2037,7 @@ console.log(count); // 10。家全体の count`,
           },
           {
             "speaker": "engineer",
-            "text": "処理順の誤りを見逃しやすくなります。letは宣言前に触るとエラーになる期間があり、範囲も狭いので、新しいコードではletかconstを選ぶのが基本です。"
+            "text": "名前だけ先に用意され、代入の行まで中身はundefinedのままです。処理順の誤りを見逃しやすくなります。letは宣言前に触るとエラーになる期間があり、範囲も狭いので、新しいコードではletかconstを選ぶのが基本です。"
           }
         ],
         diagram: "var-hoist",

@@ -34,7 +34,7 @@ export const CHAPTERS: Chapter[] = [
     track: "js",
     order: 5,
     title: "コールバック関数編",
-    summary: "関数を渡して呼んでもらい、forEachで配列の各要素を処理する",
+    summary: "関数を渡して呼んでもらい、配列の回し方（for / forEach / for...of）へつなげる",
   },
   {
     id: "js-array-fn",
