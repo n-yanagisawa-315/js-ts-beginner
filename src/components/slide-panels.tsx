@@ -50,7 +50,7 @@ function highlightToken(
   return <>{parts}</>;
 }
 
-/** トークンから右下へ曲がる波括弧＋説明（セミコロン等） */
+/** トークンから右下へ伸びる肘型矢印＋説明（セミコロン等） */
 function BraceAnnotation({
   label,
   alignEnd = false,
@@ -63,25 +63,20 @@ function BraceAnnotation({
       className={`slide-anno slide-anno-brace${alignEnd ? " is-end" : ""}`}
       aria-hidden="true"
     >
-      <svg className="slide-anno-brace-svg" viewBox="0 0 120 64" fill="none">
+      <svg className="slide-anno-brace-svg" viewBox="0 0 96 56" fill="none">
         <path
-          d="M18 2 C18 16, 6 22, 6 32 C6 42, 18 48, 18 62"
+          d="M16 2 V36 H78"
           stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
+          strokeWidth="2.2"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
         <path
-          d="M18 62 C36 58, 58 52, 88 48"
+          d="M70 28 L80 36 L70 44"
           stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-        <path
-          d="M78 40 L90 48 L78 52"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeWidth="2.2"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
       </svg>
       <span className="slide-anno-label">{label}</span>
@@ -89,34 +84,29 @@ function BraceAnnotation({
   );
 }
 
-/** 出力テキスト下の波線から右へ伸びる関係矢印（Progate風） */
+/** 出力テキスト下から右へ伸びる直線矢印 */
 function WaveAnnotation({ label }: { label: string }) {
   return (
     <div className="slide-anno slide-anno-wave" aria-hidden="true">
       <svg
         className="slide-anno-wave-pointer"
-        viewBox="0 0 280 54"
+        viewBox="0 0 220 36"
         fill="none"
         preserveAspectRatio="xMinYMid meet"
       >
         <path
-          d="M4 10 Q10 2 16 10 T28 10 T40 10 T52 10 T64 10 T76 10 T88 10 T100 10"
+          d="M4 10 H96 M96 10 V22 H168"
           stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
+          strokeWidth="2.2"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
         <path
-          d="M100 10 C100 22, 112 28, 132 28 L210 28"
+          d="M160 14 L172 22 L160 30"
           stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M200 20 L212 28 L200 36"
-          stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeWidth="2.2"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
       </svg>
       <span className="slide-anno-label">{label}</span>
@@ -124,26 +114,26 @@ function WaveAnnotation({ label }: { label: string }) {
   );
 }
 
-/** コメント未実行を示す破線枠＋矢印 */
+/** コメント未実行を示す破線枠＋直線矢印 */
 function DashAnnotation({ label }: { label: string }) {
   return (
     <div className="slide-anno slide-anno-dash" aria-hidden="true">
       <div className="slide-anno-dash-row">
         <div className="slide-anno-dash-box" />
-        <svg className="slide-anno-dash-arrow" viewBox="0 0 80 36" fill="none">
+        <svg className="slide-anno-dash-arrow" viewBox="0 0 72 28" fill="none">
           <path
-            d="M4 18 L60 18"
+            d="M4 14 H52"
             stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
+            strokeWidth="2.2"
+            strokeLinecap="square"
             strokeDasharray="5 4"
           />
           <path
-            d="M50 10 L62 18 L50 26"
+            d="M44 6 L56 14 L44 22"
             stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeWidth="2.2"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
           />
         </svg>
         <span className="slide-anno-label">{label}</span>
@@ -152,29 +142,24 @@ function DashAnnotation({ label }: { label: string }) {
   );
 }
 
-/** 複数行の引用符をまとめて指す縦ブラケット＋矢印 */
+/** 複数行をまとめて指す縦ブラケット＋直線矢印 */
 function CircleGuide({ label }: { label: string }) {
   return (
     <div className="slide-anno slide-anno-circle-guide" aria-hidden="true">
-      <svg className="slide-anno-span-brace" viewBox="0 0 100 72" fill="none">
+      <svg className="slide-anno-span-brace" viewBox="0 0 96 72" fill="none">
         <path
-          d="M22 4 C8 4, 4 18, 4 36 C4 54, 8 68, 22 68"
+          d="M28 4 H12 V68 H28 M12 36 H70"
           stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-        />
-        <path
-          d="M22 36 L72 36"
-          stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
+          strokeWidth="2.2"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
         <path
           d="M62 28 L74 36 L62 44"
           stroke="currentColor"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeWidth="2.2"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
       </svg>
       <span className="slide-anno-label">{label}</span>
@@ -190,15 +175,15 @@ export function SlidePanelFlowArrow() {
         <path
           d="M4 24 H40"
           stroke="currentColor"
-          strokeWidth="2.6"
-          strokeLinecap="round"
+          strokeWidth="2.4"
+          strokeLinecap="square"
         />
         <path
           d="M30 14 L42 24 L30 34"
           stroke="currentColor"
-          strokeWidth="2.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeWidth="2.4"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
       </svg>
       <span>実行</span>

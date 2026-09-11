@@ -40,12 +40,14 @@ function FigureNode({
 function FigureArrow({ label }: { label: string }) {
   return (
     <p className="figure-arrow">
-      <svg width="24" height="8" viewBox="0 0 24 8" aria-hidden="true">
+      <svg width="36" height="12" viewBox="0 0 36 12" aria-hidden="true">
         <path
-          d="M0 4h18M15 1.5l5 2.5-5 2.5"
+          d="M1 6h28M24 2l8 4-8 4"
           fill="none"
           stroke="currentColor"
-          strokeWidth="1"
+          strokeWidth="1.6"
+          strokeLinecap="square"
+          strokeLinejoin="miter"
         />
       </svg>
       <span>{label}</span>
@@ -1182,8 +1184,15 @@ export function Diagram({
       </section>
 
       <div className="diagram-connector" aria-hidden="true">
-        <svg viewBox="0 0 28 12">
-          <path d="M1 6h20M17 2.5l6 3.5-6 3.5" />
+        <svg viewBox="0 0 36 16">
+          <path
+            d="M2 8h26M22 3l10 5-10 5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
+          />
         </svg>
       </div>
 

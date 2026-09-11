@@ -763,8 +763,8 @@ a[aria-disabled="true"] {
 }
 
 .slide-anno-brace-svg {
-  width: 84px;
-  height: 52px;
+  width: 72px;
+  height: 48px;
   color: #3dcfb8;
 }
 
@@ -804,8 +804,8 @@ a[aria-disabled="true"] {
 
 .slide-anno-wave {
   display: grid;
-  grid-template-columns: minmax(9rem, 14rem) minmax(0, 1fr);
-  gap: 0.2rem 0.45rem;
+  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
+  gap: 0.25rem 0.5rem;
   align-items: center;
   margin: 0.05rem 0 0.65rem;
   max-width: 100%;
@@ -813,8 +813,8 @@ a[aria-disabled="true"] {
 
 .slide-anno-wave-pointer {
   width: 100%;
-  max-width: 14rem;
-  height: 42px;
+  max-width: 12rem;
+  height: 32px;
   color: #3dcfb8;
 }
 
@@ -958,9 +958,10 @@ a[aria-disabled="true"] {
   - 塗り OR 線のどちらか一方。両方に色を付けない
   - 図形は角丸四角のみ（円・楕円は使わない）。アールは --fig-radius で統一
   - 角は丸めすぎない（6px）
-  - 矢印は主役にしない（細く・薄い色）
+  - 矢印は直線の肘型／水平。曲線や波線は使わない
   - 囲みすぎない。まとまりは余白と弱い塗りで示す
   - 影・グラデーション・立体は使わない
+  - 読みやすさ優先：図式の本文は 0.9rem 前後を下限にする
 */
 .diagram-board {
   --fig-surface: #f4f8f9;
@@ -975,19 +976,19 @@ a[aria-disabled="true"] {
   --fig-neg-soft: #f0e4e2;
   --fig-ink: #294955;
   --fig-mute: #607a84;
-  --fig-arrow: #8aa0a6;
-  --fig-gap: 12px;
+  --fig-arrow: #5f7a82;
+  --fig-gap: 14px;
   --fig-radius: 6px;
   overflow: hidden;
   border-radius: 8px;
   background: var(--fig-surface);
-  padding: 14px;
+  padding: 18px;
   color: var(--fig-ink);
 }
 
 .diagram-visual {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) 28px minmax(0, 0.95fr);
+  grid-template-columns: minmax(0, 1.05fr) 40px minmax(0, 0.95fr);
   align-items: stretch;
   gap: 0;
 }
@@ -1022,15 +1023,15 @@ a[aria-disabled="true"] {
 
 .diagram-window-tab {
   display: inline-flex;
-  min-width: 8.5rem;
+  min-width: 9rem;
   align-items: center;
   gap: 8px;
   border-bottom: 2px solid #2a7a86;
   background: #293239;
-  padding: 0 12px;
+  padding: 0 14px;
   color: #c9ced2;
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.68rem;
+  font-size: 0.78rem;
 }
 
 .diagram-window-tab.is-concept {
@@ -1056,9 +1057,9 @@ a[aria-disabled="true"] {
   min-height: 100%;
   overflow-x: auto;
   margin: 0;
-  padding: 14px 0;
+  padding: 16px 0;
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: clamp(0.68rem, 1.15vw, 0.8rem);
+  font-size: clamp(0.82rem, 1.35vw, 0.95rem);
   line-height: 1.85;
   white-space: pre;
 }
@@ -1087,10 +1088,10 @@ a[aria-disabled="true"] {
 
 .diagram-concept-body {
   display: grid;
-  min-height: 12rem;
+  min-height: 16rem;
   align-content: start;
-  gap: 16px;
-  padding: 18px 16px;
+  gap: 18px;
+  padding: 22px 18px;
 }
 
 .figure-flow {
@@ -1127,7 +1128,7 @@ a[aria-disabled="true"] {
 .figure-contrast-label {
   margin: 0;
   color: var(--fig-mute);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 650;
 }
 
@@ -1150,7 +1151,7 @@ a[aria-disabled="true"] {
 .figure-nest-title {
   margin: 0;
   color: var(--fig-mute);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 650;
 }
 
@@ -1158,7 +1159,7 @@ a[aria-disabled="true"] {
   margin: 0;
   color: var(--fig-ink);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   font-weight: 650;
 }
 
@@ -1169,8 +1170,8 @@ a[aria-disabled="true"] {
 .figure-nest-note {
   margin: 0;
   color: var(--fig-mute);
-  font-size: 0.66rem;
-  line-height: 1.45;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
 .figure-tree {
@@ -1209,7 +1210,7 @@ a[aria-disabled="true"] {
   padding-top: 12px;
   color: var(--fig-mute);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.72rem;
+  font-size: 0.84rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -1233,13 +1234,13 @@ a[aria-disabled="true"] {
 
 .figure-rail-copy strong {
   color: var(--fig-ink);
-  font-size: 0.84rem;
+  font-size: 0.95rem;
   font-weight: 650;
 }
 
 .figure-rail-copy small {
   color: var(--fig-mute);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -1277,7 +1278,7 @@ a[aria-disabled="true"] {
 .figure-node > p {
   margin: 0;
   color: var(--fig-mute);
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   font-weight: 650;
 }
 
@@ -1287,7 +1288,7 @@ a[aria-disabled="true"] {
 
 .figure-node > strong {
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   font-weight: 650;
   line-height: 1.35;
   color: inherit;
@@ -1299,7 +1300,7 @@ a[aria-disabled="true"] {
 
 .figure-node > small {
   color: var(--fig-mute);
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   line-height: 1.45;
 }
 
@@ -1309,37 +1310,37 @@ a[aria-disabled="true"] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-width: 2.75rem;
+  gap: 4px;
+  min-width: 3.5rem;
   align-self: center;
   color: var(--fig-arrow);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.58rem;
-  line-height: 1.25;
+  font-size: 0.72rem;
+  line-height: 1.3;
   text-align: center;
 }
 
 .figure-arrow svg {
   color: var(--fig-arrow);
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .figure-note {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   border-radius: var(--fig-radius);
   background: var(--fig-accent-soft);
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
 .figure-note strong {
   color: var(--fig-accent);
-  font-size: 0.72rem;
+  font-size: 0.88rem;
 }
 
 .figure-note small {
   color: var(--fig-mute);
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -1367,8 +1368,8 @@ a[aria-disabled="true"] {
 .figure-trace-row strong,
 .figure-trace-row small {
   margin: 0;
-  font-size: 0.66rem;
-  line-height: 1.4;
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .figure-trace-row span {
@@ -1416,27 +1417,27 @@ a[aria-disabled="true"] {
   margin: 0;
   padding: 0;
   color: var(--fig-ink);
-  font-size: 0.88rem;
+  font-size: 1.05rem;
   font-weight: 650;
   line-height: 1.55;
 }
 
 .diagram-reading-list {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
-  padding: 12px 0 0;
+  padding: 14px 0 0;
   border-top: 1px solid color-mix(in oklab, var(--fig-arrow) 35%, transparent);
   list-style: none;
 }
 
 .diagram-reading-list li {
   display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr);
+  grid-template-columns: 1.6rem minmax(0, 1fr);
   gap: 8px;
   padding: 2px 0;
   color: var(--fig-ink);
-  font-size: 0.74rem;
+  font-size: 0.88rem;
   line-height: 1.55;
 }
 
@@ -1452,7 +1453,7 @@ a[aria-disabled="true"] {
 .diagram-reading-list span {
   color: var(--fig-mute);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.64rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -1487,7 +1488,7 @@ a[aria-disabled="true"] {
 .diagram-connector svg {
   position: relative;
   z-index: 1;
-  width: 22px;
+  width: 30px;
   overflow: visible;
   background: var(--fig-surface);
 }
@@ -1495,9 +1496,9 @@ a[aria-disabled="true"] {
 .diagram-connector path {
   fill: none;
   stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.1;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1.8;
 }
 
 .diagram-board .slide-detail-map {
@@ -1523,8 +1524,8 @@ a[aria-disabled="true"] {
   }
 
   .diagram-concept-body {
-    min-height: 9rem;
-    padding: 14px;
+    min-height: 12rem;
+    padding: 16px;
   }
 
   .figure-contrast {
@@ -1547,14 +1548,14 @@ a[aria-disabled="true"] {
   margin: 0;
   color: var(--fig-mute);
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.66rem;
+  font-size: 0.78rem;
   letter-spacing: 0.02em;
 }
 
 .figure-v {
   margin: 0;
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.92rem;
+  font-size: 1.05rem;
   font-weight: 650;
 }
 
