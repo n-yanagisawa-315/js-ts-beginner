@@ -692,10 +692,10 @@ a[aria-disabled="true"] {
 .slide-code-panel-body,
 .slide-console-panel-body {
   margin: 0;
-  padding: 1rem 1.1rem 1.35rem;
+  padding: 1.15rem 1.2rem 1.5rem;
   font-family: var(--font-code), ui-monospace, monospace;
-  font-size: 0.95rem;
-  line-height: 1.8;
+  font-size: 1.05rem;
+  line-height: 1.85;
   white-space: pre-wrap;
   overflow-x: auto;
 }
@@ -751,11 +751,11 @@ a[aria-disabled="true"] {
 
 .slide-anno-brace {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
-  gap: 0.35rem;
-  align-items: end;
-  margin: 0.1rem 0 0.65rem 0.35rem;
-  max-width: min(100%, 36rem);
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  margin: 0.25rem 0 0.85rem 0.2rem;
+  max-width: min(100%, 42rem);
 }
 
 .slide-anno-brace.is-end {
@@ -763,18 +763,19 @@ a[aria-disabled="true"] {
 }
 
 .slide-anno-brace-svg {
-  width: 72px;
-  height: 48px;
+  width: 5.5rem;
+  height: 4.5rem;
   color: #3dcfb8;
+  overflow: visible;
 }
 
 .slide-anno-label {
   margin: 0;
   color: #3dcfb8;
   font-family: var(--font-sans), "Hiragino Sans", "Noto Sans JP", sans-serif;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  line-height: 1.55;
+  line-height: 1.45;
   white-space: normal;
   overflow-wrap: anywhere;
 }
@@ -789,32 +790,32 @@ a[aria-disabled="true"] {
 
 .slide-anno-circle-guide {
   display: grid;
-  grid-template-columns: 78px minmax(0, 1fr);
-  gap: 0.35rem;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 0.55rem;
   align-items: center;
-  margin: 0.15rem 0 0.7rem 1.1rem;
-  max-width: min(100%, 36rem);
+  margin: 0.2rem 0 0.85rem 1.1rem;
+  max-width: min(100%, 42rem);
 }
 
 .slide-anno-span-brace {
-  width: 72px;
-  height: 56px;
+  width: 5rem;
+  height: 4rem;
   color: #3dcfb8;
 }
 
 .slide-anno-wave {
   display: grid;
-  grid-template-columns: minmax(8rem, 12rem) minmax(0, 1fr);
-  gap: 0.25rem 0.5rem;
+  grid-template-columns: minmax(9rem, 14rem) minmax(0, 1fr);
+  gap: 0.35rem 0.55rem;
   align-items: center;
-  margin: 0.05rem 0 0.65rem;
+  margin: 0.1rem 0 0.85rem;
   max-width: 100%;
 }
 
 .slide-anno-wave-pointer {
   width: 100%;
-  max-width: 12rem;
-  height: 32px;
+  max-width: 14rem;
+  height: 2.5rem;
   color: #3dcfb8;
 }
 
@@ -931,13 +932,16 @@ a[aria-disabled="true"] {
 }
 
 .slide-talk-line.is-engineer .talk-bubble::before {
+  left: -10px;
+  right: auto;
+  border-color: transparent;
   border-right-color: #fff;
 }
 
 .slide-talk-line.is-beginner .talk-bubble::before {
   left: auto;
-  right: -8px;
-  border-right-color: transparent;
+  right: -10px;
+  border-color: transparent;
   border-left-color: #fff;
 }
 
@@ -1815,22 +1819,31 @@ a[aria-disabled="true"] {
   box-shadow: 0 5px 13px rgb(42 96 101 / 12%);
 }
 
+/* 吹き出しのしっぽ：回転四角だと本文に重なって菱形に見えるため、外側の三角にする */
 .talk-bubble::before {
   position: absolute;
-  top: 50%;
-  width: 13px;
-  height: 13px;
-  background: #fff;
+  top: 18px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 10px;
+  border-color: transparent;
+  background: transparent;
   content: "";
-  transform: translateY(-50%) rotate(45deg);
+  transform: none;
+  pointer-events: none;
 }
 
 .talk-line.is-engineer .talk-bubble::before {
-  left: -7px;
+  left: -10px;
+  right: auto;
+  border-right-color: #fff;
 }
 
 .talk-line.is-beginner .talk-bubble::before {
-  right: -7px;
+  left: auto;
+  right: -10px;
+  border-left-color: #fff;
 }
 
 .talk-bubble .slide-lead-strong {

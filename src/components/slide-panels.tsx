@@ -63,20 +63,24 @@ function BraceAnnotation({
       className={`slide-anno slide-anno-brace${alignEnd ? " is-end" : ""}`}
       aria-hidden="true"
     >
-      <svg className="slide-anno-brace-svg" viewBox="0 0 96 56" fill="none">
+      <svg
+        className="slide-anno-brace-svg"
+        viewBox="0 0 88 72"
+        fill="none"
+        aria-hidden="true"
+      >
+        {/* 水平線を viewBox 中央 (y=44) に置き、ラベルと上下中央揃えする */}
         <path
-          d="M16 2 V36 H78"
+          d="M18 4 V44 H62"
           stroke="currentColor"
-          strokeWidth="2.2"
+          strokeWidth="2.6"
           strokeLinecap="square"
           strokeLinejoin="miter"
         />
         <path
-          d="M70 28 L80 36 L70 44"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="square"
-          strokeLinejoin="miter"
+          d="M58 36 L74 44 L58 52 Z"
+          fill="currentColor"
+          stroke="none"
         />
       </svg>
       <span className="slide-anno-label">{label}</span>
