@@ -751,10 +751,10 @@ a[aria-disabled="true"] {
 
 .slide-anno-brace {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr);
-  gap: 0.55rem;
-  align-items: center;
-  margin: 0.25rem 0 0.85rem 0.2rem;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+  margin: 0.25rem 0 0.85rem 0.35rem;
   max-width: min(100%, 42rem);
 }
 
@@ -762,11 +762,27 @@ a[aria-disabled="true"] {
   margin-left: min(10rem, 36%);
 }
 
-.slide-anno-brace-svg {
-  width: 5.5rem;
-  height: 4.5rem;
+.slide-anno-brace-stem {
+  display: block;
+  width: 1.5rem;
+  height: 2.6rem;
   color: #3dcfb8;
-  overflow: visible;
+}
+
+.slide-anno-brace-point {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  margin-top: -0.15rem;
+}
+
+.slide-anno-brace-arrow {
+  display: block;
+  flex: 0 0 auto;
+  width: 3.5rem;
+  height: 1.5rem;
+  color: #3dcfb8;
 }
 
 .slide-anno-label {
@@ -775,7 +791,7 @@ a[aria-disabled="true"] {
   font-family: var(--font-sans), "Hiragino Sans", "Noto Sans JP", sans-serif;
   font-size: 1.2rem;
   font-weight: 700;
-  line-height: 1.45;
+  line-height: 1.35;
   white-space: normal;
   overflow-wrap: anywhere;
 }

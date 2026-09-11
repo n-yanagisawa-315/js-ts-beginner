@@ -64,26 +64,35 @@ function BraceAnnotation({
       aria-hidden="true"
     >
       <svg
-        className="slide-anno-brace-svg"
-        viewBox="0 0 88 72"
+        className="slide-anno-brace-stem"
+        viewBox="0 0 24 40"
         fill="none"
         aria-hidden="true"
       >
-        {/* 水平線を viewBox 中央 (y=44) に置き、ラベルと上下中央揃えする */}
         <path
-          d="M18 4 V44 H62"
+          d="M12 2 V40"
           stroke="currentColor"
           strokeWidth="2.6"
           strokeLinecap="square"
-          strokeLinejoin="miter"
-        />
-        <path
-          d="M58 36 L74 44 L58 52 Z"
-          fill="currentColor"
-          stroke="none"
         />
       </svg>
-      <span className="slide-anno-label">{label}</span>
+      <div className="slide-anno-brace-point">
+        <svg
+          className="slide-anno-brace-arrow"
+          viewBox="0 0 56 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M2 12 H40"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="square"
+          />
+          <path d="M36 4 L52 12 L36 20 Z" fill="currentColor" stroke="none" />
+        </svg>
+        <span className="slide-anno-label">{label}</span>
+      </div>
     </div>
   );
 }
