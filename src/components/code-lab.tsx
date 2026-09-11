@@ -207,11 +207,18 @@ function CodeLabInner({
   const cwd = question.cwd ?? "app";
   const canRun = track !== "ts" && !isSql && !isGit;
   const hasOutputSample = Boolean(question.sample?.trim());
+  const expectedPaneTitle = isDom
+    ? "達成条件"
+    : hasOutputSample
+      ? "出力見本"
+      : "達成条件";
   const expectedResult = hasOutputSample
     ? question.sample
     : track === "ts"
       ? "型エラーがなく、指定された型の約束を満たせば完了です。"
-      : "この問題は表示結果ではなく、指定されたコードの形と動作を採点します。";
+      : isDom
+        ? "画面プレビューを実行したうえで、提出時に条件を自動チェックします。"
+        : "この問題は表示結果ではなく、指定されたコードの形と動作を採点します。";
   const canSubmit =
     !checked &&
     typed.trim() !== "" &&
@@ -764,7 +771,7 @@ function CodeLabInner({
                   )}
                 </OutputPane>
               )}
-              <OutputPane title={hasOutputSample ? "出力見本" : "達成条件"}>
+              <OutputPane title={expectedPaneTitle}>
                 <pre className="whitespace-pre-wrap">
                   {expectedResult}
                 </pre>

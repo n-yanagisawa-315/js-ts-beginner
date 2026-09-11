@@ -1,4 +1,5 @@
 import type { DiagramId } from "@/lib/course/types";
+import { dedentContinuation } from "./code-format";
 
 export type Listing = {
   code: string;
@@ -550,12 +551,15 @@ export function listingsFor(slide: {
   const items: Listing[] = [];
   if (slide.code) {
     items.push({
-      code: slide.code,
+      code: dedentContinuation(slide.code),
       label: slide.codeCaption ?? "参考コード",
     });
   }
   if (slide.codeExample) {
-    items.push({ code: slide.codeExample, label: "対比" });
+    items.push({
+      code: dedentContinuation(slide.codeExample),
+      label: "対比",
+    });
   }
   const compact = (value: string) => value.replace(/\s+/g, "");
   const hasFallback = items.some(
@@ -564,9 +568,15 @@ export function listingsFor(slide: {
   if (!hasFallback && items.length < 2) {
     items.push({
       ...fallback,
+      code: dedentContinuation(fallback.code),
       label: items.length === 0 ? fallback.label : "もう一つの例",
     });
   }
-  if (items.length === 0) items.push(fallback);
+  if (items.length === 0) {
+    items.push({
+      ...fallback,
+      code: dedentContinuation(fallback.code),
+    });
+  }
   return items;
 }

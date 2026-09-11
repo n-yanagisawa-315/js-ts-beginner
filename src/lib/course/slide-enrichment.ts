@@ -1,4 +1,5 @@
 import { DIAGRAM_LISTING } from "./diagram-listings";
+import { dedentContinuation } from "./code-format";
 import { resolveConsoleOutput } from "./console-preview";
 import type { Lesson, Slide, SlideCallout } from "./types";
 
@@ -8,11 +9,11 @@ type EnrichContext = {
 };
 
 function slideCode(slide: Slide): string | undefined {
-  return (
+  const raw =
     slide.code ??
     slide.codeExample ??
-    DIAGRAM_LISTING[slide.diagram]?.code
-  );
+    DIAGRAM_LISTING[slide.diagram]?.code;
+  return raw === undefined ? undefined : dedentContinuation(raw);
 }
 
 function haystack(slide: Slide): string {
@@ -64,8 +65,30 @@ function firstCodeLine(lines: string[]): number {
 }
 
 function pickToken(line: string, label?: string): string | undefined {
-  // 注釈ラベルに含まれるコード断片があれば、それを優先（console.log への誤爆を防ぐ）
+  // ラベルの意味に直結する断片を最優先（const / ( への誤爆を防ぐ）
   if (label) {
+    const semantic: Array<{ when: RegExp; token: string | RegExp }> = [
+      { when: /#|idを選/, token: "#" },
+      { when: /イベント名はclick|はclick/, token: '"click"' },
+      { when: /submitを登録|イベント名はsubmit|はsubmit/, token: '"submit"' },
+      { when: /読み込み中|loading表示/, token: "textContent" },
+      { when: /\bok\b|成功データとして扱わない/, token: ".ok" },
+      { when: /選択中の値|selectのvalue|\.value/, token: ".value" },
+      { when: /allは|元配列を使う/, token: '"all"' },
+      { when: /注文の形|一か所で揃/, token: "push" },
+      { when: /状態の置き場/, token: "orders" },
+      { when: /orders状態|ordersへ代入|取得結果をorders/, token: "orders" },
+      { when: /nullのまま|存在を確認/, token: "if" },
+      { when: /文字をそのまま|表示する/, token: "textContent" },
+      { when: /木の入口|\bdocument\b/, token: "document" },
+    ];
+    for (const rule of semantic) {
+      if (!rule.when.test(label)) continue;
+      if (typeof rule.token === "string") {
+        if (line.includes(rule.token)) return rule.token;
+      }
+    }
+
     const fromLabel = [
       "Promise.resolve().then",
       "Promise.reject",
@@ -73,9 +96,33 @@ function pickToken(line: string, label?: string): string | undefined {
       "Promise.allSettled",
       "Promise.all",
       "Promise.race",
+      "querySelectorAll",
+      "querySelector",
+      "getElementById",
+      "addEventListener",
+      "preventDefault",
+      "createElement",
+      "replaceChildren",
+      "parentElement",
+      "textContent",
+      "classList",
+      "currentTarget",
+      "localStorage",
+      "JSON.stringify",
+      "JSON.parse",
+      "FormData",
+      "dataset",
+      "setItem",
+      "getItem",
       "setTimeout",
       "queueMicrotask",
       "console.log",
+      "closest",
+      "append",
+      "filter",
+      "trim",
+      "fetch",
+      "document",
       ".then",
       ".catch",
       ".finally",
@@ -87,6 +134,8 @@ function pickToken(line: string, label?: string): string | undefined {
       ".map",
       ".filter",
       ".reduce",
+      ".value",
+      ".ok",
       "super",
       "static",
       "await",
@@ -94,28 +143,41 @@ function pickToken(line: string, label?: string): string | undefined {
       "new",
       "this",
       "===",
+      "#",
     ].find((token) => label.includes(token) && line.includes(token));
     if (fromLabel) return fromLabel;
   }
 
   const patterns = [
     /\bPromise\.(?:resolve|reject|allSettled|all|race)\b/,
-    /\.\b(?:bind|call|apply|includes|join|groupBy|map|filter|reduce|then|catch|finally)\b/,
+    /\b(?:querySelectorAll|querySelector|getElementById|addEventListener|preventDefault|createElement|replaceChildren|parentElement|textContent|classList|currentTarget|localStorage|FormData|dataset|closest|document)\b/,
+    /\bJSON\.(?:stringify|parse)\b/,
+    /\.(?:setItem|getItem|append|filter|trim|bind|call|apply|includes|join|groupBy|map|reduce|then|catch|finally|value|ok)\b/,
     /\bconsole\.log\b/,
+    /\bfetch\b/,
+    /#[A-Za-z][\w-]*/,
     /\?\?=|\?\?|\?\./,
-    /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|constructor|extends|super|static|import|export|typeof|instanceof|new|throw|try|catch|this|Promise|fetch|setTimeout)\b/,
+    /\b(?:function|return|if|else|for|while|async|await|class|constructor|extends|super|static|import|export|typeof|instanceof|new|throw|try|catch|this|Promise|setTimeout)\b/,
     /\b(?:SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE|CREATE|ALTER|COMMIT|ROLLBACK)\b/,
     /\b(?:git|npm|npx|node|gh)\b/,
-    /===|!==|=>|\.\.\.|\+\+|--/,
-    /[;=+\-*/<>!&|{}()[\]]/,
-    /['"`]/,
+    /===|!==|\.\.\.|\+\+|--/,
+    // const/let/=>/( は最終手段にしない（矢印が文頭へ寄る原因）
+    /;/,
+    /\+/,
   ];
   for (const pattern of patterns) {
     const match = line.match(pattern);
-    if (match?.[0]) return match[0];
+    if (match?.[0]) {
+      if (label?.includes("#") && /#/.test(line)) return "#";
+      return match[0];
+    }
   }
-  const word = line.trim().match(/[A-Za-z_$\u3040-\u30ff\u4e00-\u9fff][\w$]*/);
-  return word?.[0];
+  const word = line
+    .trim()
+    .match(
+      /\b(?!const|let|var)[A-Za-z_$\u3040-\u30ff\u4e00-\u9fff][\w$]*/,
+    );
+  return word?.[0] ?? line.trim().match(/[A-Za-z_$][\w$]*/)?.[0];
 }
 
 /** 注釈ラベルの用語に対応するコード行を選ぶ。見つからなければ -1 */
@@ -130,6 +192,53 @@ function bestLineForLabel(lines: string[], label: string): number {
     { label: /\?\?=|まだ無/, code: /\?\?=/ },
     { label: /\?\./, code: /\?\./ },
     { label: /\?\?|空なら|無いとき/, code: /\?\?(?!=)/ },
+    // DOM / Web API（具体→抽象）
+    { label: /querySelectorAll|まとめて受け|複数選/, code: /querySelectorAll/ },
+    // 親要素から呼ぶ querySelector（document.querySelector より後の行を優先）
+    {
+      label: /親要素からquerySelector|親から.*querySelector|内側に絞/,
+      code: /(?:\?\.|\.)querySelector(?!All)/,
+      preferLast: true,
+    },
+    { label: /querySelector|一つ選|最初の一?つ/, code: /querySelector(?!All)/ },
+    { label: /getElementById/, code: /getElementById/ },
+    { label: /#|idを選/, code: /#[A-Za-z]/ },
+    { label: /\bdocument\b|木の入口/, code: /\bdocument\b/ },
+    { label: /parentElement|親へたど|親のタグ/, code: /parentElement/ },
+    { label: /classList|クラスを付|addでクラス/, code: /classList/ },
+    { label: /dataset|data-/, code: /dataset|data-/ },
+    { label: /イベント名はclick|はclick/, code: /["']click["']/ },
+    { label: /submitを登録|["']submit["']/, code: /["']submit["']/ },
+    { label: /addEventListener|リスナー|を登録/, code: /addEventListener/ },
+    { label: /preventDefault/, code: /preventDefault/ },
+    { label: /createElement/, code: /createElement/ },
+    { label: /replaceChildren/, code: /replaceChildren/ },
+    { label: /\bappend\b/, code: /\.append\b/ },
+    { label: /文字をそのまま|表示する|textContent/, code: /textContent/ },
+    { label: /FormData/, code: /FormData/ },
+    { label: /localStorage|setItem|getItem/, code: /localStorage|\.setItem\b|\.getItem\b/ },
+    { label: /stringify/, code: /JSON\.stringify|stringify|saveOrders/ },
+    { label: /\bparse\b/, code: /JSON\.parse/ },
+    { label: /読み込み中|loading表示/, code: /読み込み中|loading/ },
+    { label: /\bok\b|成功データとして扱わない/, code: /\.ok\b/ },
+    { label: /状態の置き場/, code: /let orders\s*=|\borders\s*=\s*\[/ },
+    {
+      label: /orders状態|ordersへ代入|取得結果をorders/,
+      code: /^\s*orders\s*=/,
+      preferLast: true,
+    },
+    { label: /注文の形|一か所で揃/, code: /\.push\b|status:\s*["']unpaid["']/ },
+    { label: /allは|元配列を使う/, code: /=== ["']all["']/ },
+    { label: /選択中の値|selectのvalue/, code: /\.value\b/ },
+    { label: /nullのまま|存在を確認|見つからな/, code: /if\s*\(!|throw new Error/ },
+    { label: /\bfetch\b/i, code: /\bfetch\b/ },
+    { label: /closest/, code: /closest/ },
+    { label: /currentTarget|登録先/, code: /currentTarget/ },
+    { label: /実際の発生元|最初に操作/, code: /event\.target\b/ },
+    { label: /\btarget\b/, code: /event\.target\b/ },
+    { label: /eventは発生/, code: /\(event\)|\bevent\./ },
+    { label: /\.filter\b|filterで/, code: /\.filter\b/ },
+    { label: /\btrim\b/, code: /\.trim\b/ },
     // より具体的なキーワードを this / 先頭行より優先
     { label: /\bsuper\b/i, code: /\bsuper\b/ },
     { label: /\bstatic\b/i, code: /\bstatic\b/ },
@@ -162,12 +271,10 @@ function bestLineForLabel(lines: string[], label: string): number {
   return -1;
 }
 
-function resolveLabelLine(lines: string[], label: string, haystack: string): number {
-  // 要点ラベルだけで決め、全文に引きずられて別用語へ飛ぶのを防ぐ
+function resolveLabelLine(lines: string[], label: string): number {
+  // 要点ラベルだけで決め、lead/talk の別用語へ引きずられないようにする
   const fromLabel = bestLineForLabel(lines, label);
   if (fromLabel >= 0) return fromLabel;
-  const fromHaystack = bestLineForLabel(lines, haystack);
-  if (fromHaystack >= 0) return fromHaystack;
   return firstCodeLine(lines);
 }
 
@@ -240,7 +347,8 @@ function inferCallouts(
     }
   }
 
-  if (/引用符|クォーテーション|クォート|文字列を|シングル|ダブル/.test(text)) {
+  // 「文字列を代入」など DOM 説明文を、クォート教材と誤認しない
+  if (/引用符|クォーテーション|クォート|シングルクォート|ダブルクォート|シングル|ダブル/.test(text)) {
     const quoteLines = lines
       .map((row, index) => ({ row, index }))
       .filter(
@@ -338,7 +446,7 @@ function inferCallouts(
   // まだ注釈がなければ、要点の用語に合う行へ付ける（先頭行への誤爆を避ける）
   if (callouts.length === 0) {
     const label = shortLabel(slide.points?.[0] ?? slide.title);
-    const line = resolveLabelLine(lines, label, text);
+    const line = resolveLabelLine(lines, label);
     if (line >= 0) {
       const row = lines[line] ?? "";
       push({
@@ -357,7 +465,7 @@ function inferCallouts(
     firstCodeLine(lines) >= 0
   ) {
     const label = shortLabel(slide.points?.[0] ?? slide.title);
-    const line = resolveLabelLine(lines, label, text);
+    const line = resolveLabelLine(lines, label);
     const row = lines[line] ?? "";
     push({
       label,
@@ -390,7 +498,7 @@ function normalizeCallouts(
     );
     if (found >= 0) return { ...callout, line: found };
     // トークンがどの行にも無いなら、ラベルから行を再推定
-    const guessed = resolveLabelLine(lines, callout.label, callout.label);
+    const guessed = resolveLabelLine(lines, callout.label);
     if (guessed >= 0) {
       const row = lines[guessed] ?? "";
       return {
