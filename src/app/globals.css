@@ -811,18 +811,18 @@ a[aria-disabled="true"] {
 }
 
 .slide-anno-wave {
-  display: grid;
-  grid-template-columns: minmax(9rem, 14rem) minmax(0, 1fr);
-  gap: 0.35rem 0.55rem;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 0.35rem 0.55rem;
   margin: 0.1rem 0 0.85rem;
   max-width: 100%;
 }
 
 .slide-anno-wave-pointer {
-  width: 100%;
-  max-width: 14rem;
-  height: 2.5rem;
+  flex: 0 0 auto;
+  width: min(10rem, 40%);
+  height: 1.75rem;
   color: #3dcfb8;
 }
 

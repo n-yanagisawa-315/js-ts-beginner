@@ -90,25 +90,24 @@ function BraceAnnotation({
   );
 }
 
-/** 出力テキスト下から右へ伸びる直線矢印 */
+/** 出力テキストから右へ伸びる直線矢印 */
 function WaveAnnotation({ label }: { label: string }) {
   return (
     <div className="slide-anno slide-anno-wave" aria-hidden="true">
       <svg
         className="slide-anno-wave-pointer"
-        viewBox="0 0 220 36"
+        viewBox="0 0 160 28"
         fill="none"
         preserveAspectRatio="xMinYMid meet"
       >
         <path
-          d="M4 10 H96 M96 10 V22 H168"
+          d="M4 14 H120"
           stroke="currentColor"
           strokeWidth="2.2"
           strokeLinecap="square"
-          strokeLinejoin="miter"
         />
         <path
-          d="M160 14 L172 22 L160 30"
+          d="M108 6 L124 14 L108 22"
           stroke="currentColor"
           strokeWidth="2.2"
           strokeLinecap="square"
