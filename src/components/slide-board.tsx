@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { TalkAvatar } from "@/components/talk-avatar";
 import {
   SlideCodePanel,
@@ -14,9 +15,9 @@ import type { ResolvedSlideDTO } from "@/lib/course/client-dtos";
 import type { ConversationPage } from "@/lib/course/types";
 
 const INLINE_TOKEN =
-  /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|var|function|class|constructor|this|new|extends|super|static|typeof|instanceof|async|await|Promise|pending|fulfilled|rejected|then|catch|finally|resolve|reject|fetch|onOk|onNg|allSettled|queueMicrotask|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
+  /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|var|function|class|constructor|this|new|extends|super|static|typeof|instanceof|async|await|Promise|pending|fulfilled|rejected|then|catch|finally|resolve|reject|fetch|onOk|onNg|allSettled|queueMicrotask|forEach|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
 const KEYWORD_TOKEN =
-  /^(?:true|false|null|undefined|if|else|for|while|return|const|let|var|function|class|constructor|this|new|extends|super|static|typeof|instanceof|async|await|Promise|pending|fulfilled|rejected|then|catch|finally|resolve|reject|fetch|onOk|onNg|allSettled|queueMicrotask|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)$/;
+  /^(?:true|false|null|undefined|if|else|for|while|return|const|let|var|function|class|constructor|this|new|extends|super|static|typeof|instanceof|async|await|Promise|pending|fulfilled|rejected|then|catch|finally|resolve|reject|fetch|onOk|onNg|allSettled|queueMicrotask|forEach|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)$/;
 
 function inlineParts(text: string) {
   let offset = 0;
@@ -64,7 +65,7 @@ function EmphasisText({
             {part}
           </strong>
         ) : (
-          <span key={`${part}-${index}`}>{part}</span>
+          <Fragment key={`${part}-${index}`}>{part}</Fragment>
         );
       })}
     </>
@@ -179,8 +180,10 @@ function ExplainBoard({
 
       {slide.watch ? (
         <p className="slide-explain-watch">
-          <span>注意</span>
-          <EmphasisText text={slide.watch} />
+          <span className="slide-explain-watch-label">注意</span>
+          <span className="slide-explain-watch-body">
+            <EmphasisText text={slide.watch} />
+          </span>
         </p>
       ) : null}
 

@@ -328,7 +328,7 @@ const [a, b] = await Promise.all([pa, pb]);`,
       },
       {
         title: "for の中の await も直列",
-        lead: "for (const x of xs) { await job(x) } は1件ずつです。並列にしたいなら xs.map(job) を all します。ただし同時接続数やレート制限には上限を付ける必要があります。",
+        lead: '`for (const x of xs) { await job(x) }` は1件ずつです。並列にしたいなら `xs.map(job)` を `Promise.all` します。ただし同時接続数やレート制限には上限を付ける必要があります。',
         points: [
           "map のコールバックを async にすると、map 自体は Promise の配列をすぐ返す",
           "forEach に async を渡しても、forEach は待たない。完了待ちには向かない",
@@ -354,7 +354,7 @@ await Promise.all(xs.map((x) => job(x)));`,
             style: "brace",
           },
         ],
-        watch: "forEach + async は「全部終わるまで待つ」には使えません。",
+        watch: "`forEach` + `async` は「全部終わるまで待つ」には使えません。",
       },
       {
         title: "この講義の要点",
