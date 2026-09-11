@@ -892,7 +892,7 @@ export const jsDom: Lesson[] = [
       {
         title: "currentTargetは登録した要素",
         lead: "targetは内側の文字やアイコンになることがあります。currentTargetはリスナーを登録した要素なので、ボタン自身のdatasetを読む場面で安定します。",
-        points: ["targetは実際の発生元", "currentTargetはリスナー登録先", "用途に応じて読み分ける"],
+        points: ["currentTargetはリスナー登録先", "targetは実際の発生元", "用途に応じて読み分ける"],
         diagram: "dom-event",
         code: `button.addEventListener("click", (event) => {
           const clickedButton = event.currentTarget;
@@ -1846,10 +1846,19 @@ export const jsDom: Lesson[] = [
         lead: "ordersはJSON文字列へ変換してlocalStorageへ保存します。読み込み時は未保存、壊れたJSON、配列でない値を考え、安全な空配列へ戻します。",
         points: ["stringifyして保存", "parseして復元", "try/catchと形の確認で代替する"],
         diagram: "dom-storage",
-        code: `saveOrders(orders);
-        const restored = loadOrders();
+        code: `localStorage.setItem("orders", JSON.stringify(orders));
+        const restored = JSON.parse(localStorage.getItem("orders") ?? "[]");
         renderOrders(restored);`,
         codeExample: `localStorage.getItem("orders");`,
+        callouts: [
+          {
+            label: "stringifyして保存",
+            line: 0,
+            token: "stringify",
+            target: "code",
+            style: "brace",
+          },
+        ],
         talk: [
           { speaker: "beginner", text: "ブラウザ保存の流れを短くまとめてください。" },
           { speaker: "engineer", text: "stringifyしてlocalStorageへ保存し、起動時はparseして復元します。未保存・壊れたJSON・配列でない値は、空配列へ代替します。" },
@@ -2125,7 +2134,8 @@ export const jsDom: Lesson[] = [
         code: `async function start() {
           message.textContent = "読み込み中...";
           try {
-            orders = await fetchOrders();
+            const response = await fetch("/api/demo-orders");
+            orders = await response.json();
             renderOrders(orders);
           } catch {
             message.textContent = "注文を読み込めませんでした";
@@ -2136,7 +2146,7 @@ export const jsDom: Lesson[] = [
           {
             label: "fetchとjsonをawaitする",
             line: 3,
-            token: "await",
+            token: "fetch",
             target: "code",
             style: "brace",
           },

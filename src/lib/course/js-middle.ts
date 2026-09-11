@@ -98,13 +98,27 @@ console.log(x.n); // 2`,
         title: "この講義の要点",
         lead: "プリミティブは独立。オブジェクトは矢印のコピー。浅いコピーは一段だけ。関数渡しでも共有。次は分割とスプレッドです。",
         points: ["=== は同一性", "壊したくなければ新しい束を作る"],
+        diagram: "ref",
+        code: `const a = { n: 5 };
+const b = a;
+console.log(a === b); // true
+const c = { n: 5 };
+console.log(a === c); // false`,
+        callouts: [
+          {
+            label: "=== は同一性",
+            line: 2,
+            token: "===",
+            target: "code",
+            style: "brace",
+          },
+        ],
         talk: [
           { speaker: "beginner", text: "代入しても、値なら別々、オブジェクトなら同じ実体を見る、と整理できました。" },
           { speaker: "engineer", text: "よい整理です。ただしオブジェクトを展開しても、ネストまで自動で別々にはなりません。" },
           { speaker: "beginner", text: "変更を共有したくない場面では、どの階層を新しくするか考える必要があるんですね。" },
           { speaker: "engineer", text: "その視点を持って、次は束から値を取り出したり、新しい束へ展開したりする構文を見ましょう。" },
         ],
-        diagram: "ref",
       },
     ],
     questions: [
@@ -521,7 +535,7 @@ console.log(calculateTotal(1, 2, 3));`,
         title: "includes と join は「あるか」「つなぐか」",
         lead: "変換ではなく、調べる・文字にする操作もあります。includes は値が入っているか。join は要素を文字列でつなぎます。コールバックは使いません。",
         points: [
-          "includes(2) は 2 があれば true。=== で比べる",
+          "includes(2) は 2 があれば true（中では ===）",
           'join(",") は "1,2,3"。区切りを自分で決める',
           "文字列の includes もあるが、配列のとは別",
         ],
@@ -539,9 +553,9 @@ console.log(calculateTotal(1, 2, 3));`,
 ["Aya", "Ren"].join("と"); // "AyaとRen"`,
         callouts: [
           {
-            label: "includes(2) は 2 があれば true。=== で比べる",
+            label: "includes(2) は 2 があれば true（中では ===）",
             line: 0,
-            token: ".includes",
+            token: "includes",
             target: "code",
             style: "brace",
           },

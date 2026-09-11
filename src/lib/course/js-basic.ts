@@ -1428,25 +1428,41 @@ while (n > 0) {
         title: "この講義の要点",
         lead: "if は true のときだけ。else / else if で道を足す。for は回数、while は終わる条件。次は配列を1個ずつ処理します。",
         points: ["比較は ===。== は使わない", "i < 3 と i <= 3 で回数が違う"],
-        talk: [
+        diagram: "loop",
+        code: `const total = 1200;
+if (total === 1200) {
+  console.log("一致");
+}
+for (let i = 0; i < 3; i++) {
+  console.log(i);
+}`,
+        callouts: [
           {
-            "speaker": "beginner",
-            "text": "条件は上から判定し、繰り返しは続ける条件がfalseになるまで回る、と整理できました。",
-          },
-          {
-            "speaker": "engineer",
-            "text": "いいですね。分岐では最初に成立した道だけが動き、比較の境界を含むかどうかも結果を左右します。",
-          },
-          {
-            "speaker": "beginner",
-            "text": "forとwhileは書き方が違うだけで、更新を忘れても適当なところで止まりますよね？",
-          },
-          {
-            "speaker": "engineer",
-            "text": "条件が変わらなければ止まりません。回数が明確ならfor、終了状態を待つならwhileを選びます。配列をまとめて回す話は、関数とコールバックを学んだあとに戻ってきます。",
+            label: "比較は ===。== は使わない",
+            line: 1,
+            token: "===",
+            target: "code",
+            style: "brace",
           },
         ],
-        diagram: "loop",
+        talk: [
+          {
+            speaker: "beginner",
+            text: "条件は上から判定し、繰り返しは続ける条件がfalseになるまで回る、と整理できました。",
+          },
+          {
+            speaker: "engineer",
+            text: "いいですね。分岐では最初に成立した道だけが動き、比較の境界を含むかどうかも結果を左右します。",
+          },
+          {
+            speaker: "beginner",
+            text: "forとwhileは書き方が違うだけで、更新を忘れても適当なところで止まりますよね？",
+          },
+          {
+            speaker: "engineer",
+            text: "条件が変わらなければ止まりません。回数が明確ならfor、終了状態を待つならwhileを選びます。配列をまとめて回す話は、関数とコールバックを学んだあとに戻ってきます。",
+          },
+        ],
       },
     ],
     questions: [
