@@ -64,35 +64,21 @@ function BraceAnnotation({
       aria-hidden="true"
     >
       <svg
-        className="slide-anno-brace-stem"
-        viewBox="0 0 24 40"
+        className="slide-anno-brace-svg"
+        viewBox="0 0 64 32"
         fill="none"
         aria-hidden="true"
       >
         <path
-          d="M12 2 V40"
+          d="M14 2 V16 H42"
           stroke="currentColor"
-          strokeWidth="2.6"
+          strokeWidth="2.4"
           strokeLinecap="square"
+          strokeLinejoin="miter"
         />
+        <path d="M38 9 L50 16 L38 23 Z" fill="currentColor" stroke="none" />
       </svg>
-      <div className="slide-anno-brace-point">
-        <svg
-          className="slide-anno-brace-arrow"
-          viewBox="0 0 56 24"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M2 12 H40"
-            stroke="currentColor"
-            strokeWidth="2.6"
-            strokeLinecap="square"
-          />
-          <path d="M36 4 L52 12 L36 20 Z" fill="currentColor" stroke="none" />
-        </svg>
-        <span className="slide-anno-label">{label}</span>
-      </div>
+      <span className="slide-anno-label">{label}</span>
     </div>
   );
 }
