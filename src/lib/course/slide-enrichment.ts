@@ -66,6 +66,8 @@ function firstCodeLine(lines: string[]): number {
 function pickToken(line: string): string | undefined {
   const patterns = [
     /\bconsole\.log\b/,
+    /\.\b(?:bind|call|apply|includes|join|groupBy|map|filter|reduce)\b/,
+    /\?\?=|\?\?|\?\./,
     /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|import|export|typeof|new|throw|try|catch)\b/,
     /\b(?:SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE|CREATE|ALTER|COMMIT|ROLLBACK)\b/i,
     /\b(?:git|npm|npx|node|gh)\b/,
@@ -79,6 +81,41 @@ function pickToken(line: string): string | undefined {
   }
   const word = line.trim().match(/[A-Za-z_$\u3040-\u30ff\u4e00-\u9fff][\w$]*/);
   return word?.[0];
+}
+
+/** 注釈ラベルの用語に対応するコード行を選ぶ（先頭行に誤って付かないようにする） */
+function bestLineForLabel(lines: string[], label: string): number {
+  const cues: Array<{ label: RegExp; code: RegExp; preferLast?: boolean }> = [
+    { label: /\bbind\b/i, code: /\.bind\b/ },
+    { label: /\bcall\b/i, code: /\.call\b/ },
+    { label: /\bapply\b/i, code: /\.apply\b/ },
+    { label: /\bincludes\b/i, code: /\.includes\b/ },
+    { label: /\bjoin\b/i, code: /\.join\b/ },
+    { label: /\bgroupBy\b/i, code: /\.groupBy\b|Object\.groupBy\b/ },
+    { label: /\?\?=|まだ無/, code: /\?\?=/ },
+    { label: /\?\./, code: /\?\./ },
+    { label: /\?\?|空なら|無いとき/, code: /\?\?(?!=)/ },
+    { label: /\bthis\b/i, code: /\bthis\b/ },
+    { label: /コールバック|戻りがキー/, code: /\([^)]*\)\s*=>/ },
+  ];
+
+  for (const cue of cues) {
+    if (!cue.label.test(label)) continue;
+    if (cue.preferLast) {
+      for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const row = lines[index] ?? "";
+        if (!isCommentLine(row) && cue.code.test(row)) return index;
+      }
+    } else {
+      const line = firstMatchingLine(
+        lines,
+        (row) => cue.code.test(row) && !isCommentLine(row),
+      );
+      if (line >= 0) return line;
+    }
+  }
+
+  return firstCodeLine(lines);
 }
 
 function inferCallouts(
@@ -238,13 +275,14 @@ function inferCallouts(
     });
   }
 
-  // まだ注釈がなければ、先頭の実行行＋要点／タイトルで必ず1本付ける
+  // まだ注釈がなければ、要点の用語に合う行へ付ける（先頭行への誤爆を避ける）
   if (callouts.length === 0) {
-    const line = firstCodeLine(lines);
+    const label = shortLabel(slide.points?.[0] ?? slide.title);
+    const line = bestLineForLabel(lines, `${label}\n${text}`);
     if (line >= 0) {
       const row = lines[line] ?? "";
       push({
-        label: shortLabel(slide.points?.[0] ?? slide.title),
+        label,
         line,
         token: pickToken(row),
         target: "code",
@@ -258,10 +296,11 @@ function inferCallouts(
     callouts.every((item) => item.target === "console") &&
     firstCodeLine(lines) >= 0
   ) {
-    const line = firstCodeLine(lines);
+    const label = shortLabel(slide.points?.[0] ?? slide.title);
+    const line = bestLineForLabel(lines, `${label}\n${text}`);
     const row = lines[line] ?? "";
     push({
-      label: shortLabel(slide.points?.[0] ?? slide.title),
+      label,
       line,
       token: pickToken(row),
       target: "code",

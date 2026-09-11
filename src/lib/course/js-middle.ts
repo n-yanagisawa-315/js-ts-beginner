@@ -1012,6 +1012,15 @@ f(); // this が user ではない`,
 greet.call({ name: "Ken" }); // "Ken"
 const g = greet.bind({ name: "Aya" });
 g(); // "Aya"`,
+        callouts: [
+          {
+            label: "bind は一度固定すると、あとから call しても基本は変わらない",
+            line: 4,
+            token: ".bind",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "アロー関数の this は外側をそのまま使う",
