@@ -63,12 +63,47 @@ function firstCodeLine(lines: string[]): number {
   return firstMatchingLine(lines, (row) => !isCommentLine(row));
 }
 
-function pickToken(line: string): string | undefined {
+function pickToken(line: string, label?: string): string | undefined {
+  // 注釈ラベルに含まれるコード断片があれば、それを優先（console.log への誤爆を防ぐ）
+  if (label) {
+    const fromLabel = [
+      "Promise.resolve().then",
+      "Promise.reject",
+      "Promise.resolve",
+      "Promise.allSettled",
+      "Promise.all",
+      "Promise.race",
+      "setTimeout",
+      "queueMicrotask",
+      "console.log",
+      ".then",
+      ".catch",
+      ".finally",
+      ".bind",
+      ".call",
+      ".apply",
+      ".includes",
+      ".join",
+      ".map",
+      ".filter",
+      ".reduce",
+      "super",
+      "static",
+      "await",
+      "async",
+      "new",
+      "this",
+      "===",
+    ].find((token) => label.includes(token) && line.includes(token));
+    if (fromLabel) return fromLabel;
+  }
+
   const patterns = [
-    /\bconsole\.log\b/,
+    /\bPromise\.(?:resolve|reject|allSettled|all|race)\b/,
     /\.\b(?:bind|call|apply|includes|join|groupBy|map|filter|reduce|then|catch|finally)\b/,
+    /\bconsole\.log\b/,
     /\?\?=|\?\?|\?\./,
-    /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|constructor|extends|super|static|import|export|typeof|instanceof|new|throw|try|catch|this|Promise|fetch)\b/,
+    /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|constructor|extends|super|static|import|export|typeof|instanceof|new|throw|try|catch|this|Promise|fetch|setTimeout)\b/,
     /\b(?:SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE|CREATE|ALTER|COMMIT|ROLLBACK)\b/,
     /\b(?:git|npm|npx|node|gh)\b/,
     /===|!==|=>|\.\.\.|\+\+|--/,
@@ -309,7 +344,7 @@ function inferCallouts(
       push({
         label,
         line,
-        token: pickToken(row),
+        token: pickToken(row, label),
         target: "code",
         style: "brace",
       });
@@ -327,7 +362,7 @@ function inferCallouts(
     push({
       label,
       line,
-      token: pickToken(row),
+      token: pickToken(row, label),
       target: "code",
       style: "brace",
     });
@@ -363,7 +398,7 @@ function normalizeCallouts(
         line: guessed,
         token: row.includes(callout.token)
           ? callout.token
-          : (pickToken(row) ?? callout.token),
+          : (pickToken(row, callout.label) ?? callout.token),
       };
     }
     return callout;

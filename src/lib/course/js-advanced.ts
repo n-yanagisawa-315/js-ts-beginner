@@ -530,6 +530,15 @@ console.log("C");
 Promise.resolve().then(() => console.log("then"));
 console.log("sync");
 // sync → then → timeout`,
+        callouts: [
+          {
+            label: "Promise.resolve().then は setTimeout(0) より先",
+            line: 1,
+            token: "Promise.resolve().then",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "await の「続き」はマイクロタスク",
