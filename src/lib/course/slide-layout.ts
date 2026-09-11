@@ -86,29 +86,41 @@ function synchronizeConversationPages(
   });
 }
 
+function chunkTalkLines(lines: TalkLine[], focus: ConversationPage["focus"]) {
+  const pages: ConversationPage[] = [];
+  for (let index = 0; index < lines.length; index += 4) {
+    pages.push({
+      lines: lines.slice(index, index + 4),
+      focus,
+    });
+  }
+  return pages;
+}
+
 export function talkPages(
   slide: Slide,
   listing: SlideListing,
   context?: { slideIndex?: number },
 ): ConversationPage[] {
   const layout = slideLayout(slide, context);
+  const storyLines = slide.storyTalk ?? [];
+  const contentLines = slide.talk ?? [];
 
   if (layout === "talk") {
     const source =
-      slide.storyTalk && slide.storyTalk.length > 0
-        ? slide.storyTalk
-        : (slide.talk ?? []);
+      storyLines.length > 0 && contentLines.length > 0
+        ? [...storyLines, ...contentLines]
+        : storyLines.length > 0
+          ? storyLines
+          : contentLines;
     if (source.length === 0) {
       return [{ lines: [], focus: "story" }];
     }
-    const pages: ConversationPage[] = [];
-    for (let index = 0; index < source.length; index += 4) {
-      pages.push({
-        lines: source.slice(index, index + 4),
-        focus: "story",
-      });
-    }
-    return synchronizeConversationPages(slide, pages, listing);
+    return synchronizeConversationPages(
+      slide,
+      chunkTalkLines(source, "story"),
+      listing,
+    );
   }
 
   if (layout === "explain" || layout === "hero") {
@@ -116,21 +128,13 @@ export function talkPages(
       lines: [],
       focus: isSummarySlide(slide) ? "summary" : "intro",
     };
-    if (slide.storyTalk && slide.storyTalk.length > 0) {
-      const storyPages: ConversationPage[] = [];
-      for (let index = 0; index < slide.storyTalk.length; index += 4) {
-        storyPages.push({
-          lines: slide.storyTalk.slice(index, index + 4),
-          focus: "story",
-        });
-      }
-      return synchronizeConversationPages(
-        slide,
-        [...storyPages, explainPage],
-        listing,
-      );
-    }
-    return synchronizeConversationPages(slide, [explainPage], listing);
+    const pages: ConversationPage[] = [
+      ...chunkTalkLines(storyLines, "story"),
+      // つなぎ会話のあとに、そのスライド本来の会話も続ける
+      ...chunkTalkLines(contentLines, "story"),
+      explainPage,
+    ];
+    return synchronizeConversationPages(slide, pages, listing);
   }
 
   return synchronizeConversationPages(

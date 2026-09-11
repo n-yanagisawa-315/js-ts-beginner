@@ -459,8 +459,9 @@ a[aria-disabled="true"] {
 .slide-stage .slide-inline-code {
   border: none;
   border-radius: 4px;
-  background: var(--slide-highlight);
-  color: #4a3b18;
+  background: color-mix(in oklab, var(--slide-accent) 16%, transparent);
+  color: var(--slide-accent);
+  font-weight: 700;
   padding: 0.1em 0.38em;
 }
 

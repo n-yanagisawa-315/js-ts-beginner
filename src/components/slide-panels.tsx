@@ -54,13 +54,20 @@ function highlightToken(
 function BraceAnnotation({
   label,
   alignEnd = false,
+  indentCh = 0,
 }: {
   label: string;
   alignEnd?: boolean;
+  indentCh?: number;
 }) {
   return (
     <div
       className={`slide-anno slide-anno-brace${alignEnd ? " is-end" : ""}`}
+      style={
+        !alignEnd && indentCh > 0
+          ? { marginLeft: `max(0.15rem, ${indentCh}ch)` }
+          : undefined
+      }
       aria-hidden="true"
     >
       <svg
@@ -274,11 +281,16 @@ export function SlideCodePanel({
                 {lineCallouts.map((callout) => {
                   const kind = resolveStyle(callout);
                   if (kind === "brace") {
+                    const tokenStart =
+                      callout.token && line.includes(callout.token)
+                        ? line.indexOf(callout.token)
+                        : 0;
                     return (
                       <BraceAnnotation
                         key={`${callout.label}-${callout.token ?? ""}`}
                         label={callout.label}
                         alignEnd={callout.token === ";"}
+                        indentCh={tokenStart}
                       />
                     );
                   }

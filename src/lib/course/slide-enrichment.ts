@@ -66,9 +66,9 @@ function firstCodeLine(lines: string[]): number {
 function pickToken(line: string): string | undefined {
   const patterns = [
     /\bconsole\.log\b/,
-    /\.\b(?:bind|call|apply|includes|join|groupBy|map|filter|reduce)\b/,
+    /\.\b(?:bind|call|apply|includes|join|groupBy|map|filter|reduce|then|catch|finally)\b/,
     /\?\?=|\?\?|\?\./,
-    /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|constructor|extends|super|static|import|export|typeof|instanceof|new|throw|try|catch|this)\b/,
+    /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|constructor|extends|super|static|import|export|typeof|instanceof|new|throw|try|catch|this|Promise|fetch)\b/,
     /\b(?:SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE|CREATE|ALTER|COMMIT|ROLLBACK)\b/,
     /\b(?:git|npm|npx|node|gh)\b/,
     /===|!==|=>|\.\.\.|\+\+|--/,
@@ -100,6 +100,8 @@ function bestLineForLabel(lines: string[], label: string): number {
     { label: /\bstatic\b/i, code: /\bstatic\b/ },
     { label: /\bawait\b/i, code: /\bawait\b/ },
     { label: /\bcatch\b/i, code: /\bcatch\b|\.catch\b/ },
+    { label: /\bthen\b/i, code: /\.then\b/ },
+    { label: /fulfilled|rejected|pending|Promise/i, code: /\bPromise\b|\bfetch\b|\.then\b|\.catch\b/ },
     { label: /===/, code: /===/ },
     { label: /\bnew\b/i, code: /\bnew\b/ },
     { label: /\bthis\b/i, code: /\bthis\b/ },
@@ -334,12 +336,48 @@ function inferCallouts(
   return callouts.slice(0, 3);
 }
 
+/** token が指定行に無いとき、実際に含まれる行へ付け直す */
+function normalizeCallouts(
+  code: string,
+  callouts: SlideCallout[],
+): SlideCallout[] {
+  const lines = code.split("\n");
+  return callouts.map((callout) => {
+    if ((callout.target ?? "code") !== "code") return callout;
+    if (callout.line === undefined || !callout.token) return callout;
+    const current = lines[callout.line] ?? "";
+    if (current.includes(callout.token)) return callout;
+    const found = lines.findIndex(
+      (row, index) =>
+        !isCommentLine(row) &&
+        row.includes(callout.token!) &&
+        index !== callout.line,
+    );
+    if (found >= 0) return { ...callout, line: found };
+    // トークンがどの行にも無いなら、ラベルから行を再推定
+    const guessed = resolveLabelLine(lines, callout.label, callout.label);
+    if (guessed >= 0) {
+      const row = lines[guessed] ?? "";
+      return {
+        ...callout,
+        line: guessed,
+        token: row.includes(callout.token)
+          ? callout.token
+          : (pickToken(row) ?? callout.token),
+      };
+    }
+    return callout;
+  });
+}
+
 export function enrichSlide(slide: Slide, context: EnrichContext): Slide {
   const code = slideCode(slide);
   const consoleOutput = resolveConsoleOutput(slide.consoleOutput, code);
-  const callouts = code
+  const inferred = code
     ? inferCallouts(slide, code, consoleOutput)
     : (slide.callouts ?? []);
+  const callouts =
+    code && inferred.length > 0 ? normalizeCallouts(code, inferred) : inferred;
 
   return {
     ...slide,

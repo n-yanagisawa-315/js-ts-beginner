@@ -20,52 +20,53 @@ const PROJECT_BY_TRACK: Record<Track, string> = {
   github: "注文管理アプリの共同開発",
 };
 
-const INCIDENT_BY_TRACK: Record<Track, string> = {
-  js: "店員が迷わず注文を処理できるよう、画面の動きを1つずつ組み立てます。",
-  ts: "注文データの取り違えを実行前に見つけられるよう、コードへ約束を加えます。",
-  node: "注文をファイル・通信・プロセスへ安全につなぎ、運用できる形へ育てます。",
-  sql: "注文を正しく探して更新できるよう、データベースへ質問する手順を組み立てます。",
-  github: "注文管理アプリの変更を失わず共有できるよう、履歴と共同作業の流れを整えます。",
+/** トラック全体の最終ゴール（予告カード用。会話のたびに繰り返さない） */
+const GOAL_BY_TRACK: Record<Track, string> = {
+  js: "最終的には、注文を一覧表示・追加・更新できる画面を作ります。",
+  ts: "最終的には、注文データの取り違えを実行前に止められる型を付けます。",
+  node: "最終的には、注文をファイル・通信・プロセスへ安全につなぐAPIを作ります。",
+  sql: "最終的には、注文を正しく探して更新できるデータベース操作を身につけます。",
+  github: "最終的には、注文管理アプリの変更を失わず共有できる共同開発の流れを整えます。",
 };
 
 const PROJECT_MILESTONE_BY_CHAPTER: Record<ChapterId, string> = {
-  "js-syntax": "注文画面が読む値と、処理する順番を確かめる",
+  "js-syntax": "画面が読む値と、処理する順番を確かめる",
   "js-data": "1件の注文と注文一覧をデータとして組み立てる",
-  "js-loop": "注文の状態に応じて処理を分け、一覧を順に扱う",
-  "js-fn": "金額計算や表示名の手順を再利用できる関数にする",
-  "js-callback": "注文ごとの処理と、操作された後の処理を関数として渡す",
-  "js-array-fn": "未払い注文の抽出、合計、並べ替えを配列から作る",
+  "js-loop": "注文の状態で処理を分け、一覧を順に扱う",
+  "js-fn": "金額計算や表示名の手順を、何度でも使える関数にする",
+  "js-callback": "注文ごとの処理や、操作のあとに動く処理を関数として渡す",
+  "js-array-fn": "未払いの抽出・合計・並べ替えを配列から作る",
   "js-modern": "欠けた注文データを安全に読み、元の一覧を壊さず更新する",
-  "js-ref": "注文オブジェクトを意図せず共有・変更しない形へ直す",
-  "js-class": "同じ決まりを持つ注文を同じ形から作る",
-  "js-async": "注文APIの返事を待ちながら画面を止めない",
-  "js-dom": "注文一覧を表示し、追加・削除・支払更新・保存・API・スクロール表示まで操作できる画面にする",
-  "js-module": "注文画面の表示、計算、通信をファイルへ分ける",
-  "js-npm": "注文画面を同じ依存関係で再現できるようにする",
+  "js-ref": "注文オブジェクトを、意図せず共有・変更しない形にする",
+  "js-class": "同じ決まりを持つ注文を、共通の設計から作る",
+  "js-async": "返事が後から来る処理でも、画面を止めずに進める",
+  "js-dom": "注文一覧の表示・追加・削除・支払更新・保存・APIまで操作できる画面にする",
+  "js-module": "注文画面の表示・計算・通信をファイルへ分ける",
+  "js-npm": "注文画面を、同じ依存関係で再現できるようにする",
   "ts-intro": "注文番号・金額・状態へ型の約束を付ける",
   "ts-shape": "注文全体と表示用データの形を契約として表す",
   "ts-guard": "APIから来た不明な値を検査してから注文として扱う",
-  "ts-generic": "注文一覧を扱う共通処理でも具体的な型を保つ",
-  "ts-advanced": "注文の更新・表示用の型を元の契約から組み立てる",
-  "node-runtime": "注文APIをサーバーマシン上で起動する",
+  "ts-generic": "注文一覧を扱う共通処理でも、具体的な型を保つ",
+  "ts-advanced": "注文の更新・表示用の型を、元の契約から組み立てる",
+  "node-runtime": "注文APIをサーバー上で起動する",
   "node-fs": "注文データをJSONファイルから読み書きする",
   "node-http": "注文の取得・追加をHTTPの入口へつなぐ",
-  "node-npm": "注文APIをどの環境でも同じ手順で起動する",
-  "node-async": "複数の注文通信を止めずに処理する",
+  "node-npm": "注文APIを、どの環境でも同じ手順で起動する",
+  "node-async": "複数の注文通信を、止めずに処理する",
   "node-prod": "失敗を記録し、注文処理を途中で壊さず終了する",
-  "js-challenge": "JavaScriptの仕組みを組み合わせ、未知の注文処理とロジック・データ腕試しを解く",
+  "js-challenge": "JavaScriptの仕組みを組み合わせ、未知の注文処理を解く",
   "ts-challenge": "型の道具を組み合わせ、注文データの制約を型で表す",
   "node-challenge": "Node.jsのAPIを組み合わせ、注文サービスの課題を解く",
   "sql-select": "注文テーブルから必要な列を読み出す",
-  "sql-filter": "状態や金額を条件に必要な注文だけを選ぶ",
+  "sql-filter": "状態や金額を条件に、必要な注文だけを選ぶ",
   "sql-sort": "注文を金額や日時で並べ、表示件数を絞る",
   "sql-group": "顧客や状態ごとの件数・合計を集計する",
   "sql-join": "注文と顧客をキーで結び、表示情報を完成させる",
   "sql-write": "注文の追加・支払更新・取消を安全に行う",
-  "sql-transaction": "制約と取引で複数更新の整合性を守る",
+  "sql-transaction": "制約と取引で、複数更新の整合性を守る",
   "github-repository": "注文管理アプリを履歴管理できる状態にする",
   "github-commit": "変更を選び、意味のある単位で記録する",
-  "github-branch": "機能開発をmainから分けて安全に統合する",
+  "github-branch": "機能開発をmainから分けて、安全に統合する",
   "github-remote": "ローカルの履歴を共有先と同期する",
   "github-pr": "変更内容をPull Requestとして提案・確認する",
   "github-conflict": "同じ箇所の変更を読み、意図を保って解決する",
@@ -524,15 +525,15 @@ function storyContextForSlide(
   const beat = storyBeat(index, slides.length);
   switch (beat) {
     case "problem":
-      return `「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」。いまは「${slide.title}」。`;
+      return `この講義のゴールは「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」。いまは「${slide.title}」から入ります。`;
     case "prediction":
-      return `「${previous?.title ?? lesson.title}」を踏まえ、「${slide.title}」の結果を予想する。`;
+      return `「${previous?.title ?? lesson.title}」を踏まえ、「${slide.title}」の結果を予想します。`;
     case "trace":
-      return `「${previous?.title ?? lesson.title}」の次に、「${slide.title}」の値と実行位置を追う。`;
+      return `「${previous?.title ?? lesson.title}」の次に、「${slide.title}」の値と実行位置を追います。`;
     case "resolution":
-      return `「${slide.title}」を判断基準にして、いまの問題を直す。`;
+      return `「${slide.title}」を判断基準にして、いまの問題を直します。`;
     case "transfer":
-      return `「${slide.title}」で、同じ仕組みを別の入力でも使えるか確かめる。`;
+      return `「${slide.title}」で、同じ仕組みを別の入力でも使えるか確かめます。`;
   }
 }
 
@@ -703,10 +704,10 @@ function enrichQuestion(
     scenario:
       question.scenario ??
       (projectRole === "build"
-        ? `${PROJECT_BY_TRACK[lesson.track]}を進める工程で「${slide?.title ?? lesson.title}」を使います`
+        ? `${PROJECT_BY_TRACK[lesson.track]}づくりの中で、「${slide?.title ?? lesson.title}」を使います`
         : projectRole === "transfer"
-          ? `${PROJECT_BY_TRACK[lesson.track]}で学んだ判断を別の入力へ応用します`
-          : `基礎練習として「${slide?.title ?? lesson.title}」だけを取り出して確かめます`),
+          ? `${PROJECT_BY_TRACK[lesson.track]}で学んだ判断を、別の入力へ応用します`
+          : `基礎練習として、「${slide?.title ?? lesson.title}」だけを取り出して確かめます`),
     exerciseKind: kind,
     projectRole,
     scaffoldLevel: scaffold,
@@ -804,7 +805,7 @@ export function applyLearningDesign(lesson: Lesson): Lesson {
       lesson.story ??
       {
         project: PROJECT_BY_TRACK[lesson.track],
-        incident: `${INCIDENT_BY_TRACK[lesson.track]} 工程は「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」。まずは「${firstFocus}」から入ります。`,
+        incident: `${GOAL_BY_TRACK[lesson.track]} この講義のゴールは「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」です。まずは「${firstFocus}」から入ります。`,
         outcome: lesson.summary,
       },
     objectives:
@@ -1251,6 +1252,7 @@ function storyTalkForLesson(
   lesson: Lesson,
   firstSlide: Slide,
 ): TalkLine[] {
+  const milestone = PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter];
   return [
     {
       speaker: "beginner",
@@ -1258,15 +1260,15 @@ function storyTalkForLesson(
     },
     {
       speaker: "engineer",
-      text: `その仕組みを使うと、次は「${lesson.title}」が必要です。${INCIDENT_BY_TRACK[lesson.track]}`,
+      text: `次は「${lesson.title}」です。前で学んだことを土台に、新しい仕組みを1つ足します。`,
     },
     {
       speaker: "beginner",
-      text: "今回の作業は、どこから手を付けますか？",
+      text: "どこから始めますか？",
     },
     {
       speaker: "engineer",
-      text: `工程は「${PROJECT_MILESTONE_BY_CHAPTER[lesson.chapter]}」です。まずは「${firstSlide.title}」で、確認する動きを一つに絞ります。`,
+      text: `まずは「${firstSlide.title}」からです。この講義のゴールは「${milestone}」です。`,
     },
   ];
 }
@@ -1295,7 +1297,7 @@ export function applyCourseLearningDesign(source: Lesson[]): Lesson[] {
       lesson.objectives?.[0]?.label ??
       firstTeachingSlide(lesson)?.title ??
       lesson.title;
-    const connectedIncident = `前は「${previous.summary}」まで。今回は「${lesson.title}」で、まず「${firstFocus}」の動きを予想します。`;
+    const connectedIncident = `前は「${previous.summary}」まで見ました。今回は「${lesson.title}」です。まずは「${firstFocus}」の動きを予想してみましょう。`;
     const firstTeaching = lesson.slides.findIndex((slide) => !isSummary(slide));
     return {
       ...lesson,

@@ -13,7 +13,7 @@ export const jsAdvanced: Lesson[] = [
     slides: [
       {
         title: "同期は今終わり、非同期は後で終わる",
-        lead: "通常の行は、次の行の前に結果が出ます。ネットワークやタイマーは、待っているあいだに他の行を進めたいので、完了を後回しにします。Promise はその完了を表すオブジェクトです。状態は pending → fulfilled か rejected です。",
+        lead: "通常の行は、次の行の前に結果が出ます。ネットワークやタイマーは、待っているあいだに他の行を進めたいので、完了を後回しにします。`Promise` はその完了を表すオブジェクトです。状態は `pending` → `fulfilled` か `rejected` です。",
         points: [
           "一度 fulfilled か rejected になると、それ以上変わらない",
           "値（または理由）は1つ",
@@ -26,13 +26,23 @@ export const jsAdvanced: Lesson[] = [
           { speaker: "engineer", text: "他の処理を進め、完了後に登録した処理へ渡します。状態は成功か失敗へ一度だけ進みます。" },
         ],
         diagram: "promise",
-        code: `const p = fetch("/api");
-// この時点ではまだ本文は来ていない
-p.then((res) => res.json());`,
+        code: `// fetch の戻り値は Promise
+const p = fetch("/api");
+// いまは pending（本文はまだ無い）
+p.then((res) => res.json()); // 成功後は fulfilled`,
+        callouts: [
+          {
+            label: "p は Promise。一度 fulfilled / rejected になると変わらない",
+            line: 1,
+            token: "fetch",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "then は成功した値を次へ渡す",
-        lead: "p.then(onOk, onNg) の onOk は fulfilled の値を受けます。onOk が値を return すると、then が返す新しい Promise はその値で fulfilled です。return が Promise なら、それが終わるまで次は待ちます。これが連鎖です。",
+        lead: "`p.then(onOk, onNg)` の `onOk` は `fulfilled` の値を受けます。`onOk` が値を `return` すると、`then` が返す新しい `Promise` はその値で `fulfilled` です。`return` が `Promise` なら、それが終わるまで次は待ちます。これが連鎖です。",
         points: [
           "then は必ず新しい Promise を返す",
           "中で throw すると、その連鎖は rejected になる",
@@ -46,13 +56,22 @@ p.then((res) => res.json());`,
         ],
         diagram: "promise",
         code: `Promise.resolve(1)
-.then((n) => n + 1)
-.then((n) => n * 2);
+  .then((n) => n + 1)
+  .then((n) => n * 2);
 // 最終的に 4`,
+        callouts: [
+          {
+            label: "then は必ず新しい Promise を返す",
+            line: 1,
+            token: ".then",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "catch は途中の失敗を拾う",
-        lead: "rejected は、一番近い onNg / catch まで飛びます。途中の then はスキップされます。catch が値を return すると、その先は再び fulfilled になり得ます（回復）。握りつぶすと、後続が成功扱いになって見えなくなるので注意します。",
+        lead: "`rejected` は、一番近い onNg / `catch` まで飛びます。途中の `then` はスキップされます。`catch` が値を `return` すると、その先は再び `fulfilled` になり得ます（回復）。握りつぶすと、後続が成功扱いになって見えなくなるので注意します。",
         points: [
           "1つの catch で、それより上の失敗をまとめて扱える",
           "finally は成功・失敗の両方のあと（値は基本そのまま通過）",
@@ -80,7 +99,7 @@ p.then((res) => res.json());`,
       },
       {
         title: "並行は Promise.all / allSettled / race",
-        lead: "all は全部成功したら配列。1つでも失敗すると全体が失敗。allSettled は全部終わるまで待ち、成功失敗を並べる。race は最初に決着した1つ。待ち時間の上限は race と timeout の組み合わせでも作れます。",
+        lead: "`Promise.all` は全部成功したら配列。1つでも失敗すると全体が失敗。`allSettled` は全部終わるまで待ち、成功失敗を並べる。`race` は最初に決着した1つ。待ち時間の上限は `race` と timeout の組み合わせでも作れます。",
         points: [
           "独立した待ちは直列 then より all の方が短い",
           "失敗を個別に見たいなら allSettled",
@@ -93,12 +112,21 @@ p.then((res) => res.json());`,
         ],
         diagram: "promise",
         code: `await Promise.all([fetch(a), fetch(b)]);`,
-        note: "await は次の講義で詳しく扱います。意味は「この Promise が決まるまで一時停止」。",
+        callouts: [
+          {
+            label: "独立した待ちは直列 then より all の方が短い",
+            line: 0,
+            token: "Promise",
+            target: "code",
+            style: "brace",
+          },
+        ],
+        note: "`await` は次の講義で詳しく扱います。意味は「この `Promise` が決まるまで一時停止」。",
       },
       {
         title: "この講義の要点",
-        lead: "Promise は後で決まる値。then は連鎖、catch は失敗のジャンプ。all は並行。次は async/await です。",
-        points: ["状態は一方向", "then の戻り値が次の入力"],
+        lead: "`Promise` は後で決まる値。`then` は連鎖、`catch` は失敗のジャンプ。`all` は並行。次は async/await です。",
+        points: ["状態は一方向（pending → fulfilled / rejected）", "then の戻り値が次の入力"],
         talk: [
           { speaker: "beginner", text: "Promise は結果そのものではなく、あとで成功か失敗に決まるものを表す、と理解しました。" },
           { speaker: "engineer", text: "合っています。then の連鎖では、前の処理が何を返すかまで追う必要があります。" },
@@ -106,6 +134,20 @@ p.then((res) => res.json());`,
           { speaker: "engineer", text: "その非同期の流れを、次は async/await でもう少し順番に読みやすく書いてみましょう。" },
         ],
         diagram: "promise",
+        code: `const p = Promise.resolve("ok");
+p.then((value) => {
+  console.log(value); // "ok"
+});
+console.log("先に出る");`,
+        callouts: [
+          {
+            label: "状態は一方向（pending → fulfilled / rejected）",
+            line: 0,
+            token: "Promise",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
     ],
     questions: [
@@ -216,7 +258,7 @@ Promise.all([first, second]).then((values) => {
     slides: [
       {
         title: "async 関数は必ず Promise を返す",
-        lead: "async function f() { return 1 } の f() は 1 ではなく、1 で fulfilled する Promise です。throw すると rejected の Promise になります。呼び出し側は then でも await でも待てます。",
+        lead: "`async function f() { return 1 }` の `f()` は 1 ではなく、1 で `fulfilled` する `Promise` です。`throw` すると `rejected` の `Promise` になります。呼び出し側は `then` でも `await` でも待てます。",
         points: [
           "return の値が Promise なら、それがそのまま繋がる",
           "async を付けた瞬間、戻り値の型は Promise",
@@ -235,7 +277,7 @@ f().then(console.log); // 1`,
       },
       {
         title: "await は「決まるまでこの関数内で待つ」",
-        lead: "const x = await p は、p が fulfilled なら x はその値、rejected ならその場で throw 相当（関数が rejected）です。await の下の行は、決まるまで実行されません。ただし、関数の外の同期コードは先に進みます。",
+        lead: "`const x = await p` は、`p` が `fulfilled` なら `x` はその値、`rejected` ならその場で `throw` 相当（関数が `rejected`）です。`await` の下の行は、決まるまで実行されません。ただし、関数の外の同期コードは先に進みます。",
         points: [
           "await は async 関数（とモジュールのトップ）の中だけ",
           "待っているあいだ、他のタスクは動ける（後述のイベントループ）",
@@ -316,7 +358,7 @@ await Promise.all(xs.map((x) => job(x)));`,
       },
       {
         title: "この講義の要点",
-        lead: "async は Promise を返す糖衣。await は関数内の一時停止。失敗は try/catch。独立なら重ねる。次はイベントループです。",
+        lead: "`async` は `Promise` を返す糖衣。`await` は関数内の一時停止。失敗は `try`/`catch`。独立なら重ねる。次はイベントループです。",
         points: [
           "見た目は同期、実体は Promise",
           "forEach で await 完了を待たない",
