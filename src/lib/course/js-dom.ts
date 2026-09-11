@@ -301,10 +301,19 @@ export const jsDom: Lesson[] = [
         points: ["addでクラスを付ける", "removeでクラスを外す", "toggleの第2引数で真偽に合わせる"],
         diagram: "dom-update",
         code: `const row = document.createElement("li");
-        row.classList.toggle("unpaid", true);
+        row.classList.add("unpaid");
         console.log(row.classList.contains("unpaid"));`,
         codeExample: `row.classList.remove("unpaid");
-        row.classList.add("paid");`,
+        row.classList.toggle("unpaid", true);`,
+        callouts: [
+          {
+            label: "addでクラスを付ける",
+            line: 1,
+            token: "add",
+            target: "code",
+            style: "brace",
+          },
+        ],
         talk: [
           { speaker: "beginner", text: "未払いの見た目を付けるとき、styleを直接書くべきですか？" },
           { speaker: "engineer", text: "状態名をクラスに対応させる方が追いやすいです。classList.addでunpaidを付け、外すときはremoveを使います。" },
