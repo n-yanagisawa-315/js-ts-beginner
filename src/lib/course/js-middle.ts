@@ -537,6 +537,15 @@ console.log(calculateTotal(1, 2, 3));`,
         codeCaption: "入っているか、文字でつなぐか",
         codeExample: `["Aya", "Ren"].includes("Aya"); // true
 ["Aya", "Ren"].join("と"); // "AyaとRen"`,
+        callouts: [
+          {
+            label: "includes(2) は 2 があれば true。=== で比べる",
+            line: 0,
+            token: ".includes",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "toSorted は写真を並べる",
@@ -1047,7 +1056,7 @@ g(); // "Aya"`,
       },
       {
         title: "次の class でも、this の決まりは同じ",
-        lead: "次の講義の class でも、中の通常メソッドは呼び出し方が this を決めます。コンストラクタは new されたインスタンスが this です。フィールドの handler = () => this.save() は、作られたときのインスタンスを閉じ込める定番です。",
+        lead: "次の講義の class でも、中の通常メソッドは呼び出し方が this を決めます。コンストラクタは `new` されたインスタンスが this です。フィールドの `handler = () => this.save()` は、作られたときのインスタンスを閉じ込める定番です。",
         points: [
           "new を付け忘れると this が壊れる（class はエラーになることが多い）",
           "React などのクラスコンポーネントでも同じ話だった",
@@ -1059,6 +1068,25 @@ g(); // "Aya"`,
           { speaker: "engineer", text: "はい。ドットの左を失うなら bind するか、インスタンスを閉じるアローフィールドを使います。次の講義で class の書き方と合わせて使います。" },
         ],
         diagram: "this-call",
+        code: `class User {
+  constructor(name) {
+    this.name = name;
+  }
+  hello() {
+    return this.name;
+  }
+}
+const a = new User("Aya");
+a.hello(); // "Aya"`,
+        callouts: [
+          {
+            label: "new を付け忘れると this が壊れる（class はエラーになることが多い）",
+            line: 8,
+            token: "new",
+            target: "code",
+            style: "brace",
+          },
+        ],
         note: "迷ったら「ドットの左は誰か」「アローか function か」の2点だけ見る。",
       },
       {
@@ -1212,7 +1240,7 @@ console.log(detached());`,
     slides: [
       {
         title: "new すると、空の個体に this が入り中身が付く",
-        lead: 'class User { constructor(name) { this.name = name; } } に対し new User("Aya") は、新しいオブジェクトを作り、constructor 内の this がその個体を指します。return しなくても、その個体が式の値になります。',
+        lead: '`class User { constructor(name) { this.name = name; } }` に対し `new User("Aya")` は、新しいオブジェクトを作り、`constructor` 内の `this` がその個体を指します。`return` しなくても、その個体が式の値になります。',
         points: [
           "同じ設計図から、名前の違う個体を何個でも",
           "個体ごとのデータは this.xxx に置く",
@@ -1235,10 +1263,19 @@ console.log(detached());`,
 }
 const a = new User("Aya");
 a.hello(); // "hi Aya"`,
+        callouts: [
+          {
+            label: "同じ設計図から、名前の違う個体を何個でも",
+            line: 8,
+            token: "new",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "メソッドは個体ごとではなく設計図側に1つ",
-        lead: "hello は各インスタンスにコピーされるのではなく、プロトタイプに1つあります。a.hello を探すと、個体に無く、User.prototype.hello が見つかります。だから個体はデータ中心で、振る舞いを共有できます。",
+        lead: "`hello` は各インスタンスにコピーされるのではなく、プロトタイプに1つあります。`a.hello` を探すと、個体に無く、`User.prototype.hello` が見つかります。だから個体はデータ中心で、振る舞いを共有できます。",
         points: [
           "a.hello === b.hello は通常 true（同じ関数）",
           "個体に同名を代入すると、そちらが隠す",
@@ -1250,11 +1287,37 @@ a.hello(); // "hi Aya"`,
           { speaker: "engineer", text: "自分に無ければプロトタイプを上へ探します。所有場所と参照できることは別です。" },
         ],
         diagram: "class-instance",
+        code: `class User {
+  constructor(name) {
+    this.name = name;
+  }
+  hello() {
+    return "hi " + this.name;
+  }
+}
+const a = new User("Aya");
+const b = new User("Ken");
+console.log(a.hello === b.hello); // true`,
+        callouts: [
+          {
+            label: "a.hello === b.hello は通常 true（同じ関数）",
+            line: 10,
+            token: "===",
+            target: "code",
+            style: "brace",
+          },
+          {
+            label: "「true」が出力（表示）される",
+            target: "console",
+            line: 0,
+            style: "wave",
+          },
+        ],
         note: "これは「プロトタイプチェーン」の入口です。上級で深く扱います。",
       },
       {
         title: "extends は設計図を伸ばす",
-        lead: "class Admin extends User は User の個体＋追加を作れます。constructor では super(...) を先に呼び、親の this 初期化を終わらせます。メソッド上書き後、super.hello() で親版を呼べます。",
+        lead: '`class Admin extends User` は User の個体＋追加を作れます。`constructor` では `super(...)` を先に呼び、親の this 初期化を終わらせます。メソッド上書き後、`super.hello()` で親版を呼べます。',
         points: [
           "子の constructor で this を触る前に super が必要",
           "instanceof Admin も instanceof User も true になり得る",
@@ -1272,10 +1335,19 @@ a.hello(); // "hi Aya"`,
     this.role = role;
   }
 }`,
+        callouts: [
+          {
+            label: "子の constructor で this を触る前に super が必要",
+            line: 2,
+            token: "super",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "static は個体ではなく設計図に付く",
-        lead: "static create() は User.create() で呼びます。個体 a.create ではありません。工場メソッドや定数に使います。",
+        lead: '`static kind` は `User.kind` で読みます。個体 `a.kind` ではありません。工場メソッドや定数に使います。`static` の中の `this` はクラス側です。',
         points: [
           "static の中の this はクラス側",
           "個体データには触れない（触るなら引数で個体を渡す）",
@@ -1289,12 +1361,28 @@ a.hello(); // "hi Aya"`,
         diagram: "class-instance",
         code: `class User {
   static kind = "user";
+  static create(name) {
+    return new this(name);
+  }
+  constructor(name) {
+    this.name = name;
+  }
 }
-User.kind; // "user"`,
+User.kind; // "user"
+User.create("Aya");`,
+        callouts: [
+          {
+            label: "static の中の this はクラス側",
+            line: 3,
+            token: "this",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "この講義の要点",
-        lead: "new が個体。メソッドは prototype で共有。extends は super から。static はクラス呼び。次は非同期です。",
+        lead: "`new` が個体。メソッドは prototype で共有。`extends` は `super` から。`static` はクラス呼び。次は非同期です。",
         points: ["データは this、振る舞いの実体は共有", "new を付けて作る"],
         talk: [
           { speaker: "beginner", text: "new で個体を作り、個体ごとの値は this に入り、通常メソッドは共有されるんですね。" },
@@ -1303,6 +1391,25 @@ User.kind; // "user"`,
           { speaker: "engineer", text: "そこまで押さえれば十分です。次は、すぐには結果が決まらない非同期処理へ進みます。" },
         ],
         diagram: "class-instance",
+        code: `class User {
+  constructor(name) {
+    this.name = name;
+  }
+  hello() {
+    return "hi " + this.name;
+  }
+}
+const a = new User("Aya");
+a.hello(); // "hi Aya"`,
+        callouts: [
+          {
+            label: "new を付けて作る",
+            line: 8,
+            token: "new",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
     ],
     questions: [
@@ -1325,7 +1432,7 @@ User.kind; // "user"`,
         ],
         hint:
           "クラスからオブジェクトを作るときは `new` が必要です。コンストラクタ自身にインスタンスを返す処理を足す必要はありません。",
-        sample: "hi Aya",
+        sample: "customer Aya",
         answer: `class Order {
   constructor(customer) {
     this.customer = customer;

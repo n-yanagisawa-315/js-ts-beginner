@@ -851,6 +851,15 @@ await writeFile("./out.txt", "hello\n", "utf8");`,
   if (err.code === "ENOENT") return null;
   throw err;
 }`,
+        callouts: [
+          {
+            label: 'エラーコード err.code === "ENOENT" が「無い」',
+            line: 3,
+            token: "===",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "この講義の要点",

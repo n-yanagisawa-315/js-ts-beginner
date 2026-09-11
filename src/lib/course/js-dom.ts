@@ -1807,6 +1807,15 @@ export const jsDom: Lesson[] = [
         }`,
         codeExample: `const orders = loadOrders();
         renderOrders(orders);`,
+        callouts: [
+          {
+            label: "parseの失敗をcatchする",
+            line: 4,
+            token: "catch",
+            target: "code",
+            style: "brace",
+          },
+        ],
         talk: [
           { speaker: "beginner", text: "保存文字列が壊れていたら、parseはそのまま成功しますか？" },
           { speaker: "engineer", text: "壊れていると例外になります。try/catchで囲み、失敗時は案内を出して空配列へ戻します。" },
@@ -2105,6 +2114,15 @@ export const jsDom: Lesson[] = [
           }
         }`,
         codeExample: `start(); // 注文管理画面の入口`,
+        callouts: [
+          {
+            label: "fetchとjsonをawaitする",
+            line: 3,
+            token: "await",
+            target: "code",
+            style: "brace",
+          },
+        ],
         talk: [
           { speaker: "beginner", text: "APIから注文を読む完成形の手順は？" },
           { speaker: "engineer", text: "読み込み中を示し、fetchとjsonをawaitし、okで成否を確認し、成功したordersをrenderへ渡します。" },

@@ -14,9 +14,9 @@ import type { ResolvedSlideDTO } from "@/lib/course/client-dtos";
 import type { ConversationPage } from "@/lib/course/types";
 
 const INLINE_TOKEN =
-  /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
+  /(`[^`]+`|「[^」]+」|\b(?:true|false|null|undefined|if|else|for|while|return|const|let|var|function|class|constructor|this|new|extends|super|static|typeof|instanceof|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)\b)/g;
 const KEYWORD_TOKEN =
-  /^(?:true|false|null|undefined|if|else|for|while|return|const|let|function|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)$/;
+  /^(?:true|false|null|undefined|if|else|for|while|return|const|let|var|function|class|constructor|this|new|extends|super|static|typeof|instanceof|async|await|Promise|Node|JavaScript|TypeScript|SQL|SELECT|WHERE|JOIN|Git|GitHub|commit|branch|npm|npx|LTS|stdout|stderr)$/;
 
 function inlineParts(text: string) {
   let offset = 0;

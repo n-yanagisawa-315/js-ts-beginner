@@ -68,8 +68,8 @@ function pickToken(line: string): string | undefined {
     /\bconsole\.log\b/,
     /\.\b(?:bind|call|apply|includes|join|groupBy|map|filter|reduce)\b/,
     /\?\?=|\?\?|\?\./,
-    /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|import|export|typeof|new|throw|try|catch)\b/,
-    /\b(?:SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE|CREATE|ALTER|COMMIT|ROLLBACK)\b/i,
+    /\b(?:function|const|let|var|return|if|else|for|while|async|await|class|constructor|extends|super|static|import|export|typeof|instanceof|new|throw|try|catch|this)\b/,
+    /\b(?:SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE|CREATE|ALTER|COMMIT|ROLLBACK)\b/,
     /\b(?:git|npm|npx|node|gh)\b/,
     /===|!==|=>|\.\.\.|\+\+|--/,
     /[;=+\-*/<>!&|{}()[\]]/,
@@ -83,7 +83,7 @@ function pickToken(line: string): string | undefined {
   return word?.[0];
 }
 
-/** 注釈ラベルの用語に対応するコード行を選ぶ（先頭行に誤って付かないようにする） */
+/** 注釈ラベルの用語に対応するコード行を選ぶ。見つからなければ -1 */
 function bestLineForLabel(lines: string[], label: string): number {
   const cues: Array<{ label: RegExp; code: RegExp; preferLast?: boolean }> = [
     { label: /\bbind\b/i, code: /\.bind\b/ },
@@ -95,6 +95,13 @@ function bestLineForLabel(lines: string[], label: string): number {
     { label: /\?\?=|まだ無/, code: /\?\?=/ },
     { label: /\?\./, code: /\?\./ },
     { label: /\?\?|空なら|無いとき/, code: /\?\?(?!=)/ },
+    // より具体的なキーワードを this / 先頭行より優先
+    { label: /\bsuper\b/i, code: /\bsuper\b/ },
+    { label: /\bstatic\b/i, code: /\bstatic\b/ },
+    { label: /\bawait\b/i, code: /\bawait\b/ },
+    { label: /\bcatch\b/i, code: /\bcatch\b|\.catch\b/ },
+    { label: /===/, code: /===/ },
+    { label: /\bnew\b/i, code: /\bnew\b/ },
     { label: /\bthis\b/i, code: /\bthis\b/ },
     { label: /コールバック|戻りがキー/, code: /\([^)]*\)\s*=>/ },
   ];
@@ -115,6 +122,15 @@ function bestLineForLabel(lines: string[], label: string): number {
     }
   }
 
+  return -1;
+}
+
+function resolveLabelLine(lines: string[], label: string, haystack: string): number {
+  // 要点ラベルだけで決め、全文に引きずられて別用語へ飛ぶのを防ぐ
+  const fromLabel = bestLineForLabel(lines, label);
+  if (fromLabel >= 0) return fromLabel;
+  const fromHaystack = bestLineForLabel(lines, haystack);
+  if (fromHaystack >= 0) return fromHaystack;
   return firstCodeLine(lines);
 }
 
@@ -225,11 +241,18 @@ function inferCallouts(
     }
   }
 
-  if (/\bSELECT\b|\bFROM\b|\bWHERE\b|\bJOIN\b/i.test(code) || /SQL|クエリ|表|行/.test(text)) {
+  // Array#join を SQL の JOIN と誤認しない（case-insensitive \bJOIN\b は .join に当たる）
+  const looksLikeSql =
+    /\bSELECT\b/i.test(code) ||
+    (/\bFROM\b/i.test(code) && /\bWHERE\b/i.test(code)) ||
+    /(?:^|[\s(,])JOIN\b/i.test(code) ||
+    /SQL|クエリ/.test(text);
+  if (looksLikeSql) {
     const line = firstMatchingLine(
       lines,
       (row) =>
         /\b(?:SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE)\b/i.test(row) &&
+        !/\.join\b/i.test(row) &&
         !isCommentLine(row),
     );
     if (line >= 0) {
@@ -278,7 +301,7 @@ function inferCallouts(
   // まだ注釈がなければ、要点の用語に合う行へ付ける（先頭行への誤爆を避ける）
   if (callouts.length === 0) {
     const label = shortLabel(slide.points?.[0] ?? slide.title);
-    const line = bestLineForLabel(lines, `${label}\n${text}`);
+    const line = resolveLabelLine(lines, label, text);
     if (line >= 0) {
       const row = lines[line] ?? "";
       push({
@@ -297,7 +320,7 @@ function inferCallouts(
     firstCodeLine(lines) >= 0
   ) {
     const label = shortLabel(slide.points?.[0] ?? slide.title);
-    const line = bestLineForLabel(lines, `${label}\n${text}`);
+    const line = resolveLabelLine(lines, label, text);
     const row = lines[line] ?? "";
     push({
       label,

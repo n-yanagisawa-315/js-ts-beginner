@@ -68,6 +68,15 @@ p.then((res) => res.json());`,
 .then(() => console.log("ok"))
 .catch((e) => console.log(e.message));
 // "ng" と出る。ok の行は飛ばされる`,
+        callouts: [
+          {
+            label: "1つの catch で、それより上の失敗をまとめて扱える",
+            line: 2,
+            token: ".catch",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "並行は Promise.all / allSettled / race",
@@ -247,6 +256,15 @@ f().then(console.log); // 1`,
     console.log("失敗", e);
   }
 }`,
+        callouts: [
+          {
+            label: "await は async 関数（とモジュールのトップ）の中だけ",
+            line: 2,
+            token: "await",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "直列 await は合計時間が足し算",
@@ -280,6 +298,20 @@ const [a, b] = await Promise.all([pa, pb]);`,
           { speaker: "engineer", text: "同時実行数が増えすぎる場合があります。順序、依存、APIの上限を見て直列か制限付き並行を選びます。" },
         ],
         diagram: "async-await",
+        code: `for (const x of xs) {
+  await job(x); // 1件ずつ
+}
+// 並列にしたいとき
+await Promise.all(xs.map((x) => job(x)));`,
+        callouts: [
+          {
+            label: "map のコールバックを async にすると、map 自体は Promise の配列をすぐ返す",
+            line: 4,
+            token: ".map",
+            target: "code",
+            style: "brace",
+          },
+        ],
         watch: "forEach + async は「全部終わるまで待つ」には使えません。",
       },
       {
@@ -479,6 +511,15 @@ console.log("sync");
 f();
 console.log("3");
 // 1 3 2`,
+        callouts: [
+          {
+            label: "async 関数は、最初の await まで同期で走る",
+            line: 2,
+            token: "await",
+            target: "code",
+            style: "brace",
+          },
+        ],
       },
       {
         title: "なぜこの順番を知る必要があるか",
